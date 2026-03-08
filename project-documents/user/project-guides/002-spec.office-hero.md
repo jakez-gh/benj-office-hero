@@ -44,6 +44,18 @@ The `permissions[]` array in the JWT enables per-user permission overrides witho
 creating new roles. Roles provide a default permission set; `permissions[]` can
 add (grant) or remove (deny, prefixed `!`) individual capabilities.
 
+**Customizable roles per Tenant:**
+TenantAdmins may define their own role names and associated permission sets
+within the scope of their Tenant. The platform ships with the standard hierarchy
+above, but a TenantAdmin can use the **role builder** UI to create, modify, or
+delete tenant‑scoped roles (e.g. "Senior Technician", "Weekend Dispatcher").
+These custom roles are stored in a `roles` table keyed by `tenant_id`; when a
+user logs in the JWT’s `role` claim reflects the chosen role and the service
+layer fetches the corresponding default permissions. This mechanism keeps the
+model simple while giving each Tenant fine‑grained control over their internal
+organizational structure. Tenant-level role defaults are also editable by the
+Operator for all Tenants if desired.
+
 ```text
 permissions: ["jobs:write", "routes:read", "!dispatch:write"]
 ```
