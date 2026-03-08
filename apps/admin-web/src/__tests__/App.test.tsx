@@ -35,9 +35,9 @@ describe('Admin web authentication and navigation', () => {
 
     await waitFor(() => expect(mockLogin).toHaveBeenCalled());
 
-    // after login, admin panel welcome message should show
+    // after login, admin panel with Jobs page should show
     await waitFor(() => {
-      expect(screen.getByText(/welcome to admin panel/i)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /jobs/i })).toBeInTheDocument();
     });
 
     // nav links should exist
@@ -78,7 +78,7 @@ describe('Admin web authentication and navigation', () => {
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'secret' } });
     fireEvent.click(screen.getByRole('button', { name: /login/i }));
 
-    await waitFor(() => screen.getByText(/welcome to admin panel/i));
+    await waitFor(() => screen.getByRole('heading', { name: /jobs/i }));
 
     fireEvent.click(screen.getByRole('button', { name: /logout/i }));
 
