@@ -1,27 +1,23 @@
 from __future__ import annotations
 
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+import os
+
+from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import create_async_engine as sa_create_async_engine
 from sqlalchemy.pool import NullPool
 
 
-def create_async_engine_from_url(url: str | None = None) -> AsyncEngine:
-    """Create an AsyncEngine configured from `DATABASE_URL`.
+def create_async_engine(url: str | None = None) -> AsyncEngine:
+    """Create an AsyncEngine configured from `DATABASE_URL` env or explicit URL.
 
     Uses NullPool by default to avoid connection sharing issues in serverless
     environments; you can override via environment variables if needed.
     """
-    from pydantic import BaseSettings
-
-    class Settings(BaseSettings):
-        database_url: str
-
-        class Config:
-            env_prefix = ""
-
-    settings = Settings()
-    database_url = url or settings.database_url
+    database_url = url or os.environ.get("DATABASE_URL")
+    if not database_url:
+        raise ValueError("DATABASE_URL must be provided as argument or set in environment")
     # URL should be of form postgresql+asyncpg://...
-    return create_async_engine(
+    return sa_create_async_engine(
         database_url,
         echo=False,
         poolclass=NullPool,
@@ -29,5 +25,5 @@ def create_async_engine_from_url(url: str | None = None) -> AsyncEngine:
     )
 
 
-# alias for easier import
-create_engine = create_async_engine_from_url
+# alias for backwards compatibility
+create_engine = create_async_engine

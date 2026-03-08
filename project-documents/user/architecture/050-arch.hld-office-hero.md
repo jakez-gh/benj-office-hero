@@ -24,10 +24,10 @@ See spec and concept docs for terminology, constraints, and decision rationale.
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Internet                                 │
 │                                                                 │
-│  ┌──────────────────┐   ┌──────────────────┐                   │
-│  │  Tenant Admin    │   │  Operator        │                   │
-│  │  Web Browser     │   │  Web Browser     │                   │
-│  └────────┬─────────┘   └────────┬─────────┘                   │
+│  ┌──────────────────┐   ┌──────────────────┐   ┌───────────┐ │
+│  │  Tenant Admin    │   │  Operator        │   │   CLI     │ │
+│  │  Web Browser     │   │  Web Browser     │   │  Tools    │ │
+│  └────────┬─────────┘   └────────┬─────────┘   └────┬──────┘ │
 │           │                      │                             │
 │  ┌────────▼──────────────────────▼─────────┐                   │
 │  │           Office Hero API               │                   │
@@ -50,6 +50,12 @@ See spec and concept docs for terminology, constraints, and decision rationale.
 ## Major Subsystems
 
 ### 1. Office Hero API (FastAPI)
+
+The presentation tier also includes **CLI tooling** located in `tools/`;
+these Python scripts and commands interact with the API in the same way the
+GUI does. They are used for migrations, health checks, and operator maintenance
+commands (e.g. tenant provisioning). The CLI shares authentication, logging,
+and error-handling behaviour with other clients.
 
 The single API consumed by all clients. Structured in layers:
 
