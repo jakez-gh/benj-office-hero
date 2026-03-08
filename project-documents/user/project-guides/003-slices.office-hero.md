@@ -37,6 +37,11 @@ Each foundation slice leaves the system in a runnable, tested state.
    `outbox_events` and `saga_log` tables included in initial migration (required by back-office
    slices). Dependencies: none. Effort: 1/5
 
+1a. [ ] **CLI & tooling baseline** — `tools/` directory with a simple Python CLI for
+   migrations, health checks, and operator maintenance commands; shared code for
+   generating JWTs and invoking the REST API. Establishes the presentation-tier CLI
+   mentioned in the concept. Dependencies: Slice 1. Effort: 1/5
+
 2. [ ] **Database foundation** — Neon connection, SQLAlchemy async session factory,
    Alembic migration workflow, base `tenant_id` column pattern, RLS policy helpers,
    per-request session context. `outbox_events` + `saga_log` migrations (see ADR 056).
