@@ -41,12 +41,20 @@ repos:
         args: [--fix=lf]
       - id: detect-private-key
 
-  # Security scan — run on push (slow; skip on every commit with SKIP=bandit)
+  # Security scan + tests — run on push (slow; skip with SKIP=bandit,pytest-check)
   - repo: local
     hooks:
       - id: bandit
         name: bandit security scan
         entry: python -m bandit -r src -ll
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
+      - id: pytest-check
+        name: pytest (TDD gate)
+        entry: python -m pytest --tb=short -q
         language: system
         pass_filenames: false
         always_run: true
