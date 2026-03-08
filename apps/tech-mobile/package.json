@@ -24,6 +24,8 @@
     "@types/react": "~19.2.2",
     "typescript": "~5.9.2",
     "jest-expo": "~48.0.0",
+    "babel-preset-expo": "~11.0.0",
+    "babel-jest": "^29.0.0",
     "@testing-library/react-native": "*",
     "@testing-library/jest-native": "*",
     "@types/jest": "*",
