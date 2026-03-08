@@ -52,8 +52,10 @@ Each foundation slice leaves the system in a runnable, tested state.
 4. [ ] **Observability & security middleware foundation** — structlog structured logging
    (JSON, request-id), `GET /health` endpoint (DB + ORS reachability), global FastAPI
    exception handler (no stack traces to client), request-id middleware, CSP/security
-   headers middleware (`X-Frame-Options`, `X-Content-Type-Options`, `Content-Security-Policy`).
-   Dependencies: Slices 1–2. Effort: 1/5
+   headers middleware (`X-Frame-Options`, `X-Content-Type-Options`, `Content-Security-Policy`),
+   and basic `slowapi` integration wired to the RateLimitManager with database table and
+   cache hooks ready to accept operator-configurable limits. Dependencies: Slices 1–2.
+   Effort: 1/5
 
 5. [ ] **Frontend scaffold** — pnpm monorepo (`packages/api-client`, `packages/types`,
    `apps/admin-web`, `apps/tech-web`, `apps/tech-mobile`), TypeScript config, ESLint,
@@ -80,9 +82,15 @@ Ordered by dependency and value. Each slice is independently demonstrable.
 7. [ ] **Tenant management** — Operator CRUD for Tenants; Tenant provisioning creates
    DB schema, sets back\_office\_adapter. Dependencies: Slices 1–4. Risk: Low. Effort: 2/5
 
+7a. [ ] **Operator observability dashboard** — Metrics & log viewer with live control panel
+   (rate-limit adjustments, ban filter management) and an audit-log tab. Provides quick
+   access to health metrics and enables operators to alter protection rules at runtime.
+   Dependencies: Slices 3–4. Risk: Medium. Effort: 3/5
+
 8. [ ] **User management** — TenantAdmin CRUD for Users within their Tenant (all roles
-   except Operator). Self-registration disabled by default (Operator or TenantAdmin
-   invites). **GUI:** User list + invite form in Admin web shell (depends on 5a).
+   except Operator). Includes role-builder UI allowing TenantAdmins to create and modify
+   tenant‑scoped roles/permission sets. Self-registration disabled by default (Operator or
+   TenantAdmin invites). **GUI:** User list + invite form in Admin web shell (depends on 5a).
    Dependencies: Slices 3, 7. Risk: Low. Effort: 2/5
 
 ### Core FSM
