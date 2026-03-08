@@ -143,6 +143,12 @@ Tenant can see another Tenant's data or Operator-level views.
 
 ### Development Approach
 
+All design patterns used in this document (layered architecture, adapter pattern, saga, outbox, etc.) are detailed in `project-documents/user/architecture/patterns.md` so developers can consult them when implementing.
+
+All design patterns used in this document (layered architecture, adapter
+pattern, saga, outbox, back-office adapters, etc.) are documented in the
+project's patterns reference so developers can understand and reuse them.
+
 - **TDD** throughout — tests written before implementation
 - **SOLID and DRY** enforced via linter rules and AI-assisted code review
 - **Security first** — Tenant isolation is a hard requirement, not a backlog item

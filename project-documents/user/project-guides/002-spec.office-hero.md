@@ -103,7 +103,7 @@ to minimize translation cost.
 | Tenant data isolation | Hard gate | PostgreSQL RLS + service-layer tenant check |
 | Authentication | JWT RS256, 15 min access / 7 day refresh | See ADR 060 |
 | RBAC | Role + fine-grained permissions[] | Every endpoint declares role + permission |
-| Rate limiting | All endpoints — tiered by endpoint type | `slowapi`; auth tighter; global fallback |
+| Rate limiting | All endpoints — tiered by endpoint type; dynamically configurable by Operator at runtime | `slowapi` plus `RateLimitManager` (see ADR 062); auth tighter; global fallback |
 | Audit logging | Every auth event, RBAC check, data access | Immutable, queryable, forensic-grade |
 | Test coverage | Increases each sprint | 0% floor at launch; no sprint regresses coverage |
 | TDD | Strict | Failing test written before every production code change; pytest runs on every push |
@@ -115,7 +115,7 @@ to minimize translation cost.
 
 ## Technology Stack
 
-All choices are wrapped for swapability — see ADRs in `user/architecture/`.
+All choices are wrapped for swapability — see ADRs in `user/architecture/` (including 057–063). Design patterns used by these ADRs are documented in `user/architecture/patterns.md`.
 
 | Layer | Choice | ADR |
 | ----- | ------ | --- |
@@ -132,8 +132,8 @@ All choices are wrapped for swapability — see ADRs in `user/architecture/`.
 | Auth | JWT RS256 + bcrypt + refresh tokens | [060-adr.auth.md](../architecture/060-adr.auth.md) |
 | MCP server | Python MCP SDK + OpenAPI codegen | [061-adr.mcp-server.md](../architecture/061-adr.mcp-server.md) |
 | Rate limiting | slowapi (starlette-compatible) | Applied globally + per-endpoint |
-| Logging | structlog (JSON) + audit log | Separate structured log and immutable audit log |
-| Observability | Grafana + Loki (free) or Better Stack | Operator dashboard; log viewer |
+| Logging | structlog (JSON) + audit log | Separate structured log and immutable audit log; system ship to Grafana/Loki (see ADR 063) |
+| Observability | Grafana + Loki (free) or Better Stack | Operator dashboard; log viewer; dashboards and alerts described in ADR 063 |
 
 ---
 
@@ -260,6 +260,8 @@ provide dashboards + log search out of the box.
 **Log viewer (Operator + Owner only):**
 
 Structured log search with:
+
+- Live control panel: Operators can adjust rate limits and add/remove ban filters (account, tenant, IP, geography) dynamically from the dashboard; changes propagate immediately without a restart.
 
 - Filter by: `tenant_id`, `user_id`, `request_id`, `level`, `endpoint`, time range
 - Search by: arbitrary JSON field value (structlog produces JSON)
