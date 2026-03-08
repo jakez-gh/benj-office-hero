@@ -56,6 +56,7 @@ Industry-standard terms borrowed from PestPac, ServiceTitan, and Jobber where po
 | Term | Definition |
 | ---- | ---------- |
 | **Operator** | Jake + any internal staff running the platform (our term — not visible to Tenants) |
+| **Owner** | Internal super-admin with full rights across all Tenants and Operators; only another Owner can assign this role. |
 | **Tenant** | A service company subscribed to Office Hero — the plumber, HVAC co., or pest control co. (our SaaS term; in the UI this may appear as "Company") |
 | **Tenant Admin** | Owner or office manager at a Tenant; configures the account, manages their team |
 | **Technician** | A field worker employed by a Tenant who travels to and performs Jobs (universal FSM term) |
@@ -84,14 +85,13 @@ commercial launch is the near-term goal.
 **Primary (daily users):**
 
 - **Tenant Admin** — enters or reviews Jobs, reviews and approves Routes, handles
-  day-of exceptions (Technician sick, emergency added, Customer cancels).
-- **Technician** — may enter a Job in the field; receives their daily Route and
+  day-of exceptions (Technician sick, emergency added, Customer cancels).- **Tenant Sales** â€” a Tenant employee granted permission by the Tenant Admin to
+  enter new Jobs/Contracts and to propose or manually adjust Routes for their Crew.- **Technician** — may enter a Job in the field; receives their daily Route and
   acknowledges it via their mobile browser.
 
 **Secondary (platform oversight):**
 
-- **Operator** — manages Tenants, monitors the platform, has access to all data.
-  Tenants cannot see Operator-level views or other Tenants' data.
+- **Owner** — super-admin with god-level permissions over the entire platform. Manages Operators, billing, and may impersonate Tenants for troubleshooting.
 
 **Never a user:**
 

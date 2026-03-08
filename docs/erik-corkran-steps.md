@@ -2,7 +2,7 @@
 
 This document is a distilled, human‑readable version of the
 **AI Project Guide** methodology maintained by Erik Corkran
-(see https://github.com/ecorkran/ai-project-guide).  It outlines the
+(see <https://github.com/ecorkran/ai-project-guide>).  It outlines the
 seven phases and supporting structure that his workflow uses when
 building software with AI assistance.
 
@@ -130,5 +130,5 @@ existing step‑by‑step approach.  You can either maintain it manually or
 use the ai-project-guide materials directly in your own projects.
 
 *See also the original guide at
-https://github.com/ecorkran/ai-project-guide for the full, living
+<https://github.com/ecorkran/ai-project-guide> for the full, living
 methodology.*

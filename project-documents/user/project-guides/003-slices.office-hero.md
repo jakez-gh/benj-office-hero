@@ -206,9 +206,23 @@ Each integration is a separate slice. All implement the `BackOfficeAdapter` prot
 
 ## Integration Work
 
-28. [ ] **E2E test suite** — Playwright (web) + Detox or Maestro (mobile) covering
-    core flows: Job entry → dispatch → Technician receives Route → location update.
-    Dependencies: Slices 17–22. Effort: 3/5
+28. [ ] **E2E test suite** — Full cross-platform coverage across all client types.
+    Emulator setup is a prerequisite (see `950-tasks.maintenance.md`):
+
+    - **Android** — Maestro against Android Emulator (AVD). Auth, Route view,
+      Job entry, location tracking (foreground + background).
+    - **iOS** — Maestro against iOS Simulator (Xcode/macOS required). Same
+      flows as Android. Gated on iOS Expo build being enabled.
+    - **Web** — Playwright (Chromium + Firefox + WebKit). Login, Job entry,
+      routing options, dispatch, Dispatch dashboard drag-and-drop.
+    - **API** — pytest + httpx AsyncClient against live test environment. All
+      endpoint contracts, auth flows, RBAC enforcement, rate limiting responses.
+    - **MCP** — pytest invokes MCP tools against test environment. Tool
+      discovery, auth passthrough, response schema validation.
+
+    Core flow (all platforms): Job entry → routing options → dispatch →
+    Technician receives Route → location update posted.
+    Dependencies: Slices 17–22. Effort: 4/5
 
 29. [ ] **Deployment automation** — Fly.io deployment pipeline (GitHub Actions);
     Neon branch promotion (dev → production); zero-downtime deploys via Fly.io
