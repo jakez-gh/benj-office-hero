@@ -11,7 +11,20 @@ export interface LoginResponse {
   token_type: 'bearer';
 }
 
+export interface RefreshRequest {
+  refresh_token: string;
+}
+
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   const response = await client.post<LoginResponse>('/auth/login', credentials);
   return response.data;
+}
+
+export async function refresh(request: RefreshRequest): Promise<LoginResponse> {
+  const response = await client.post<LoginResponse>('/auth/refresh', request);
+  return response.data;
+}
+
+export async function logout(request: { refresh_token: string }): Promise<void> {
+  await client.post('/auth/logout', request);
 }
