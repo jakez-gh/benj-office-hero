@@ -1,6 +1,5 @@
 module.exports = {
   roots: ['<rootDir>/src'],
-  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/src/e2e/'],
   transform: {
     '^.+\\.tsx?$': 'ts-jest'
   },

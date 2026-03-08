@@ -42,14 +42,12 @@ repos:
         name: bump semver patch
         entry: node scripts/bump-version.js
         language: node
-        additional_dependencies: ['semver']
         pass_filenames: false
         stages: [pre-commit]
       - id: restart-frontend
         name: restart frontend dev server
         entry: node scripts/restart-frontend.js
         language: node
-        additional_dependencies: ['kill-port']
         pass_filenames: false
         stages: [post-commit]
 

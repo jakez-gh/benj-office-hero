@@ -1,23 +1,14 @@
 
 // mock API client before any component imports
 const mockLogin = jest.fn();
-const mockClient = {
-  interceptors: {
-    response: {
-      use: jest.fn().mockReturnValue(1),
-      eject: jest.fn()
-    }
-  },
-  defaults: { headers: { common: {} } }
-};
 jest.mock('@office-hero/api-client', () => ({
-  login: mockLogin,
-  client: mockClient
+  login: mockLogin
 }));
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from '../App';
+import * as api from '@office-hero/api-client';
 
 describe('Admin web authentication and navigation', () => {
   beforeEach(() => {
@@ -30,7 +21,7 @@ describe('Admin web authentication and navigation', () => {
     mockLogin.mockResolvedValue({
       access_token: 'fake-token',
       refresh_token: 'r',
-      user: { id: '1', email: 'me@example.com', role: 'admin' }
+      token_type: 'bearer'
     });
 
     render(<App />);
@@ -44,9 +35,9 @@ describe('Admin web authentication and navigation', () => {
 
     await waitFor(() => expect(mockLogin).toHaveBeenCalled());
 
-    // after login, admin panel with Jobs page should show
+    // after login, admin panel welcome message should show
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /jobs/i })).toBeInTheDocument();
+      expect(screen.getByText(/welcome to admin panel/i)).toBeInTheDocument();
     });
 
     // nav links should exist
@@ -78,7 +69,7 @@ describe('Admin web authentication and navigation', () => {
     mockLogin.mockResolvedValue({
       access_token: 'fake-token',
       refresh_token: 'r',
-      user: { id: '1', email: 'me@example.com', role: 'admin' }
+      token_type: 'bearer'
     });
 
     render(<App />);
@@ -87,7 +78,7 @@ describe('Admin web authentication and navigation', () => {
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'secret' } });
     fireEvent.click(screen.getByRole('button', { name: /login/i }));
 
-    await waitFor(() => screen.getByRole('heading', { name: /jobs/i }));
+    await waitFor(() => screen.getByText(/welcome to admin panel/i));
 
     fireEvent.click(screen.getByRole('button', { name: /logout/i }));
 
