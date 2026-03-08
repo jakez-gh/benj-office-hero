@@ -133,15 +133,29 @@ Tenant can see another Tenant's data or Operator-level views.
 
 ### Initial Technical Direction
 
+The implementation will follow a classic **layered (n‑tier) architecture**. At the top sits the *presentation* layer (web UI, CLI tools, MCP server), which communicates with the core *API* layer. The API invokes business logic in the *service* layer, which in turn talks to the *repository/persistence* layer backed by PostgreSQL with RLS. This separation helps keep each slice testable and replaceable. Alternatives such as a microservices split or “fat controller” monolith were considered, but they introduce complexity and impede solo‑developer agility. The layered model is simple, aligns with our TDD philosophy, and makes it easy to mock boundaries during unit tests.
+
+The layers map as follows:
+
+- **Presentation** – GUI (React web, mobile web), Operator CLI (Python script using the REST API), MCP server (Python MCP SDK generated from OpenAPI), CLI tooling for migrations/maintenance. All of these consume the same REST API.
+- **API** – FastAPI routers, auth/permission middleware. No business logic is implemented above this layer.
+- **Service** – Application rules, orchestration, saga coordination, rate‑limit checks. Depends only on protocol interfaces; no HTTP or DB imports.
+- **Repository/Persistence** – SQLAlchemy + Alembic talking to PostgreSQL. Only this layer uses async sessions and raw queries. RLS is enforced here.
+
+This document’s later sections assume the layered structure; refer to `architecture/patterns.md` for a fuller explanation of each pattern.
+
+Also, because operators may occasionally run scripted commands, a **CLI tool** will live in `tools/` directory and will interact exclusively with the public API. It is not a separate layer, but part of the presentation tier alongside the web UI and MCP server.
+
 - **Language:** Python 3.11+
 - **Deployment:** Free-tier cloud hosting at launch (Railway, Render, or Fly.io)
 - **Database:** PostgreSQL with row-level Tenant isolation
-- **Routing engine:** TBD — OpenRouteService (fully free/open-source) preferred
-  over Google Maps to avoid API costs
+- **Routing engine:** OpenRouteService (ORS) will be used initially via the community server; performance or rate limits may trigger a self‑hosted ORS instance or evaluation of alternatives (OSRM, paid API) during slice‑003-routing. The definitive choice and any hosting decisions will be documented in ADR 052 when that slice is kicked off.
 - **Location tracking:** Mobile browser Geolocation API (no native app at launch)
-- **Frontend:** TBD in Phase 2
+- **Frontend:** Web SPA (React/TypeScript) in Phase 2; a lightweight mobile web view for technicians launches Phase 1. A native mobile app may follow after the first year.
 
 ### Development Approach
+
+**Logging & rollback requirement:** Every interaction with a back‑office system will be recorded in the audit log with sufficient detail to reconstruct and, if necessary, replay or roll back the operation. The structured log will include correlation IDs and serialized command data; compensation routines can use this history when reversing an action. See `architecture/063-adr.logging-observability.md` for how this is implemented.
 
 All design patterns used in this document (layered architecture, adapter pattern, saga, outbox, etc.) are detailed in `project-documents/user/architecture/patterns.md` so developers can consult them when implementing.
 
