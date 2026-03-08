@@ -39,9 +39,10 @@ coverage.json
 # Docker
 *.pid
 
-# Secrets
+# Secrets (keep .env.example — it's a template, not a secret)
 .env
-.env.*
+.env.local
+.env.*.local
 secrets.*
 
 # Logs
