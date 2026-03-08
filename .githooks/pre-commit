@@ -1,0 +1,13 @@
+#!/bin/sh
+# pre-commit hook — managed by repository
+# Run once to activate: bash scripts/setup-dev.sh
+# Or: git config core.hooksPath .githooks
+HERE="$(cd "$(dirname "$0")" && pwd)"
+ARGS=(hook-impl --config=.pre-commit-config.yaml --hook-type=pre-commit --hook-dir "$HERE" -- "$@")
+
+if command -v pre-commit > /dev/null; then
+    exec pre-commit "${ARGS[@]}"
+else
+    echo '`pre-commit` not found. Run: pip install pre-commit && pre-commit install' 1>&2
+    exit 1
+fi
