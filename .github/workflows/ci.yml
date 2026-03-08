@@ -37,16 +37,19 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Install bandit
-        run: pip install bandit
+      - name: Install security tools
+        run: pip install bandit pip-audit
 
-      - name: Run bandit
+      - name: Run bandit (static analysis)
         run: |
-          if [ -d src ] && find src -name "*.py" | grep -q .; then
+          if find src -name "*.py" 2>/dev/null | grep -q .; then
             bandit -r src -ll
           else
-            echo "No Python source files found in src/ — skipping bandit."
+            echo "No Python source files in src/ — skipping bandit."
           fi
+
+      - name: Run pip-audit (dependency CVE scan)
+        run: pip-audit --desc
 
   test:
     name: Test & coverage
@@ -64,14 +67,38 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Run tests
+        id: run-tests
         run: |
           if find tests -name "test_*.py" | grep -q .; then
             python -m pytest -q --tb=short
           else
             echo "No test files found — skipping pytest."
           fi
+        continue-on-error: true
 
-      - name: Upload coverage
+      - name: Open GitHub issue on test failure
+        if: steps.run-tests.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = `CI: tests failed on ${context.ref.replace('refs/heads/','')} (${context.sha.slice(0,7)})`;
+            const body = [
+              `Automated CI detected failing tests for commit ${context.sha}.`,
+              ``,
+              `**Branch:** \`${context.ref}\``,
+              `**Workflow run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            ].join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['ci-failure'],
+            });
+            core.setFailed('Tests failed — issue created.');
+
+      - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
         with:

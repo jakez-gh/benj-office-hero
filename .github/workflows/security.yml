@@ -1,0 +1,56 @@
+name: Scheduled Security Scan
+
+on:
+  schedule:
+    # Daily at 06:00 UTC
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  dependency-audit:
+    name: Dependency CVE audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Audit dependencies
+        run: pip-audit --desc
+
+  bandit:
+    name: Bandit static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install bandit
+        run: pip install bandit
+
+      - name: Run bandit
+        run: |
+          if find src -name "*.py" 2>/dev/null | grep -q .; then
+            bandit -r src -ll -f json -o bandit-report.json
+            bandit -r src -ll
+          else
+            echo "No Python source files in src/ — skipping."
+          fi
+
+      - name: Upload bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
+          if-no-files-found: ignore
