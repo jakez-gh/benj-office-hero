@@ -1,0 +1,19 @@
+[project]
+name = "office-hero-mcp"
+version = "0.1.0"
+description = "MCP server and tools for Office Hero"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.26",
+    "httpx>=0.24",
+    "pydantic>=2.5"
+]
+
+[tool.poetry] # placeholder to satisfy some tooling
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
