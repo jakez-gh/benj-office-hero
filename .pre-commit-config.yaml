@@ -36,6 +36,22 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
 
+  # Node tooling for frontend versioning and dev server management
+  - repo: local
+    hooks:
+      - id: bump-version
+        name: bump semver patch
+        entry: node scripts/bump-version.js
+        language: node
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: restart-frontend
+        name: restart frontend dev server
+        entry: node scripts/restart-frontend.js
+        language: node
+        pass_filenames: false
+        stages: [post-commit]
+
   # General file hygiene
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0

@@ -1,0 +1,21 @@
+{
+  "name": "tech-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "echo \"no tests configured\""
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "vite": "^4.4.0",
+    "typescript": "^5.4.0",
+    "@vitejs/plugin-react": "^5.1.4"
+  }
+}
