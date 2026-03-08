@@ -119,10 +119,10 @@ All choices are wrapped for swapability — see ADRs in `user/architecture/` (in
 
 | Layer | Choice | ADR |
 | ----- | ------ | --- |
-| Language | Python 3.11+ | — |
+| Language | Python 3.11+ | [057-adr.language.md](../architecture/057-adr.language.md) |
 | Web framework | FastAPI | [051-adr.web-framework.md](../architecture/051-adr.web-framework.md) |
-| ORM | SQLAlchemy 2.x + Alembic | — |
-| Database | PostgreSQL 15+ | — |
+| ORM | SQLAlchemy 2.x + Alembic | [058-adr.orm.md](../architecture/058-adr.orm.md) |
+| Database | PostgreSQL 15+ | [059-adr.database.md](../architecture/059-adr.database.md) |
 | DB hosting | Neon (serverless PG, free tier) | [054-adr.hosting.md](../architecture/054-adr.hosting.md) |
 | App hosting | Fly.io (free tier) | [054-adr.hosting.md](../architecture/054-adr.hosting.md) |
 | Routing engine | OpenRouteService (ORS) | [052-adr.routing-engine.md](../architecture/052-adr.routing-engine.md) |
@@ -131,9 +131,9 @@ All choices are wrapped for swapability — see ADRs in `user/architecture/` (in
 | Mobile app | React Native (Expo) | [055-adr.frontend.md](../architecture/055-adr.frontend.md) |
 | Auth | JWT RS256 + bcrypt + refresh tokens | [060-adr.auth.md](../architecture/060-adr.auth.md) |
 | MCP server | Python MCP SDK + OpenAPI codegen | [061-adr.mcp-server.md](../architecture/061-adr.mcp-server.md) |
-| Rate limiting | slowapi (starlette-compatible) | Applied globally + per-endpoint |
-| Logging | structlog (JSON) + audit log | Separate structured log and immutable audit log; system ship to Grafana/Loki (see ADR 063) |
-| Observability | Grafana + Loki (free) or Better Stack | Operator dashboard; log viewer; dashboards and alerts described in ADR 063 |
+| Rate limiting | slowapi (starlette-compatible) | [062-adr.rate-limiting.md](../architecture/062-adr.rate-limiting.md) |
+| Logging | structlog (JSON) + audit log | [063-adr.logging-observability.md](../architecture/063-adr.logging-observability.md) |
+| Observability | Grafana + Loki (free) or Better Stack | [063-adr.logging-observability.md](../architecture/063-adr.logging-observability.md) |
 
 ---
 
