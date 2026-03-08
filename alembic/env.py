@@ -56,6 +56,12 @@ def run_migrations_online() -> None:
     with the context.
     """
 
+    # ensure the URL from the environment is set in the alembic config so that
+    # ``engine_from_config`` picks it up.  This mirrors what run_migrations_offline
+    # does and allows us to avoid duplicating the URL logic later.
+    url = get_url()
+    config.set_main_option("sqlalchemy.url", url)
+
     connectable = AsyncEngine(
         engine_from_config(
             config.get_section(config.config_ini_section),
@@ -65,10 +71,16 @@ def run_migrations_online() -> None:
         )
     )
 
-    async def do_run_migrations(connection):
-        context.configure(connection=connection, target_metadata=target_metadata)
-
-        await connection.run_sync(context.run_migrations)
+    async def do_run_migrations(engine):
+        # ``engine`` is an AsyncEngine; acquire a connection from it for the
+        # migration context.
+        async with engine.connect() as connection:
+            context.configure(connection=connection, target_metadata=target_metadata)
+            # ``run_sync`` will supply a synchronous connection object to the
+            # callable; we need to wrap ``context.run_migrations`` accordingly.
+            # run_migrations reads the connection from the configured
+            # context; it does not accept any positional parameters.
+            await connection.run_sync(lambda conn: context.run_migrations())
 
     asyncio.run(do_run_migrations(connectable))
 

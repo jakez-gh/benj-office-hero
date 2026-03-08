@@ -1,6 +1,7 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 
@@ -32,5 +33,5 @@ async def get_session(
     async with maker() as session:  # type: AsyncSession
         if tenant_id is not None:
             # ``SET LOCAL`` only affects the current transaction/connection.
-            await session.execute(f"SET LOCAL app.tenant_id = '{tenant_id}'")
+            await session.execute(text(f"SET LOCAL app.tenant_id = '{tenant_id}'"))
         yield session
