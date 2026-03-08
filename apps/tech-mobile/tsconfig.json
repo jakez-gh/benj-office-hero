@@ -1,0 +1,12 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    "types": ["jest", "react", "react-native"],
+    "paths": {
+      "@office-hero/api-client": ["../../packages/api-client/src"],
+      "@office-hero/types": ["../../packages/types/src"]
+    }
+  }
+}
