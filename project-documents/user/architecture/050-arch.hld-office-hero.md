@@ -8,7 +8,7 @@ description: High-Level Design (HLD) for Office Hero — single-initiative proje
 dependsOn: [../project-guides/001-concept.office-hero.md, ../project-guides/002-spec.office-hero.md]
 dateCreated: 20260308
 dateUpdated: 20260308
-status: in_progress
+status: approved
 ---
 
 # High-Level Design: Office Hero
