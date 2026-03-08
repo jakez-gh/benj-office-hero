@@ -35,6 +35,7 @@ hard gate. The service layer also validates `tenant_id` as defense-in-depth.
 | **Operator** | Platform | All Tenant data, platform configuration (except Owner management) |
 | **OperatorStaff** | Platform | Same as Operator minus billing and Operator/Owner user management |
 | **TenantAdmin** | Own Tenant only | Full CRUD within their Tenant |
+| **Sales** | Own Tenant only | Enter Contracts, select routing options (if TenantAdmin permits), conditionally modify routes per admin delegation |
 | **Dispatcher** | Own Tenant only | Jobs, Routes, Dispatch — no user/account management |
 | **Technician** | Own Tenant only | View own Route, enter Jobs in field, location updates |
 | **TechnicianHelper** | Own Tenant only | View own Route, location updates — read-only Jobs |
