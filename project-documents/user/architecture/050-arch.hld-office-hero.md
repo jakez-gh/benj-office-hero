@@ -212,18 +212,49 @@ These are addressed as **Foundation Work** slices (the first slices implemented)
 
 ---
 
-## Security at Depth (layers)
+## Security at Depth (OWASP Top 10 Coverage)
+
+| OWASP 2021 | Risk | Mitigation |
+| ---------- | ---- | ---------- |
+| A01 Broken Access Control | Tenant cross-contamination, privilege escalation | RLS (DB layer) + RBAC (API layer) + service-layer `tenant_id` assertion |
+| A02 Cryptographic Failures | Exposed secrets, weak tokens | JWT RS256 (asymmetric), bcrypt passwords, HTTPS-only, secrets in env vars only |
+| A03 Injection | SQL injection, path traversal | SQLAlchemy ORM; Pydantic input validation; `unknown='forbid'` on all schemas |
+| A04 Insecure Design | Missing threat model | ADR-driven architecture; protocol isolation; defense-in-depth layers |
+| A05 Security Misconfiguration | Default creds, verbose errors | `bandit` on every push; global error handler hides stack traces from clients |
+| A06 Vulnerable Components | CVE in deps | `pip-audit` daily CI + pre-commit on push stage |
+| A07 Auth Failures + Brute Force | Password spray, token theft | Rate limiting middleware (slowapi) on auth endpoints; account lockout after N failures; short JWT expiry (15 min access, 7 day refresh) |
+| A08 Data Integrity Failures | Tampered JWT, supply chain | JWT signature verification; `detect-private-key` hook; pinned dep hashes in CI |
+| A09 Logging & Monitoring Failures | Undetected breaches | `structlog` JSON logs with request-id; Sentry error tracking; uptime SLO alerting |
+| A10 SSRF | Malicious URL via ORS/back-office callbacks | `RoutingAdapter` validates URLs against allowlist; no user-supplied URLs forwarded to outbound HTTP calls |
+
+### Additional Hardening
+
+- **JWT Algorithm Pinning:** RS256 (asymmetric) specified explicitly in decode call;
+  `algorithms=["RS256"]` — never `algorithms=["none"]` or wildcard.
+- **CSP Headers:** Content-Security-Policy, X-Frame-Options, X-Content-Type-Options
+  set on all web responses via FastAPI middleware.
+- **Rate Limiting:** `slowapi` (starlette-compatible) applied to:
+  `POST /auth/login`, `POST /auth/token`, `POST /auth/register` — 10 req/min per IP.
+- **SSRF Protection:** `RoutingAdapter` and all `BackOfficeAdapter` implementations
+  validate outbound URLs against a configured allowlist; private IP ranges are blocked.
+- **Secure Cookie Flags:** Session cookies (if used) set `HttpOnly`, `Secure`,
+  `SameSite=Strict`.
+
+### Security Gate Automation
 
 1. HTTPS enforced at edge; HTTP redirected
-2. JWT validation middleware on every request
-3. RBAC decorator on every endpoint
-4. Service layer validates `tenant_id` from JWT (never from client)
+2. JWT RS256 validation middleware on every request
+3. RBAC `@require_role` decorator on every endpoint
+4. Service layer re-asserts `tenant_id` from JWT
 5. PostgreSQL RLS enforces tenant isolation at DB
-6. Pydantic validates all inputs; rejects unknown fields
-7. SQLAlchemy ORM prevents raw SQL injection
-8. bandit static analysis on every push
-9. pip-audit CVE scan daily
-10. Secrets in env vars only; detect-private-key pre-commit hook
+6. Pydantic validates all inputs; `model_config = ConfigDict(extra='forbid')`
+7. SQLAlchemy ORM — no raw SQL in repositories
+8. `bandit` static analysis on every push (pre-commit push stage)
+9. `pip-audit` CVE scan daily + on push
+10. Secrets in env vars only; `detect-private-key` pre-commit hook
+11. Rate limiting on auth endpoints via `slowapi`
+12. SSRF allowlist on all outbound HTTP adapters
+13. CSP/security headers middleware on all responses
 
 ---
 

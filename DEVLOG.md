@@ -5,6 +5,26 @@ Format: `## YYYYMMDD` date header followed by brief session notes.
 
 ---
 
+## 20260308 (session 2)
+
+- Fixed file structure: moved 003-slices to correct location
+  (`user/project-guides/003-slices.office-hero.md` per naming conventions)
+- Created missing user/ subdirectories: `analysis/`, `reviews/`, `ui/`, `ui/screenshots/`
+- Added ADR 056: back-office distributed transaction risk — Saga + Outbox pattern
+  with compensating transactions, idempotency keys, dead-letter handling; `saga_log`
+  and `outbox_events` tables added to DB foundation slice
+- Updated HLD (050) with full OWASP Top 10 coverage table; added rate limiting
+  (slowapi), SSRF allowlist, CSP headers, JWT RS256 algorithm pinning, secure cookies
+- Updated slice plan: added Slice 5a (Admin web shell — early GUI visibility),
+  GUI notes on feature slices, back-office Saga risk callout, parallel work stream table
+- Invited ecorkran (Erik Corkran) as admin collaborator on GitHub repo
+- Created docs/worktrees.md — git worktree strategy for parallel Claude Code sessions,
+  5 work streams defined, Context Forge (cf) setup notes
+- Phase status: Phase 1 ✓, Phase 2 ✓ (pending Jake sign-off), Phase 3 ✓ (pending
+  Jake sign-off). Phase 4 (Slice Design) not yet started.
+
+---
+
 ## 20260308
 
 - Initialized repo; quality gates imported from stars-web, bens-project-seeds,
