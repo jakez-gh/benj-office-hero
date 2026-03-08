@@ -50,6 +50,16 @@ The following make targets are provided:
 Integration tests will automatically skip when ``DATABASE_URL`` is not set.
 CI provisions a temporary branch and configures this variable appropriately.
 
+The Python library exposes ``office_hero.db.session.get_session`` which
+accepts an optional ``tenant_id`` keyword argument.  When supplied the
+session will execute ``SET LOCAL app.tenant_id`` on the connection, which is
+required for PostgreSQL row-level security.  Example:
+
+```python
+async with get_session(engine, tenant_id=some_uuid) as session:
+    await session.execute("SELECT ...")
+```
+
 ## CI
 
 GitHub Actions runs on every push and PR:
