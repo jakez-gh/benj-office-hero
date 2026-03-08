@@ -6,6 +6,9 @@ requires-python = ">=3.11"
 dependencies = [
     "httpx>=0.24",
     "click>=8.0",
+    # authentication utilities
+    "bcrypt>=4.0",
+    "python-jose[cryptography]>=3.3",
 ]
 
 [project.optional-dependencies]
