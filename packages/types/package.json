@@ -7,9 +7,10 @@
   "scripts": {
     "build": "tsc -b",
     "lint": "eslint . --ext .ts,.tsx",
-    "test": "echo \"No tests yet\""
+    "test": "vitest"
   },
   "devDependencies": {
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^1.0.0"
   }
 }
