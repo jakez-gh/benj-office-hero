@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from jose import JWTError, jwt
@@ -57,7 +57,7 @@ class AuthService:
         """
 
         payload = claims.copy()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload.setdefault("iat", int(now.timestamp()))
         payload["exp"] = int((now + timedelta(seconds=self._access_token_expires)).timestamp())
 
