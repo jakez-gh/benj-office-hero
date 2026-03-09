@@ -3,307 +3,188 @@ docType: slice-design
 parent: ../project-guides/003-slices.office-hero.md
 project: office-hero
 dateCreated: 20260308
-dateUpdated: 20260308
-status: in_progress
-dependencies:
-  - 003: Auth & RBAC (backend JWT endpoints)
-  - 008: Frontend Scaffold (pnpm monorepo)
+status: not_started
 ---
 
-# Slice Design 009: Admin Web Shell (Login + Navigation)
+# Slice Design 009: Admin web shell (login + navigation stub)
 
-This is the fifth-a (5a) *foundation* slice, delivering the first **visible user interface** with full
-end-to-end authentication flow. TenantAdmins can log in with email/password, refresh tokens automatically
-on 401, and navigate to all major sections of the admin panel.
+This is an early-GUI-visibility foundation slice. It delivers a working login page connected
+to the real `POST /auth/login` API and a top-level navigation shell with placeholder pages.
+This demonstrates the full auth flow end-to-end and provides stakeholders a visual sign of progress.
 
-This slice demonstrates:
-
-* Working login page connected to real /auth/login endpoint (from Slice 3)
-* Automatic 401 → silent token refresh → retry flow (defensive)
-* Navigation shell with links to Jobs, Dispatch, Vehicles, Users
-* Placeholder pages for all sections
-* E2E tests covering login flow
-* Ready for deployment and stakeholder demos
+It corresponds to slice 5a in the slice plan.
 
 ## Goals
 
-* Implement `useAuth()` React Context hook with login/logout/refresh state.
-* Create LoginPage component (email + password form with error handling).
-* Implement axios response interceptor for 401 → refresh → retry flow.
-* Set up React Router with protected routes (/jobs, /dispatch, /vehicles, /users).
-* Create NavShell component (top navigation bar with logout button, version badge).
-* Create placeholder pages for all major sections (Jobs, Dispatch, Vehicles, Users).
-* Write Jest unit tests for auth context and components.
-* Write Playwright E2E tests for login → navigation flow.
-* Ensure app is deployable to Fly.io and testable locally.
+* Create a React Context-based auth hook `useAuth()` in `apps/admin-web/src/hooks/useAuth.tsx`:
+  * Stores `{ user: User | null, token: string | null }`
+  * Methods: `login(email, password)`, `logout()`
+  * Automatically handles 401 responses with silent refresh
+  * Persists refresh token in an httpOnly cookie (if using BFF) or memory (if direct API calls)
+  * On login, stores access_token in memory, refresh_token in cookie or secure storage
+  * On 401, calls `POST /auth/refresh`, stores new access_token, retries original request
+  * On refresh failure (401 on refresh endpoint), clears auth state and redirects to login
+* Create login page component `apps/admin-web/src/pages/LoginPage.tsx`:
+  * Form with email + password inputs
+  * Submit button; disabled during loading
+  * Error display (e.g. "Invalid credentials")
+  * On success, redirect to `/jobs` (or `/dashboard`)
+  * No persistent state; form clears on logout
+* Create protected route wrapper `ProtectedRoute.tsx`:
+  * Checks `useAuth().token`; if null, redirects to `/login`
+  * Otherwise renders child component
+* Set up React Router in `apps/admin-web/src/App.tsx`:
+  * Routes:
+    * `/login` → LoginPage (unprotected)
+    * `/` → redirect to `/jobs`
+    * `/jobs` → `<Jobs />` placeholder (protected)
+    * `/dispatch` → `<Dispatch />` placeholder (protected)
+    * `/vehicles` → `<Vehicles />` placeholder (protected)
+    * `/users` → `<Users />` placeholder (protected)
+  * All placeholder pages display section name + "Coming soon in next slice"
+* Create navigation component `apps/admin-web/src/components/Navigation.tsx`:
+  * Sidebar or top nav with links to: Jobs, Dispatch, Vehicles, Users
+  * User menu with logout button
+  * Only visible when logged in
+* API configuration: `apps/admin-web/src/api.ts`:
+  * Instantiate `ApiClient` with `API_BASE_URL` from env (`import.meta.env.VITE_API_BASE_URL`)
+  * Export singleton for use throughout app
+  * Default to `http://localhost:8000` in dev, environment override in prod
+* Environment config: `apps/admin-web/.env.example`:
+  * `VITE_API_BASE_URL=http://localhost:8000`
+* Playwright E2E test `apps/admin-web/e2e/auth.spec.ts`:
+  * Start test server (or use `http://localhost:3000` if running `pnpm dev`)
+  * Navigate to `/login`
+  * Fill email + password form
+  * Click login button
+  * Assert redirect to `/jobs` page
+  * Assert navigation menu visible
+  * Click logout
+  * Assert redirect to `/login`
+* Vitest unit test `apps/admin-web/src/hooks/__tests__/useAuth.test.ts`:
+  * Mock `ApiClient`
+  * Test `login()` sets token + user
+  * Test `logout()` clears token + user
+  * Test 401 response triggers refresh → retry
+  * Test failed refresh clears auth state
+* Build and run locally:
+  * `pnpm install` (from repo root installs all workspaces)
+  * `pnpm --filter admin-web dev` (runs Vite dev server on `http://localhost:5173`)
+  * Backend must be running on `http://localhost:8000`
+  * Navigate to login, enter test credentials, verify redirect to jobs page
 
 ## Structure
 
 ```text
 apps/admin-web/
 ├── src/
-│   ├── App.tsx
-│   │   ├── BrowserRouter wrapper
-│   │   ├── Protected layout (AppContent)
-│   │   ├── Routes
-│   │   │   ├── / → JobsPage
-│   │   │   ├── /jobs → JobsPage
-│   │   │   ├── /dispatch → DispatchPage
-│   │   │   ├── /vehicles → VehiclesPage
-│   │   │   ├── /users → UsersPage
-│   │   │   └── /login → <redirect to />
-│   │   └── Unmatched routes → <redirect to />
-│   │
-│   ├── auth.tsx
-│   │   ├── AuthContext<{ token, login, logout, isRefreshing }>
-│   │   ├── AuthProvider component
-│   │   ├── localStorage persistence (access_token, refresh_token)
-│   │   ├── axios interceptor setup
-│   │   │   ├── On 401: refresh token
-│   │   │   ├── Retry original request
-│   │   │   └── Clear tokens if refresh fails
-│   │   └── Authorization header management
-│   │
+│   ├── App.tsx              # Router setup + layout
+│   ├── main.tsx             # entry point
+│   ├── api.ts               # ApiClient singleton
+│   ├── hooks/
+│   │   ├── useAuth.tsx      # Auth context + hook
+│   │   └── __tests__/
+│   │       └── useAuth.test.ts
 │   ├── components/
-│   │   ├── LoginPage.tsx
-│   │   │   ├── Email input (required)
-│   │   │   ├── Password input (required)
-│   │   │   ├── Error message display
-│   │   │   ├── Submit button (disabled while loading)
-│   │   │   └── Calls AuthContext.login()
-│   │   │
-│   │   └── NavShell.tsx
-│   │       ├── Top navigation bar
-│   │       ├── Links: Jobs, Dispatch, Vehicles, Users
-│   │       ├── Logout button
-│   │       ├── Version badge (from package.json)
-│   │       └── Main content area (children)
-│   │
+│   │   ├── Navigation.tsx    # Nav sidebar/top nav
+│   │   ├── ProtectedRoute.tsx # Route guard
+│   │   └── __tests__/
 │   ├── pages/
-│   │   ├── JobsPage.tsx     (placeholder: "Coming soon")
-│   │   ├── DispatchPage.tsx (placeholder: "Coming soon")
-│   │   ├── VehiclesPage.tsx (placeholder: "Coming soon")
-│   │   └── UsersPage.tsx    (placeholder: "Coming soon")
-│   │
-│   ├── __tests__/
-│   │   └── App.test.tsx
-│   │       ├── Shows login form initially
-│   │       ├── Allows login with valid credentials
-│   │       ├── Displays error on invalid credentials
-│   │       ├── Logs out and returns to login
-│   │       └── Verifies token persistence in localStorage
-│   │
-│   └── e2e/
-│       └── login.spec.ts
-│           ├── Login form display
-│           ├── Invalid credentials error
-│           ├── Token persistence across reload
-│           ├── Navigation links visible after login
-│           ├── Logout button visible
-│           └── Happy path (with API mocking capability)
-│
-└── playwright.config.ts
-    ├── Base URL: http://localhost:3000
-    ├── Chrome, Firefox, Safari browsers
-    ├── Dev server auto-start
-    └── HTML reporter + screenshots on failure
+│   │   ├── LoginPage.tsx
+│   │   ├── JobsPage.tsx     # Placeholder
+│   │   ├── DispatchPage.tsx # Placeholder
+│   │   ├── VehiclesPage.tsx # Placeholder
+│   │   └── UsersPage.tsx    # Placeholder
+│   └── env.d.ts
+├── e2e/
+│   └── auth.spec.ts         # Playwright tests
+├── vite.config.ts
+├── tsconfig.json
+├── package.json
+├── .env.example
+├── .prettierrc.json
+├── .eslintrc.json
+└── index.html
 ```
 
-## Implementation Details
-
-### Auth Context & Provider
-
-**File:** `src/auth.tsx`
+## Failing Test Outline
 
 ```typescript
-interface AuthContextType {
-  token: string | null;           // access token
-  login: (creds: LoginRequest) => Promise<void>;
-  logout: () => void;
-  isRefreshing: boolean;          // true during token refresh
-}
+// Playwright E2E test
+import { test, expect } from '@playwright/test'
 
-// Usage:
-const { token, login, logout, isRefreshing } = useContext(AuthContext);
+test('Login flow: fill form → submit → redirect to /jobs', async ({ page }) => {
+  await page.goto('http://localhost:5173/login')
+
+  // Fill form
+  await page.fill('input[name="email"]', 'admin@tenant1.com')
+  await page.fill('input[name="password"]', 'testpassword')
+
+  // Submit
+  await page.click('button:has-text("Login")')
+
+  // Assert redirect to /jobs
+  await expect(page).toHaveURL(/\/jobs/)
+
+  // Assert navigation menu visible
+  await expect(page.locator('nav')).toBeVisible()
+})
+
+test('Logout flow: click logout → redirect to /login', async ({ page }) => {
+  // Precondition: already logged in (from test setup or previous test)
+  await page.click('button:has-text("Logout")')
+
+  await expect(page).toHaveURL(/\/login/)
+})
+
+// Vitest unit test
+import { renderHook, act } from '@testing-library/react'
+import { useAuth } from '../useAuth'
+import { ApiClient } from '../../api'
+import { vi } from 'vitest'
+
+vi.mock('../../api')
+
+describe('useAuth', () => {
+  it('should login and store token', async () => {
+    const { result } = renderHook(() => useAuth())
+
+    act(() => {
+      result.current.login('test@example.com', 'password')
+    })
+
+    // Mock returns tokens
+    expect(result.current.token).toBeDefined()
+    expect(result.current.user).toBeDefined()
+  })
+
+  it('should handle 401 with automatic refresh', async () => {
+    // Mock: first API call returns 401, refresh returns new token, retry succeeds
+    const { result } = renderHook(() => useAuth())
+
+    // Trigger a request that gets 401
+    // Hook should auto-refresh and retry
+    expect(result.current.token).toBeDefined() // new token after refresh
+  })
+})
 ```
 
-**Features:**
+## Dependencies
 
-* Login: stores access_token + refresh_token in localStorage
-* Logout: clears tokens and updates UI
-* Auto-refresh: 401 response triggers token refresh via refresh_token
-* Error handling: clear tokens if refresh fails
-* Authorization header: automatically added to all requests
+Depends on slices 3 (Auth & RBAC — JWT endpoints) and 5 (Frontend scaffold — pnpm workspace + TypeScript).
 
-### 401 → Refresh → Retry Flow
+Slice 6 (Mobile scaffold) does NOT depend on this; it has its own navigation and auth flow.
 
-When an axios request gets a 401 response:
+## Effort
 
-1. Check if we have a refresh_token in localStorage
-2. POST /auth/refresh with refresh_token
-3. On success: update tokens, set new Authorization header, retry original request
-4. On failure: clear tokens, reject request (user must log back in)
+Estimate: 2/5. Most work is React component plumbing: useContext/useReducer for auth state,
+React Router setup, Playwright test infrastructure. The API integration is straightforward
+(use ApiClient from slice 5). Main concern: ensuring automatic token refresh works correctly
+and test coverage is comprehensive (login success/failure, logout, 401 handling, navigation).
 
-This is transparent to components using the API client.
+---
 
-### Login Page
-
-**File:** `src/components/LoginPage.tsx`
-
-* Simple form with email and password inputs
-* Submit button calls `AuthContext.login()`
-* On success: redirects to home (via AuthProvider state update)
-* On error: displays inline error message (red text)
-* No loading spinner yet (added in future slice)
-
-### Navigation Shell
-
-**File:** `src/components/NavShell.tsx`
-
-* Top navigation bar with links to all major sections
-* Logout button on the right
-* Version badge (reads from `__APP_VERSION__` global, set by Vite)
-* Simple CSS inline styles (minimal styling)
-* Content area below for child components
-
-### Placeholder Pages
-
-All four pages follow the same pattern:
-
-```typescript
-export const JobsPage: React.FC = () => (
-  <div>
-    <h1>Jobs</h1>
-    <p>Job management interface coming soon. ...</p>
-  </div>
-);
-```
-
-## Testing Strategy
-
-### Unit Tests (Jest)
-
-**File:** `src/__tests__/App.test.tsx`
-
-* Mock `@office-hero/api-client` login function
-* Test login form submission and success flow
-* Test error message display
-* Test logout flow
-* Test localStorage token persistence
-
-### E2E Tests (Playwright)
-
-**File:** `src/e2e/login.spec.ts`
-
-* Load `/` and verify login form appears
-* Fill credentials and test invalid login error
-* Set tokens in localStorage and verify redirect to admin panel
-* Verify navigation links appear after login
-* Verify logout button visible and clickable
-* Test browser reload with saved tokens (persistence)
-
-## API Integration Points
-
-### Required Endpoints (from Slice 3 - Auth & RBAC)
-
-1. **POST /auth/login**
-   * Request: `{ email: string, password: string }`
-   * Response: `{ access_token, refresh_token, token_type: "bearer" }`
-
-2. **POST /auth/refresh**
-   * Request: `{ refresh_token: string }`
-   * Response: `{ access_token, refresh_token, token_type: "bearer" }`
-
-3. **POST /auth/logout** (optional, added for completeness)
-   * Request: `{ refresh_token: string }`
-   * Response: `{}`
-
-**Proxy Configuration:**
-
-* Vite dev server proxies `/api/*` to `http://localhost:8000` (configurable)
-* In production, backend will serve frontend OR front-end deployed separately
-
-## Deployment Considerations
-
-### Local Development
-
-```bash
-# Terminal 1: backend API
-cd backend/ && make start
-
-# Terminal 2: frontend dev server
-cd frontend/ && pnpm run dev:admin
-# Opens http://localhost:3000
-```
-
-### Production (Fly.io)
-
-Frontend can be deployed either:
-
-1. **Static assets served by FastAPI** (simplest)
-   * Run `pnpm build` → `dist/` files
-   * Backend serves `/` → index.html, `/**` → static assets + API
-
-2. **Separate frontend deployment** (future)
-   * Deploy admin-web to Fly.io or Vercel
-   * Configure API proxy to backend Fly.io app
-
-## Deliverables
-
-### Completed
-
-* [x] Auth context with login/logout/refresh state management
-* [x] LoginPage component with form and error handling
-* [x] NavShell component with navigation and logout
-* [x] Placeholder pages for Jobs, Dispatch, Vehicles, Users
-* [x] React Router setup with protected routes
-* [x] Axios 401 → refresh → retry interceptor
-* [x] localStorage token persistence (access_token + refresh_token)
-* [x] Authorization header auto-injection for all requests
-* [x] Jest unit tests for auth flow (3 tests passing)
-* [x] Playwright E2E test scaffold with login flow tests
-* [x] GitHub Actions workflow includes frontend tests
-* [x] All builds passing (`pnpm build` succeeds)
-* [x] Ready for demo and testing with real backend
-
-### Testing Status
-
-* ✅ Admin-web unit tests: 3 passing (login success, login error, logout)
-* ✅ Playwright E2E tests: configured and runnable
-* ✅ Manual testing: login flow works with real API (requires backend running)
-* ✅ localStorage persistence: verified
-* ✅ 401 refresh flow: implemented and ready for backend integration tests
-
-## Notes
-
-* **Styling:** Currently using inline CSS. Recommend adding Tailwind CSS, CSS Modules,
-  or styled-components in future slices as UX is designed.
-
-* **Loading states:** LoginPage doesn't show loading spinner. Add when backend
-  latency becomes noticeable (usually in Slice 7+ when real data flows).
-
-* **Form validation:** Email/password required. Add Zod or React Hook Form for
-  advanced validation in future slices.
-
-* **Accessibility:** Links and buttons are semantic HTML. Add ARIA labels as
-  design is finalized.
-
-* **Token storage:** localStorage is fine for SPA. For enhanced security,
-  consider httpOnly cookies in production hardening phase.
-
-* **404 pages:** Unmatched routes redirect to home. Add custom 404 page
-  in Slice 5a+ if needed.
-
-## Success Criteria Met
-
-✅ Login page renders and submits credentials
-✅ 401 responses automatically trigger token refresh
-✅ Original request retried after refresh (transparent to user)
-✅ Logout clears tokens and returns to login
-✅ Navigation shell visible after login
-✅ All placeholder pages accessible via links
-✅ Unit tests pass (Jest)
-✅ E2E test infrastructure in place (Playwright)
-✅ App builds and runs locally
-✅ Ready for demo with real backend API
-✅ Ready for Slice 7+ (User Management, Customer Management, Jobs, etc.)
+Once this design is approved, the implementation starts with the failing Playwright test
+(login form fill and redirect). By the end of this slice, stakeholders can see a working
+login + navigation shell connected to the real backend API. This is the first time a human
+can visually interact with the system.
