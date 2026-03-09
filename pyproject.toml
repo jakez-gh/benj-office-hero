@@ -6,9 +6,14 @@ requires-python = ">=3.11"
 dependencies = [
     "httpx>=0.24",
     "click>=8.0",
-    # authentication utilities
-    "bcrypt>=4.0",
+    "sqlalchemy>=2.0",
+    "alembic>=1.10",
+    "asyncpg>=0.27",
+    "fastapi>=0.104",
+    "pydantic-settings>=2.0",
     "python-jose[cryptography]>=3.3",
+    "passlib>=1.7",
+    "slowapi>=0.1",
 ]
 
 [project.optional-dependencies]
