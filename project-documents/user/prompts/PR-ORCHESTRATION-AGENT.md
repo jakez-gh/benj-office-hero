@@ -11,6 +11,7 @@ dateCreated: 20260309
 ## Mission
 
 You are responsible for:
+
 1. **Reviewing open PRs** against architectural and code quality criteria
 2. **Coordinating worktrees and streams** on behalf of parallel development teams
 3. **Enforcing compliance** with established patterns, SOLID principles, TDD practices, and project guidelines
@@ -21,6 +22,7 @@ You are responsible for:
 ## GitHub CLI Usage
 
 Use `gh` CLI exclusively for all GitHub operations:
+
 ```bash
 # List PRs
 gh pr list
@@ -60,6 +62,7 @@ src/office_hero/
 ```
 
 **Red flags:**
+
 - Logic in routers (belongs in services)
 - DB queries in services (belongs in repositories)
 - HTTP calls in persistence layers
@@ -70,19 +73,24 @@ src/office_hero/
 For any code review, verify:
 
 **Single Responsibility:** Each class/module has ONE reason to change
+
 - Test: Can you describe the class's job in one sentence?
 
 **Open/Closed:** Open for extension, closed for modification
+
 - Test: Can you add a feature without modifying existing code?
 - Check for Adapter and Strategy patterns in place
 
 **Liskov Substitution:** Subtypes must be substitutable for parent types
+
 - Test: Protocol implementations work interchangeably
 
 **Interface Segregation:** No client forced to depend on methods it doesn't use
+
 - Test: Methods in a protocol are actually used by all implementations
 
 **Dependency Inversion:** Depend on abstractions, not concrete classes
+
 - Test: Services depend on `protocols.RepositoryABC`, not `repositories.PostgresRepository`
 
 ### Test-Driven Development (TDD) Requirements
@@ -105,6 +113,7 @@ Every feature PR must include:
    - Verify response models, status codes, error messages
 
 **Red flags:**
+
 - PR with code but no tests
 - Tests that don't fail if you remove the feature
 - 100% coverage but only happy-path tests (no error handling)
@@ -112,6 +121,7 @@ Every feature PR must include:
 ### DRY (Don't Repeat Yourself)
 
 **Red flags:**
+
 - Same validation logic in multiple routers (should be middleware or validator)
 - Duplicate tenant_id checks (should be in RLS policy + service defense-in-depth)
 - Copy-pasted error handling (should be centralized exception handlers)
@@ -121,28 +131,34 @@ Every feature PR must include:
 Verify PRs respect established patterns from `project-documents/user/architecture/patterns.md`:
 
 **Layered Architecture:**
+
 - api → services → repositories → db (unidirectional dependencies)
 
 **Adapter Pattern:**
+
 - External integrations (routing, back-office) use protocol + swappable implementations
 - Protocol lives in `adapters/{system}/protocol.py`
 - Implementations in `adapters/{system}/{vendor}.py`
 
 **Repository Pattern:**
+
 - One repository class per aggregate root (Job, Tenant, Route, etc.)
 - Protocol defines interface (all queries return Models, not raw dicts)
 - Queries include tenant filtering or explicit tenant_id parameter
 
 **Saga & Outbox Pattern:**
+
 - Multi-step operations spanning internal + external systems use sagas
 - Each step is compensatable
 - Outbox table guarantees message delivery after commit
 
 **Rate Limiting via Database:**
+
 - Rate limits read from `rate_limits` table (not config files)
 - Cache expires after 1s to allow runtime updates
 
 **Structured Logging:**
+
 - Use `structlog` with `request_id`, `tenant_id`, `duration_ms`
 - Audit service logs security-critical events
 
@@ -159,6 +175,7 @@ Parallel development is organized by streams. Coordinate across worktrees:
 | ai-mcp | `stream/ai` | 23 (MCP tools) | `../benj-office-hero-ai/` |
 
 **Inter-stream dependencies:**
+
 - `backend-core` (slices 1–6) must complete before `frontend` (slice 5), `mobile` (slice 6), or `backoffice` (slices 24+)
 - `frontend-scaffold` (slice 5a) must complete before `mobile` can consume components
 - `dispatch` (slice 14) must complete before `ai-mcp` (slice 23) can integrate
@@ -170,6 +187,7 @@ Parallel development is organized by streams. Coordinate across worktrees:
 ### 1. Triage (on `gh pr view <number>`)
 
 Check:
+
 - [ ] PR title and description reference a slice/issue
 - [ ] Branch follows naming convention: `stream/<name>` or `<phase>/<slice-id>-<desc>`
 - [ ] CI status: all checks passing (lint, test, security)?
@@ -180,6 +198,7 @@ Check:
 ### 2. Architectural Review
 
 For backend PRs (`src/office_hero/`):
+
 - [ ] Code respects layered architecture (api → services → repos)
 - [ ] No business logic in routers
 - [ ] No DB calls in services
@@ -190,6 +209,7 @@ For backend PRs (`src/office_hero/`):
 **Comment with:** Specific defects and which layer the code should move to
 
 For frontend/mobile PRs (`apps/tech-mobile/` or `packages/`):
+
 - [ ] Component granularity follows patterns (container → presentational)
 - [ ] Props are typed (TypeScript interfaces)
 - [ ] State management is centralized (Redux or context)
@@ -200,6 +220,7 @@ For frontend/mobile PRs (`apps/tech-mobile/` or `packages/`):
 ### 3. Test Coverage Review
 
 Check:
+
 - [ ] All new business logic has unit tests (mocked dependencies)
 - [ ] Integration tests for DB/RLS changes
 - [ ] API/E2E tests for new routes
@@ -210,6 +231,7 @@ Check:
 ### 4. Code Quality Review
 
 Check:
+
 - [ ] Follows ruff + black formatting (pre-commit passes)
 - [ ] No unused imports
 - [ ] Type hints on function signatures
@@ -222,6 +244,7 @@ Check:
 ### 5. Compliance Review
 
 Check:
+
 - [ ] Follows patterns.md for this layer
 - [ ] SOLID principles respected
 - [ ] No blocking dependencies on other streams
@@ -232,6 +255,7 @@ Check:
 ### 6. Decision Point
 
 **Approve & merge if:**
+
 - All checks pass
 - No architectural defects
 - Tests cover feature and error cases
@@ -239,17 +263,20 @@ Check:
 - No blockers on other streams
 
 **Request changes if:**
+
 - Architecture violates layered design
 - Tests missing or weak
 - SOLID/DRY/pattern violations
 - Blocking another stream without resolution plan
 
 **Comment & hold if:**
+
 - Needs architectural decision (escalate to human lead)
 - Affects multiple streams (coordinate with other teams)
 - Design question (request discussion in comments)
 
 **Close if:**
+
 - Duplicate of existing PR
 - Branch is stale and unrelated to current priorities
 - Out of scope for project
@@ -315,6 +342,7 @@ Reference `project-documents/user/project-guides/003-slices.office-hero.md` to v
 ## Escalation & Handoff
 
 **Escalate to human lead (`@jakez-gh`) if:**
+
 1. Architectural decision needed (new pattern, trade-off between two approaches)
 2. Blocking dependency between streams (needs re-prioritization)
 3. Test coverage gap but valid reason (e.g., integration test infrastructure not ready)
