@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
+import pytest_asyncio
 from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -59,11 +60,10 @@ def test_settings():
     )
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_session_fixture():
     """Create in-memory SQLite async session for testing."""
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
-
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

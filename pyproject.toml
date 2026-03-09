@@ -4,6 +4,8 @@ version = "0.1.0"
 description = "Office Hero web application"
 requires-python = ">=3.11"
 dependencies = [
+    "fastapi>=0.104",
+    "uvicorn[standard]>=0.24",
     "httpx>=0.24",
     "click>=8.0",
     "sqlalchemy>=2.0",
@@ -14,11 +16,15 @@ dependencies = [
     "python-jose[cryptography]>=3.3",
     "passlib[bcrypt]>=1.7",
     "slowapi>=0.1",
+    "structlog>=24.0",
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4",
+    "pytest-asyncio>=0.24",
+    "aiosqlite>=0.19",
     "pytest-cov>=4.1",
     "pre-commit>=4.0",
     "ruff>=0.8",
@@ -27,10 +33,7 @@ dev = [
     "hypothesis>=6.88",
     "pytest-xdist>=3.5",
     "pytest-timeout>=2.2",
-    # optional dependencies for integration tests
-    "fastapi>=0.100",
-    "pydantic>=2.5",  # used by local test app
-    "uvicorn>=0.22",
+    "httpx>=0.24",
 ]
 
 [tool.pytest.ini_options]
@@ -39,6 +42,7 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 pythonpath = ["src"]
+asyncio_mode = "auto"
 addopts = [
     "--verbose",
     "--tb=short",
