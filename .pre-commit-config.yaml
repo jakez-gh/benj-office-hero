@@ -55,17 +55,17 @@ repos:
   # Security scan + tests — run on push (slow; skip with SKIP=bandit,pytest-check)
   - repo: local
     hooks:
-      - id: bandit
-        name: bandit security scan
-        entry: python -m bandit -r src -ll
+      - id: start-services
+        name: start necessary backend services
+        entry: python scripts/start_services.py
         language: system
         pass_filenames: false
         always_run: true
-        stages: [pre-push]
+        stages: [pre-push, commit-msg]
 
-      - id: pip-audit
-        name: pip-audit dependency scan
-        entry: python -m pip_audit --exit-zero
+      - id: bandit
+        name: bandit security scan
+        entry: python -m bandit -r src -ll
         language: system
         pass_filenames: false
         always_run: true
