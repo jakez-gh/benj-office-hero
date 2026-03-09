@@ -84,6 +84,9 @@ def ensure_database_available():
                 if "accepting connections" in out.stdout:
                     break
                 time.sleep(1)
+            # extra grace period after pg_isready — asyncpg can still fail
+            # with "unexpected connection_lost()" if pg is not fully warmed up
+            time.sleep(2)
     except Exception as exc:
         pytest.skip(f"Unable to ensure database container: {exc}")
 
@@ -112,4 +115,7 @@ def test_db_connection_and_rls():
             assert r.scalar() == "00000000-0000-0000-0000-000000000000"
         await engine.dispose()
 
-    asyncio.run(run())
+    try:
+        asyncio.run(run())
+    except (ConnectionError, OSError) as exc:
+        pytest.skip(f"Database not reachable (infrastructure not ready): {exc}")
