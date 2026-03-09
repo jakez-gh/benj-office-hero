@@ -1,7 +1,26 @@
 from sqlalchemy import text
 
+# Whitelist of tables allowed for RLS policy creation to prevent SQL injection
+_ALLOWED_TABLES = {"users", "refresh_tokens", "audit_events", "ban_list", "rate_limits"}
+
 
 def tenant_policy(table_name: str) -> str:
+    """Generate a CREATE POLICY statement for tenant isolation.
+
+    Args:
+        table_name: Name of the table (must be in whitelist to prevent SQL injection).
+
+    Returns:
+        SQL string for creating a tenant isolation policy.
+
+    Raises:
+        ValueError: If table_name is not in the whitelist.
+    """
+    if table_name not in _ALLOWED_TABLES:
+        raise ValueError(
+            f"Table '{table_name}' not allowed for RLS policy creation. "
+            f"Allowed tables: {_ALLOWED_TABLES}"
+        )
     return f"CREATE POLICY tenant_isolation ON {table_name} USING (tenant_id = current_setting('app.tenant_id')::uuid);"
 
 
