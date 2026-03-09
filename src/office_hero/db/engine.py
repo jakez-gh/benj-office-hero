@@ -27,3 +27,5 @@ def create_async_engine(url: str | None = None) -> AsyncEngine:
 
 # alias for backwards compatibility
 create_engine = create_async_engine
+# internal reference exposed so tests can monkeypatch the underlying factory
+_create_async_engine = sa_create_async_engine

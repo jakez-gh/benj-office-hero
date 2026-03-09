@@ -1,18 +1,27 @@
 from datetime import UTC, datetime
+from uuid import UUID
 
 import pytest
 
 from office_hero.api.auth import InsufficientRoleError, require_role
+from office_hero.core.roles import Role
 from office_hero.services.auth_service import AuthService
 
-# for tests we'll use a simple symmetric secret and HS256 algorithm.
-# this avoids dealing with RSA key encoding and keeps the tests fast.
-SECRET = "test-secret"
+
+class _TestSettings:
+    """Minimal settings stub for unit tests — avoids pydantic-settings env-var loading."""
+
+    jwt_private_key = "test-secret"
+    jwt_public_key = "test-secret"
+    jwt_algorithm = "HS256"
+    access_token_ttl_minutes = 15
+    refresh_token_ttl_days = 7
+    database_url = "sqlite+aiosqlite:///:memory:"
 
 
 @pytest.fixture
 def auth_service():
-    return AuthService(private_key=SECRET, public_key=SECRET, algorithm="HS256")
+    return AuthService(_TestSettings())
 
 
 def test_password_hashing(auth_service):
@@ -23,11 +32,12 @@ def test_password_hashing(auth_service):
 
 
 def test_access_token_roundtrip(auth_service):
-    claims = {"sub": "user1", "role": "User"}
-    token = auth_service.issue_access_token(claims)
-    decoded = auth_service.verify_access_token(token)
-    assert decoded["sub"] == "user1"
-    assert decoded["role"] == "User"
+    user_id = UUID("00000000-0000-0000-0000-000000000001")
+    tenant_id = UUID("00000000-0000-0000-0000-000000000002")
+    access_token, _ = auth_service.issue_jwt(user_id, tenant_id, Role.User)
+    decoded = auth_service.validate_jwt(access_token)
+    assert decoded["user_id"] == str(user_id)
+    assert decoded["role"] == Role.User.value
     # exp should be present and in the future
     assert decoded["exp"] > int(datetime.now(UTC).timestamp())
 

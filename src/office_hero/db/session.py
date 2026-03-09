@@ -2,33 +2,48 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from typing import Any
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import async_sessionmaker as _sa_async_sessionmaker
 
 from office_hero.db.engine import create_engine
 
+# Expose as a module-level name so tests can monkeypatch it without replacing
+# the SQLAlchemy import.  ``get_session`` looks this up in the module namespace
+# at call time, so ``monkeypatch.setattr(session_mod, "async_sessionmaker", …)``
+# takes effect immediately.
+async_sessionmaker = _sa_async_sessionmaker
+
 
 @asynccontextmanager
-async def get_session(engine=None) -> AsyncGenerator[AsyncSession, None]:
-    """Yield an async session, setting the RLS tenant_id variable automatically."""
+async def get_session(
+    engine: Any = None, *, tenant_id: str | None = None
+) -> AsyncGenerator[AsyncSession, None]:
+    """Yield an async session, optionally setting the RLS tenant_id variable.
+
+    Args:
+        engine: An ``AsyncEngine`` instance.  Defaults to the engine built from
+            ``DATABASE_URL``.
+        tenant_id: When provided, executes ``SET LOCAL app.tenant_id`` before
+            yielding the session so that RLS policies are applied for this
+            request.  Falls back to the starlette-context value when omitted.
+    """
     if engine is None:
         engine = create_engine()
-    async with AsyncSession(engine) as session:  # type: ignore[misc]
-        # set the tenant id session variable to whatever has been stashed
-        # on the FastAPI app object; callers may set app.tenant_id in middleware
-        from sqlalchemy import text
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    async with session_factory() as session:
+        _tenant = tenant_id
+        if _tenant is None:
+            # fall back to starlette-context when running inside a web request
+            try:
+                from starlette_context import context
 
-        # we can't import Request directly here because this module also
-        # is used in background jobs where no request object exists. instead
-        # we read from a global thread-local if available.
-        try:
-            from starlette_context import context
-
-            tenant = context.get("tenant_id")
-        except ImportError:
-            tenant = None
-
-        if tenant:
-            await session.execute(text("SET LOCAL app.tenant_id = :tid"), {"tid": tenant})
+                _tenant = context.get("tenant_id")
+            except ImportError:
+                pass
+        if _tenant:
+            await session.execute(text("SET LOCAL app.tenant_id = :tid"), {"tid": _tenant})
         yield session
         await session.commit()
