@@ -44,6 +44,7 @@ async def get_session(
             except ImportError:
                 pass
         if _tenant:
-            await session.execute(text("SET LOCAL app.tenant_id = :tid"), {"tid": _tenant})
+            # Use string interpolation rather than bind params: asyncpg does not
+            # support parameter placeholders ($1, $2 …) in SET LOCAL statements.
+            await session.execute(text(f"SET LOCAL app.tenant_id = '{_tenant}'"))
         yield session
-        await session.commit()

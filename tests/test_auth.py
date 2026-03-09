@@ -34,10 +34,10 @@ def test_password_hashing(auth_service):
 def test_access_token_roundtrip(auth_service):
     user_id = UUID("00000000-0000-0000-0000-000000000001")
     tenant_id = UUID("00000000-0000-0000-0000-000000000002")
-    access_token, _ = auth_service.issue_jwt(user_id, tenant_id, Role.User)
+    access_token, _ = auth_service.issue_jwt(user_id, tenant_id, Role.Technician)
     decoded = auth_service.validate_jwt(access_token)
     assert decoded["user_id"] == str(user_id)
-    assert decoded["role"] == Role.User.value
+    assert decoded["role"] == Role.Technician.value
     # exp should be present and in the future
     assert decoded["exp"] > int(datetime.now(UTC).timestamp())
 
