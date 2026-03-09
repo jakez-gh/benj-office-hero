@@ -50,8 +50,11 @@ def ensure_mcp_server(port: int = 8001) -> subprocess.Popen | None:
 
 def main():
     # make sure mock backend and MCP server are up before push
-    ensure_mock_backend()
-    ensure_mcp_server()
+    # ports can be overridden using environment variables for testing
+    backend_port = int(os.environ.get("MOCK_BACKEND_PORT", "9000"))
+    mcp_port = int(os.environ.get("MCP_SERVER_PORT", "8001"))
+    ensure_mock_backend(backend_port)
+    ensure_mcp_server(mcp_port)
 
 
 if __name__ == "__main__":
