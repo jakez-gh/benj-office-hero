@@ -1,10 +1,20 @@
+"""Authentication service with JWT and passlib pbkdf2_sha256."""
+
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
-import bcrypt
 from jose import JWTError, jwt
+from passlib.context import CryptContext
+
+# PBKDF2-SHA256 hashing context (avoids external bcrypt dependency and
+# 72-byte limit issues). Work factor via rounds ~ 20000.
+_pwd_context = CryptContext(
+    schemes=["pbkdf2_sha256"],
+    deprecated="auto",
+    pbkdf2_sha256__rounds=20000,
+)
 
 
 class AuthService:
@@ -28,16 +38,13 @@ class AuthService:
         self._access_token_expires = access_token_expires
 
     def hash_password(self, plaintext: str) -> str:
-        """Return a bcrypt hash of ``plaintext``."""
-
-        hashed = bcrypt.hashpw(plaintext.encode("utf-8"), bcrypt.gensalt())
-        return hashed.decode("utf-8")
+        """Return a pbkdf2_sha256 hash of ``plaintext`` (20,000 rounds)."""
+        return _pwd_context.hash(plaintext)
 
     def verify_password(self, plaintext: str, hashed: str) -> bool:
-        """Return ``True`` if ``plaintext`` matches the bcrypt ``hashed`` value."""
-
+        """Return ``True`` if ``plaintext`` matches the pbkdf2_sha256 ``hashed`` value."""
         try:
-            return bcrypt.checkpw(plaintext.encode("utf-8"), hashed.encode("utf-8"))
+            return _pwd_context.verify(plaintext, hashed)
         except ValueError:
             return False
 
@@ -50,7 +57,7 @@ class AuthService:
         """
 
         payload = claims.copy()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         payload.setdefault("iat", int(now.timestamp()))
         payload["exp"] = int((now + timedelta(seconds=self._access_token_expires)).timestamp())
 

@@ -50,6 +50,7 @@ repos:
       - id: check-merge-conflict
       - id: mixed-line-ending
         args: [--fix=lf]
+        exclude: '\.(ps1|bat)$'
       - id: detect-private-key
 
   # Security scan + tests — run on push (slow; skip with SKIP=bandit,pytest-check)
