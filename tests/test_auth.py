@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -29,7 +29,7 @@ def test_access_token_roundtrip(auth_service):
     assert decoded["sub"] == "user1"
     assert decoded["role"] == "User"
     # exp should be present and in the future
-    assert decoded["exp"] > int(datetime.now(timezone.utc).timestamp())
+    assert decoded["exp"] > int(datetime.now(UTC).timestamp())
 
 
 def test_require_role_decorator():
