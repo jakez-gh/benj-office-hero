@@ -33,5 +33,6 @@ async def get_session(
     async with maker() as session:  # type: AsyncSession
         if tenant_id is not None:
             # ``SET LOCAL`` only affects the current transaction/connection.
-            await session.execute(text(f"SET LOCAL app.tenant_id = '{tenant_id}'"))
+            # Use parameterized query to prevent SQL injection.
+            await session.execute(text("SET LOCAL app.tenant_id = :tid"), {"tid": tenant_id})
         yield session

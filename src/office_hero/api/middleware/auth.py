@@ -6,7 +6,7 @@ module exposes utility functions that can be imported by tests.
 
 from typing import Any
 
-from jose import JWTError, jwt
+from jose import jwt
 
 
 def decode_jwt(token: str, public_key: str, algorithms: list[str]) -> dict[str, Any]:
@@ -15,7 +15,4 @@ def decode_jwt(token: str, public_key: str, algorithms: list[str]) -> dict[str, 
     A real middleware would extract the token from headers, call this helper,
     and attach the resulting claims to the request/context.
     """
-    try:
-        return jwt.decode(token, public_key, algorithms=algorithms)
-    except JWTError:
-        raise
+    return jwt.decode(token, public_key, algorithms=algorithms)
