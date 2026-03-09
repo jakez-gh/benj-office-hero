@@ -13,7 +13,7 @@ from office_hero.sagas.core import (
 )
 from office_hero.sagas.exceptions import (
     BackOfficeAdapterError,
-    SagaCompensationFailed,
+    SagaCompensationFailedError,
     SagaError,
 )
 
@@ -153,10 +153,10 @@ def test_saga_error_includes_saga_id_and_step():
 
 
 def test_saga_compensation_failed():
-    """SagaCompensationFailed is a specific SagaError subtype."""
+    """SagaCompensationFailedError is a specific SagaError subtype."""
     saga_id = uuid4()
 
-    err = SagaCompensationFailed(
+    err = SagaCompensationFailedError(
         message="compensation failed",
         saga_id=saga_id,
         step_name="rollback_step",
