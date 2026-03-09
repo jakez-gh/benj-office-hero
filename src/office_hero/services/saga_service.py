@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from office_hero.repositories.protocols import SagaRepository
@@ -82,7 +82,7 @@ class SagaService:
             saga_ctx = await self.saga_repo.update_status(
                 saga_ctx.saga_id,
                 SagaStatus.DONE,
-                context_update={"completed_at": datetime.now(timezone.utc).isoformat()},
+                context_update={"completed_at": datetime.now(UTC).isoformat()},
             )
             logger.info(
                 "Saga %s (%s) completed successfully",
