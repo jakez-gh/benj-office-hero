@@ -1,0 +1,133 @@
+#!/bin/bash
+# post-merge hook — ensure backend is running after git operations
+# This runs after merge/rebase/pull to verify the backend server is available
+
+set -e
+
+# Color output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+BACKEND_PORT=8000
+BACKEND_TIMEOUT=10
+
+# Function to check if backend is running
+backend_running() {
+    if command -v curl > /dev/null; then
+        curl -s http://localhost:$BACKEND_PORT/health > /dev/null 2>&1
+        return $?
+    else
+        netstat -tuln 2>/dev/null | grep -q ":$BACKEND_PORT " 2>/dev/null
+        return $?
+    fi
+}
+
+# Function to start backend
+start_backend() {
+    echo -e "${YELLOW}ℹ️  Backend not running. Starting...${NC}"
+
+    # Look for backend in common locations
+    if [ -d "../../office-hero-backend-core" ]; then
+        BACKEND_DIR="../../office-hero-backend-core"
+    elif [ -d "../office-hero-backend-core" ]; then
+        BACKEND_DIR="../office-hero-backend-core"
+    elif [ -d "office-hero-backend-core" ]; then
+        BACKEND_DIR="office-hero-backend-core"
+    else
+        echo -e "${RED}❌ Backend directory not found${NC}"
+        return 1
+    fi
+
+    if [ -f "$BACKEND_DIR/start_backend.ps1" ]; then
+        # PowerShell on Windows
+        powershell -File "$BACKEND_DIR/start_backend.ps1" &
+        BACKEND_PID=$!
+    elif [ -f "$BACKEND_DIR/start_backend.sh" ]; then
+        # Bash script
+        bash "$BACKEND_DIR/start_backend.sh" &
+        BACKEND_PID=$!
+    else
+        echo -e "${YELLOW}⚠️  Backend startup script not found in $BACKEND_DIR${NC}"
+        return 1
+    fi
+
+    # Wait for backend to start
+    echo -e "${YELLOW}Waiting for backend to start (up to ${BACKEND_TIMEOUT}s)...${NC}"
+    for i in $(seq 1 $BACKEND_TIMEOUT); do
+        if backend_running; then
+            echo -e "${GREEN}✅ Backend is running${NC}"
+            return 0
+        fi
+        sleep 1
+    done
+
+    echo -e "${RED}❌ Backend failed to start${NC}"
+    return 1
+}
+
+# Main logic
+if backend_running; then
+    echo -e "${GREEN}✅ Backend is running${NC}"
+else
+    start_backend
+fi
+
+#!/usr/bin/env pwsh
+# post-merge hook for Windows PowerShell
+# Auto-start backend if not running
+
+$BackendPort = 8000
+$BackendTimeout = 10
+
+function Test-BackendRunning {
+    try {
+        $response = Invoke-WebRequest -Uri "http://localhost:$BackendPort/health" -ErrorAction SilentlyContinue
+        return $response.StatusCode -eq 200
+    } catch {
+        return $false
+    }
+}
+
+function Start-BackendServer {
+    Write-Host "ℹ️  Backend not running. Starting..." -ForegroundColor Yellow
+
+    $BackendDir = $null
+    @("..\..\office-hero-backend-core", "..\office-hero-backend-core", "office-hero-backend-core") | ForEach-Object {
+        if (Test-Path $_ -PathType Container) {
+            $BackendDir = $_
+        }
+    }
+
+    if (-not $BackendDir) {
+        Write-Host "❌ Backend directory not found" -ForegroundColor Red
+        return $false
+    }
+
+    $StartScript = Join-Path $BackendDir "start_backend.ps1"
+    if (Test-Path $StartScript) {
+        & $StartScript -NoNewWindow -PassThru | Out-Null
+
+        Write-Host "Waiting for backend to start..." -ForegroundColor Yellow
+        $startTime = Get-Date
+        while ((Get-Date) - $startTime -lt [TimeSpan]::FromSeconds($BackendTimeout)) {
+            if (Test-BackendRunning) {
+                Write-Host "✅ Backend is running" -ForegroundColor Green
+                return $true
+            }
+            Start-Sleep -Milliseconds 500
+        }
+
+        Write-Host "❌ Backend failed to start" -ForegroundColor Red
+        return $false
+    }
+
+    return $false
+}
+
+if (Test-BackendRunning) {
+    Write-Host "✅ Backend is running" -ForegroundColor Green
+} else {
+    Start-BackendServer
+}
