@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 from uuid import UUID
 
 
-class SagaStatus(str, Enum):
+class SagaStatus(StrEnum):
     """State of a saga orchestration."""
 
     RUNNING = "running"
@@ -18,7 +18,7 @@ class SagaStatus(str, Enum):
     FAILED = "failed"
 
 
-class StepStatus(str, Enum):
+class StepStatus(StrEnum):
     """State of a single saga step."""
 
     PENDING = "pending"
