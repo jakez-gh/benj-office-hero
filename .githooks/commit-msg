@@ -1,6 +1,7 @@
 #!/bin/sh
 # commit-msg hook — managed by repository
-# Runs commit-msg stage hooks from .pre-commit-config.yaml (pip-audit CVE scan)
+# Reserved for future commit-message validation (e.g. commitlint, Conventional Commits).
+# No hooks are currently configured for the commit-msg stage in .pre-commit-config.yaml.
 # Activated automatically after: bash scripts/setup-dev.sh
 # Or manually: git config core.hooksPath .githooks && chmod +x .githooks/*
 HERE="$(cd "$(dirname "$0")" && pwd)"

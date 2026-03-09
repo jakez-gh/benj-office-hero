@@ -1,10 +1,11 @@
-.PHONY: help install dev test lint security qa clean
+.PHONY: help install dev run test lint security qa clean
 
 help:
 	@echo "benj.office-hero — developer targets"
 	@echo ""
 	@echo "  make install    Install runtime dependencies"
 	@echo "  make dev        Install dev dependencies + activate hooks"
+	@echo "  make run        Start FastAPI dev server (requires .env)"
 	@echo "  make test       Run pytest"
 	@echo "  make lint       Run pre-commit on all files"
 	@echo "  make security   Run bandit + pip-audit"
@@ -18,6 +19,10 @@ dev:
 	pip install -e ".[dev]"
 	git config core.hooksPath .githooks
 	python -c "import stat, pathlib; [f.chmod(f.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) for f in pathlib.Path('.githooks').iterdir() if f.is_file() and not f.name.startswith('.')]"
+	python -c "import stat, pathlib; [f.chmod(f.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) for f in pathlib.Path('scripts').iterdir() if f.suffix == '.sh']"
+
+run:
+	bash scripts/start-backend.sh
 
 test:
 	python -m pytest -q --tb=short

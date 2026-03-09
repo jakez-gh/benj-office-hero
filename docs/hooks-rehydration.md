@@ -27,32 +27,37 @@ This single command will:
 
 ### 1. Local Git Hooks (.githooks/)
 
-| Hook | Purpose | Stages | When Triggered |
-|---|---|---|---|
-| **pre-commit** | Runs pre-commit checks (lint, format, security) | commit | Before each commit |
-| **commit-msg** | Validates commit message format | commit-msg | After commit message is written |
-| **pre-push** | Runs tests + bandit + pip-audit before push | pre-push | Before pushing to remote |
+| Hook | Purpose | When Triggered |
+|---|---|---|
+| **pre-commit** | Lint, format, file hygiene | Before each commit |
+| **commit-msg** | Reserved — no hooks configured yet | After commit message is written |
+| **pre-push** | Tests + bandit + pip-audit | Before pushing to remote |
+
+> **Note:** The `commit-msg` shim is wired up but no hooks are configured for
+> that stage in `.pre-commit-config.yaml`. It is reserved for future commit
+> message validation (e.g. commitlint, Conventional Commits).
 
 **Location:** `.githooks/` directory
 
 **How they're installed:**
 
-```powershell
+```bash
 git config core.hooksPath .githooks
+chmod +x .githooks/*
 ```
 
 ### 2. Pre-Commit Framework Configuration
 
 **File:** `.pre-commit-config.yaml`
 
-**Includes:** 28 quality gates across 7 categories
+**Includes:** 15 hooks across 7 categories
 
 | Category | Tools | When |
 |---|---|---|
 | Markdown | markdownlint (auto-fix) | pre-commit |
 | Python formatting | black | pre-commit |
 | Python linting | ruff (auto-fix) | pre-commit |
-| File hygiene | trailing whitespace, EOF fixer, merge conflict detection | pre-commit |
+| File hygiene | trailing-whitespace, end-of-file-fixer, check-yaml, check-toml, check-json, check-added-large-files, check-merge-conflict, mixed-line-ending, detect-private-key | pre-commit |
 | CVE scanning | pip-audit | pre-push |
 | Security | bandit static analysis | pre-push |
 | Testing | pytest (TDD gate) | pre-push |
@@ -119,37 +124,16 @@ dev = [
 
 ### Initial Setup (First Clone)
 
-```mermaid
-graph TD
-    A["Clone Repository"] --> B["Run setup-dev.sh / .ps1"]
-    B --> C["Configure core.hooksPath"]
-    B --> D["Initialize Submodules"]
-    B --> E["Install Dependencies"]
-    B --> F["Verify Hooks"]
-    C --> G{"All checks pass?"}
-    D --> G
-    E --> G
-    F --> G
-    G -->|Yes| H["✅ Ready to work"]
-    G -->|No| I["❌ Review errors"]
+```text
+Clone → setup-dev.sh / .ps1 → configure hooksPath → init submodules → install deps → verify
 ```
 
 ### Per-Commit Workflow
 
-```mermaid
-graph LR
-    A["Edit files"] --> B["git add .<br/>(stage changes)"]
-    B --> C["git commit<br/>(pre-commit hook runs)"]
-    C --> D{"Linting/Format<br/>pass?"}
-    D -->|No| E["Auto-fix or manual fix"]
-    E --> B
-    D -->|Yes| F["✅ Commit succeeds"]
-    F --> G["git push<br/>(pre-push hook runs)"]
-    G --> H{"Tests + Security<br/>pass?"}
-    H -->|No| I["❌ Fix issues"]
-    I --> B
-    H -->|Yes| J["✅ Push succeeds"]
-```
+1. Edit files
+2. `git add` — stage changes
+3. `git commit` — pre-commit hook runs lint/format/hygiene; auto-fixes are applied inline
+4. `git push` — pre-push hook runs `pytest`, `bandit`, `pip-audit` (slow; ~30–90 s)
 
 ### Skip Hooks (Emergency Only)
 
@@ -160,7 +144,7 @@ git commit --no-verify
 # Skip all pre-push checks
 git push --no-verify
 
-# Skip specific hook with SKIP env var
+# Skip specific hooks (use SKIP env var)
 SKIP=bandit,pytest-check git push
 ```
 
@@ -207,13 +191,11 @@ pip install -e ".[dev]"
 **Options:**
 
 1. **Fix the test** — Recommended, ensures code quality
-2. **Skip hook** — Emergency only (not recommended)
+2. **Skip hook** — Emergency only
 
    ```bash
    SKIP=pytest-check git push
    ```
-
-3. **Check hook output** — Review the error messages carefully
 
 ---
 
@@ -223,8 +205,8 @@ pip install -e ".[dev]"
 
 **Options:**
 
-1. **Fix the security issue** — Recommended, addresses vulnerability
-2. **Skip hook** — Emergency only (not recommended)
+1. **Fix the security issue** — Recommended
+2. **Skip hook** — Emergency only
 
    ```bash
    SKIP=bandit git push
@@ -240,20 +222,23 @@ Run these commands anytime to check code quality without committing:
 # All pre-commit checks (without committing)
 pre-commit run --all-files
 
-# Just linting
+# Lint only
 ruff check src/
 
-# Just formatting
+# Format check
 black --check src/
 
-# Just security scan
+# Security scan
 bandit -r src -ll
 
-# Just tests
+# Tests
 pytest -q --tb=short
 
 # Coverage report
 pytest --cov=src --cov-report=html
+
+# Full quality gate (lint + security + test)
+make qa
 ```
 
 ---
@@ -266,21 +251,9 @@ pytest --cov=src --cov-report=html
 
 **Jobs:**
 
-1. **lint** (~ 2 min)
-   - Installs dev dependencies
-   - Runs `pre-commit run --all-files`
-   - Status: ✅ pass / ❌ fail
-
-2. **security** (~ 3 min)
-   - Runs bandit on src/ with -ll flag
-   - Runs pip-audit on all dependencies
-   - Status: ✅ pass / ❌ fail
-
-3. **test** (~ 5 min)
-   - Collects and runs pytest
-   - If failure: Creates GitHub issue automatically
-   - Generates coverage reports
-   - Status: ✅ pass / ⏭️ continue-on-error
+1. **lint** (~ 2 min) — `pre-commit run --all-files`
+2. **security** (~ 3 min) — bandit + pip-audit
+3. **test** (~ 5 min) — pytest with coverage
 
 ### GitHub Actions: security.yml
 
@@ -289,25 +262,24 @@ pytest --cov=src --cov-report=html
 **Jobs:**
 
 - Dependency vulnerability audit (pip-audit)
-- Bandit static analysis with JSON report
-- Uploads artifact: `bandit-report.json`
+- Bandit static analysis with JSON report artifact
 
 ---
 
 ## Files Summary
 
-| File | Purpose | Commits | Status |
-|---|---|---|---|
-| `.githooks/pre-commit` | Pre-commit hook runner | All | ✅ |
-| `.githooks/commit-msg` | Commit message validator | All | ✅ |
-| `.githooks/pre-push` | Pre-push hook runner | All | ✅ |
-| `.pre-commit-config.yaml` | Quality gate definitions | All | ✅ |
-| `.github/workflows/ci.yml` | CI pipeline | All | ✅ |
-| `.github/workflows/security.yml` | Security pipeline | All | ✅ |
-| `pyproject.toml` | Dependencies | All | ✅ |
-| `scripts/setup-dev.sh` | Unix/Linux/macOS setup | All | ✅ |
-| `scripts/setup-dev.ps1` | Windows PowerShell setup | All | ✅ |
-| `.gitmodules` | Submodule references | All | ✅ |
+| File | Purpose |
+|---|---|
+| `.githooks/pre-commit` | Pre-commit hook shim |
+| `.githooks/commit-msg` | Commit-msg shim (reserved, no active hooks) |
+| `.githooks/pre-push` | Pre-push hook shim |
+| `.pre-commit-config.yaml` | Quality gate definitions (15 hooks) |
+| `.github/workflows/ci.yml` | CI pipeline |
+| `.github/workflows/security.yml` | Scheduled security pipeline |
+| `pyproject.toml` | Dev dependency definitions |
+| `scripts/setup-dev.sh` | Unix/Linux/macOS one-command setup |
+| `scripts/setup-dev.ps1` | Windows PowerShell one-command setup |
+| `.gitmodules` | Submodule references |
 
 ---
 
@@ -316,23 +288,20 @@ pytest --cov=src --cov-report=html
 After running setup, verify everything is working:
 
 ```bash
-# ✅ Check 1: Hooks are configured
+# Check 1: Hooks are configured
 git config core.hooksPath              # Should output: .githooks
 
-# ✅ Check 2: Dependencies are installed
-pip list | grep -E "pre-commit|pytest-asyncio|bandit"
+# Check 2: Dependencies are installed
+pip list | grep -E "pre-commit|bandit|ruff"
 
-# ✅ Check 3: Pre-commit can run
+# Check 3: Pre-commit can run
 pre-commit run --all-files             # Should pass all checks
 
-# ✅ Check 4: Submodules are initialized
+# Check 4: Submodules are initialized  (bash / Git Bash only)
 ls -la project-documents/ai-project-guide/
 
-# ✅ Check 5: Tests can run
-pytest --co -q                         # Should collect tests
-
-# ✅ Check 6: Hook execution simulation
-python -c "import pre_commit; print('✓ pre-commit ready')"
+# Check 5: Tests can run
+pytest --co -q                         # Should collect tests without error
 ```
 
 ---
@@ -344,8 +313,3 @@ python -c "import pre_commit; print('✓ pre-commit ready')"
 - **Black Documentation:** <https://black.readthedocs.io/>
 - **Bandit Documentation:** <https://bandit.readthedocs.io/>
 - **pytest Documentation:** <https://docs.pytest.org/>
-
----
-
-**Last Updated:** March 9, 2026
-**Version:** 1.0
