@@ -42,7 +42,6 @@ python -m uvicorn src.office_hero.main:app --host 0.0.0.0 --port 8000
 ```
 
 **Note:** The backend requires PostgreSQL running at `localhost:5432`. Use Docker:
-
 ```bash
 docker run -d --name oh-test-db -e POSTGRES_PASSWORD=pass -e POSTGRES_DB=test -p 5432:5432 postgres:15-alpine
 ```
@@ -57,7 +56,7 @@ pnpm dev
 pnpm -F admin-web run dev
 ```
 
-The frontend will be available at **<http://localhost:3000>**
+The frontend will be available at **http://localhost:3000**
 
 ### 4. Test Credentials
 
@@ -67,7 +66,6 @@ Password: password123
 ```
 
 **Note:** Test user is created by `init_testdata.py` in the backend. If needed, reinitialize:
-
 ```bash
 cd ../office-hero-backend-core
 python init_testdata.py
@@ -91,7 +89,7 @@ useEffect(() => {
   const stored = localStorage.getItem('access_token');
   const storedRefresh = localStorage.getItem('refresh_token');
   const storedUser = localStorage.getItem('user');
-
+  
   if (stored) {
     setToken(stored);
     client.defaults.headers.common['Authorization'] = `Bearer ${stored}`;
@@ -113,7 +111,7 @@ useEffect(() => {
       // ...
     }
   );
-
+  
   // Cleanup: remove interceptor on unmount
   return () => {
     client.interceptors.response.eject(interceptor);
@@ -122,8 +120,7 @@ useEffect(() => {
 ```
 
 **Rehydration is automatic** - no manual action needed. Just:
-
-1. Open <http://localhost:3000>
+1. Open http://localhost:3000
 2. If tokens exist in localStorage, user is rehydrated as authenticated
 3. If no tokens, user sees login form
 
@@ -172,23 +169,19 @@ pnpm exec playwright test --ui  # Opens interactive test UI
 The E2E tests cover:
 
 ✅ **Form Validation**
-
 - Login form displays correctly
 - Invalid credentials show error message
 
 ✅ **Authentication**
-
 - Successful login with valid credentials
 - Redirect to /jobs after login
 - Navigation bar visible for authenticated user
 
 ✅ **Token Persistence**
-
 - Tokens stored in localStorage after login
 - Tokens readable and valid (JSON parsing for user object)
 
 ✅ **Hook Rehydration** (Most Important)
-
 - Login → tokens in localStorage
 - Reload page → still authenticated
 - No login form shown
@@ -196,23 +189,19 @@ The E2E tests cover:
 - Same tokens in localStorage
 
 ✅ **Navigation**
-
 - Navigate between Jobs, Dispatch, Vehicles, Users pages
 - Each page accessible when authenticated
 
 ✅ **Logout**
-
 - Logout button visible when authenticated
 - Click logout → redirect to login page
 - localStorage tokens cleared
 - All auth state cleared
 
 ✅ **Version Badge**
-
 - Version displayed in navigation bar
 
 ✅ **Token Refresh**
-
 - Expired token detection
 - Automatic refresh on 401 error
 - Original request retried with new token
@@ -271,7 +260,7 @@ flyctl logs
 
 ### Production Verification
 
-1. **Login Test**: Use <test@example.com> / password123
+1. **Login Test**: Use test@example.com / password123
 2. **Token Persistence**: Close and reopen browser → should still be logged in
 3. **Version Badge**: Should display correct version
 4. **Navigation**: All pages should be accessible
@@ -420,5 +409,5 @@ pnpm format                           # Auto-format code
 
 ---
 
-**Last Updated:** March 9, 2026
+**Last Updated:** March 9, 2026  
 **Status:** Production Ready ✅
