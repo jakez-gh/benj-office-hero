@@ -39,6 +39,7 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 pythonpath = ["src"]
+asyncio_mode = "auto"
 addopts = [
     "--verbose",
     "--tb=short",

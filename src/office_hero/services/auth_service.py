@@ -1,4 +1,4 @@
-"""Authentication service with JWT and bcrypt."""
+"""Authentication service with JWT and passlib pbkdf2_sha256."""
 
 from __future__ import annotations
 
@@ -15,11 +15,12 @@ from office_hero.core.roles import Role
 from office_hero.models import RefreshToken, User
 from office_hero.repositories.user_repository import UserRepository
 
-# Bcrypt password hashing context with work factor 12
+# PBKDF2-SHA256 hashing context (avoids external bcrypt dependency and
+# 72-byte limit issues during tests). Work factor via rounds ~ 20000.
 pwd_context = CryptContext(
-    schemes=["bcrypt"],
+    schemes=["pbkdf2_sha256"],
     deprecated="auto",
-    bcrypt__rounds=12,
+    pbkdf2_sha256__rounds=20000,
 )
 
 
@@ -31,11 +32,11 @@ class AuthService:
         self.settings = settings
 
     def hash_password(self, password: str) -> str:
-        """Hash a plaintext password using bcrypt with work factor 12."""
+        """Hash a plaintext password using pbkdf2_sha256 (20,000 rounds)."""
         return pwd_context.hash(password)
 
     def verify_password(self, plain_password: str, password_hash: str) -> bool:
-        """Verify plaintext password against bcrypt hash."""
+        """Verify plaintext password against pbkdf2_sha256 hash."""
         return pwd_context.verify(plain_password, password_hash)
 
     def issue_jwt(

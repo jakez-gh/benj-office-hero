@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from typing import Any
 
 from office_hero.repositories.protocols import SagaRepository
@@ -48,7 +49,10 @@ class SagaService:
             for step_idx, step in enumerate(saga_definition.steps):
                 try:
                     logger.info(
-                        f"Saga {saga_ctx.saga_id}: executing step {step_idx}: " f"{step.name}"
+                        "Saga %s: executing step %s: %s",
+                        saga_ctx.saga_id,
+                        step_idx,
+                        step.name,
                     )
                     step_result = await step.execute(saga_ctx.context)
                     # Merge step result into saga context
@@ -57,7 +61,12 @@ class SagaService:
                     # Update current_step and status
                     await self.saga_repo.update_current_step(saga_ctx.saga_id, step_idx + 1)
                 except Exception as e:
-                    logger.error(f"Saga {saga_ctx.saga_id}: step {step.name} failed: {e}")
+                    logger.error(
+                        "Saga %s: step %s failed: %s",
+                        saga_ctx.saga_id,
+                        step.name,
+                        e,
+                    )
                     # Compensate: unwind prior steps
                     try:
                         await self.compensate(saga_ctx, saga_definition, step_idx)
@@ -73,15 +82,21 @@ class SagaService:
             saga_ctx = await self.saga_repo.update_status(
                 saga_ctx.saga_id,
                 SagaStatus.DONE,
-                context_update={"completed_at": "now"},
+                context_update={"completed_at": datetime.now(timezone.utc).isoformat()},
             )
             logger.info(
-                f"Saga {saga_ctx.saga_id} ({saga_definition.saga_type}) " f"completed successfully"
+                "Saga %s (%s) completed successfully",
+                saga_ctx.saga_id,
+                saga_definition.saga_type,
             )
             return saga_ctx
 
         except Exception as e:
-            logger.exception(f"Saga {saga_ctx.saga_id}: unexpected error during execution: {e}")
+            logger.exception(
+                "Saga %s: unexpected error during execution: %s",
+                saga_ctx.saga_id,
+                e,
+            )
             raise
 
     async def compensate(
@@ -111,12 +126,18 @@ class SagaService:
             step = saga_definition.steps[step_idx]
             try:
                 logger.info(
-                    f"Saga {saga_ctx.saga_id}: compensating step {step_idx}: " f"{step.name}"
+                    "Saga %s: compensating step %s: %s",
+                    saga_ctx.saga_id,
+                    step_idx,
+                    step.name,
                 )
                 await step.compensate(saga_ctx.context)
             except Exception as e:
                 logger.error(
-                    f"Saga {saga_ctx.saga_id}: compensation of step " f"{step.name} failed: {e}"
+                    "Saga %s: compensation of step %s failed: %s",
+                    saga_ctx.saga_id,
+                    step.name,
+                    e,
                 )
                 # Compensation itself failed: mark saga as FAILED
                 await self.saga_repo.update_status(
@@ -137,7 +158,7 @@ class SagaService:
             SagaStatus.DONE,
             context_update={"compensated": True},
         )
-        logger.info(f"Saga {saga_ctx.saga_id}: all compensation steps completed")
+        logger.info("Saga %s: all compensation steps completed", saga_ctx.saga_id)
 
     async def get_saga_status(self, saga_id: Any) -> SagaContext | None:
         """Retrieve the current status and context of a saga."""
