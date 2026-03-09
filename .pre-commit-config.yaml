@@ -18,16 +18,16 @@ repos:
         language_version: python3.11
         args: [--line-length=100]
 
-  # CVE scanning on every commit as well as push
+  # CVE scanning on push only (slow; skip with SKIP=pip-audit)
   - repo: local
     hooks:
       - id: pip-audit
         name: pip-audit dependency scan
-        entry: python -m pip_audit --exit-zero
+        entry: python -m pip_audit --desc
         language: system
         pass_filenames: false
         always_run: true
-        stages: [commit-msg, pre-push]
+        stages: [pre-push]
 
   # Python linting + import sorting
   - repo: https://github.com/astral-sh/ruff-pre-commit

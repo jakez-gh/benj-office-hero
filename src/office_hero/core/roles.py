@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     """Enum representing all RBAC roles in Office Hero.
 
     Roles follow ServiceTitan/PestPac/Jobber industry standards.
@@ -19,6 +19,3 @@ class Role(str, Enum):
     Dispatcher = "dispatcher"
     Technician = "technician"
     TechnicianHelper = "technician_helper"
-
-    def __str__(self) -> str:
-        return self.value
