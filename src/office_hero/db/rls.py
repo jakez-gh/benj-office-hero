@@ -37,6 +37,7 @@ def tenant_id_column() -> Column:  # type: ignore[type-arg]
     """Return a SQLAlchemy Column definition for the standard tenant FK column."""
     return Column("tenant_id", PGUUID(as_uuid=True), nullable=False)
 
+
 # Whitelist of tables allowed for RLS policy creation to prevent SQL injection
 _ALLOWED_TABLES = {"users", "refresh_tokens", "audit_events", "ban_list", "rate_limits"}
 
