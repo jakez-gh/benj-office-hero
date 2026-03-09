@@ -1,11 +1,12 @@
 import React, { createContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { client } from '@office-hero/api-client';
-import { login as apiLogin, refresh as apiRefresh, LoginRequest } from '@office-hero/api-client';
+import { login as apiLogin, refresh as apiRefresh, LoginRequest, AuthUser } from '@office-hero/api-client';
 import type { AxiosError } from 'axios';
 
 interface AuthContextType {
   token: string | null;
+  user: AuthUser | null;
   login: (creds: LoginRequest) => Promise<void>;
   logout: () => void;
   isRefreshing: boolean;
@@ -13,17 +14,18 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType>({
   token: null,
+  user: null,
   login: async () => {},
   logout: () => {},
   isRefreshing: false
 });
 
 let isRefreshing = false;
-let refreshPromise: Promise<string> | null = null;
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isRefreshingState, setIsRefreshing] = useState(false);
 
   // Setup axios interceptor to handle 401 and refresh token
@@ -44,11 +46,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             if (storedRefreshToken) {
               try {
+                // refresh() returns {access_token, user} — refresh_token is unchanged
                 const data = await apiRefresh({ refresh_token: storedRefreshToken });
                 localStorage.setItem('access_token', data.access_token);
-                localStorage.setItem('refresh_token', data.refresh_token);
                 setToken(data.access_token);
-                setRefreshToken(data.refresh_token);
+                setUser(data.user);
 
                 // Update authorization header
                 client.defaults.headers.common['Authorization'] = `Bearer ${data.access_token}`;
@@ -65,6 +67,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 localStorage.removeItem('refresh_token');
                 setToken(null);
                 setRefreshToken(null);
+                setUser(null);
                 isRefreshing = false;
                 setIsRefreshing(false);
                 return Promise.reject(refreshError);
@@ -73,6 +76,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               // No refresh token, clear and reject
               localStorage.removeItem('access_token');
               setToken(null);
+              setUser(null);
               isRefreshing = false;
               setIsRefreshing(false);
               return Promise.reject(error);
@@ -92,13 +96,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const stored = localStorage.getItem('access_token');
     const storedRefresh = localStorage.getItem('refresh_token');
+    const storedUser = localStorage.getItem('user');
     if (stored) {
       setToken(stored);
-      // Set default authorization header
       client.defaults.headers.common['Authorization'] = `Bearer ${stored}`;
     }
     if (storedRefresh) {
       setRefreshToken(storedRefresh);
+    }
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch {
+        localStorage.removeItem('user');
+      }
     }
   }, []);
 
@@ -106,22 +117,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const data = await apiLogin(creds);
     localStorage.setItem('access_token', data.access_token);
     localStorage.setItem('refresh_token', data.refresh_token);
+    localStorage.setItem('user', JSON.stringify(data.user));
     setToken(data.access_token);
     setRefreshToken(data.refresh_token);
-    // Set default authorization header
+    setUser(data.user);
     client.defaults.headers.common['Authorization'] = `Bearer ${data.access_token}`;
   };
 
   const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
     setToken(null);
     setRefreshToken(null);
+    setUser(null);
     delete client.defaults.headers.common['Authorization'];
   };
 
   return (
-    <AuthContext.Provider value={{ token, login, logout, isRefreshing: isRefreshingState }}>
+    <AuthContext.Provider value={{ token, user, login, logout, isRefreshing: isRefreshingState }}>
       {children}
     </AuthContext.Provider>
   );

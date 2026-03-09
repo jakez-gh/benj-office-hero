@@ -5,14 +5,25 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: string;
+}
+
 export interface LoginResponse {
   access_token: string;
   refresh_token: string;
-  token_type: 'bearer';
+  user: AuthUser;
 }
 
 export interface RefreshRequest {
   refresh_token: string;
+}
+
+export interface RefreshResponse {
+  access_token: string;
+  user: AuthUser;
 }
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
@@ -20,8 +31,8 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   return response.data;
 }
 
-export async function refresh(request: RefreshRequest): Promise<LoginResponse> {
-  const response = await client.post<LoginResponse>('/auth/refresh', request);
+export async function refresh(request: RefreshRequest): Promise<RefreshResponse> {
+  const response = await client.post<RefreshResponse>('/auth/refresh', request);
   return response.data;
 }
 

@@ -56,6 +56,9 @@ importers:
       '@office-hero/types':
         specifier: workspace:*
         version: link:../../packages/types
+      axios:
+        specifier: ^1.13.6
+        version: 1.13.6
       react:
         specifier: ^18.2.0
         version: 18.3.1
