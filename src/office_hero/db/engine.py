@@ -1,22 +1,29 @@
+from __future__ import annotations
+
 import os
-from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncEngine
-from sqlalchemy.ext.asyncio import create_async_engine as _create_async_engine
+from sqlalchemy.ext.asyncio import create_async_engine as sa_create_async_engine
+from sqlalchemy.pool import NullPool
 
 
-def create_async_engine(url: str | None = None, **kwargs: Any) -> AsyncEngine:
-    """Return a SQLAlchemy :class:`~sqlalchemy.ext.asyncio.AsyncEngine`.
+def create_async_engine(url: str | None = None) -> AsyncEngine:
+    """Create an AsyncEngine configured from `DATABASE_URL` env or explicit URL.
 
-    The ``DATABASE_URL`` environment variable is consulted if ``url`` is
-    not provided.  A ``ValueError`` is raised when no URL can be found.
-
-    Additional keyword arguments are passed through to
-    ``sqlalchemy.ext.asyncio.create_async_engine``.
+    Uses NullPool by default to avoid connection sharing issues in serverless
+    environments; you can override via environment variables if needed.
     """
+    database_url = url or os.environ.get("DATABASE_URL")
+    if not database_url:
+        raise ValueError("DATABASE_URL must be provided as argument or set in environment")
+    # URL should be of form postgresql+asyncpg://...
+    return sa_create_async_engine(
+        database_url,
+        echo=False,
+        poolclass=NullPool,
+        future=True,
+    )
 
-    if url is None:
-        url = os.environ.get("DATABASE_URL")
-        if not url:
-            raise ValueError("DATABASE_URL not configured")
-    return _create_async_engine(url, **kwargs)
+
+# alias for backwards compatibility
+create_engine = create_async_engine

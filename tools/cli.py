@@ -35,5 +35,21 @@ def migrate():
     sys.exit(result.returncode)
 
 
+@cli.command()
+@click.option("--host", default="127.0.0.1", help="API server host")
+@click.option("--port", default=8000, type=int, help="API server port")
+@click.option("--reload", is_flag=True, help="Enable auto-reload on code changes")
+def run_server(host, port, reload):
+    """Start the Office Hero API server."""
+    import uvicorn
+
+    uvicorn.run(
+        "office_hero.api:app",
+        host=host,
+        port=port,
+        reload=reload,
+    )
+
+
 if __name__ == "__main__":
     cli()

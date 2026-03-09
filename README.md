@@ -23,7 +23,7 @@ pre-commit run --all-files       # any platform
 | Python lint | ruff | commit |
 | File hygiene | pre-commit-hooks | commit |
 | Security scan | bandit | push |
-| Unit tests | pytest | CI |
+| Unit tests (includes ADR compliance checks) | pytest | CI |
 | Coverage | pytest-cov | CI |
 
 ## Database
