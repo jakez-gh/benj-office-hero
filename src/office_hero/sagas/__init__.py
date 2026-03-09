@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -46,17 +47,26 @@ class Saga:
         }
 
         if self._outbox is not None:
-            # the repository may provide an async ``insert`` method or a simple
-            # synchronous ``insert``; we support either for flexibility in tests.
+            # the repository may provide either ``insert`` or ``create``; each
+            # could be async or sync.  We *do not* want to swallow unexpected
+            # errors, hence the more explicit handling below.
             try:
                 await self._outbox.insert(event)
             except TypeError:
-                # not awaitable
+                # returned a non-awaitable (sync implementation)
                 self._outbox.insert(event)
             except AttributeError:
-                # no insert method; try ``create`` as an alternative
-                from contextlib import suppress
-
-                with suppress(Exception):
-                    await self._outbox.create(event)  # type: ignore
+                # ``insert`` doesn't exist; try ``create`` instead.
+                # Since we already know ``insert`` is missing, AttributeError here
+                # means the attribute lookup failed.  Replace the prior blanket
+                # suppression with conditional logic so that real exceptions
+                # propagate.
+                if hasattr(self._outbox, "create"):
+                    result = self._outbox.create(event)
+                    if inspect.isawaitable(result):
+                        await result  # type: ignore
+                else:
+                    # neither method is available; propagate the original
+                    # AttributeError so callers can notice misconfiguration.
+                    raise
         return event

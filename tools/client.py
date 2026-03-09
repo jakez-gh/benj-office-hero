@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 import httpx
 
@@ -7,8 +6,8 @@ import httpx
 class Client:
     def __init__(
         self,
-        base_url: Optional[str] = None,
-        token: Optional[str] = None,
+        base_url: str | None = None,
+        token: str | None = None,
         timeout: float = 10.0,
     ):
         self.base_url = base_url or os.environ.get("API_BASE_URL", "http://localhost:8000")

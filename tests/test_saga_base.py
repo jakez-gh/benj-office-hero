@@ -40,3 +40,16 @@ async def test_enqueue_outbox_event_with_idem():
     ev = await saga.enqueue_outbox_event("bar", {}, idem_key=key)
     assert ev["idem_key"] == key
     assert repo.events[0]["idem_key"] == key
+
+
+@pytest.mark.asyncio
+async def test_enqueue_outbox_event_missing_methods_raises():
+    """If the outbox repo has neither insert nor create, an error bubbles up."""
+
+    class BadRepo:
+        pass
+
+    tid = uuid4()
+    saga = DummySaga(tenant_id=tid, outbox_repo=BadRepo())
+    with pytest.raises(AttributeError):
+        await saga.enqueue_outbox_event("oops", {})
