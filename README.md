@@ -1,20 +1,65 @@
 # benj.office-hero
 
-Office Hero web application.
+Office Hero web application with automated backend management via git hooks.
 
-## Development setup
+## Quick Start
+
+Clone and setup in two steps:
 
 ```bash
-# One-time setup (activates git hooks + installs deps)
+# 1. Clone the repository
+git clone <url> office-hero-mobile
+cd office-hero-mobile
+
+# 2. Run setup (choose your platform)
 bash scripts/setup-dev.sh        # Linux / macOS / Git Bash
 .\scripts\setup-dev.ps1          # Windows PowerShell
+```
 
-# Run all quality gates locally
+✅ That's it! The setup script will:
+
+- Configure git hooks for automatic backend management
+- Install all Node.js dependencies
+- Create development environment files
+- Verify your setup with pre-commit
+
+**For detailed rehydration instructions**, see [SETUP.md](SETUP.md) (highly recommended).
+
+## Git Hooks (Automatic)
+
+Once setup runs, git hooks automatically manage your development environment:
+
+| Hook | Purpose | Trigger |
+|------|---------|---------|
+| **pre-commit** | Linting, formatting, security | Before `git commit` |
+| **post-merge** | Backend health check + auto-start | After `git pull` / `git merge` |
+| **post-checkout** | Environment verification | After `git checkout` |
+
+Example: Backend automatically restarts if it crashes during a pull
+
+```bash
+$ git pull
+✅ Backend is running on port 8000
+```
+
+## Quality Gates
+
+| Gate | Tool | When | Skip? |
+|------|------|------|-------|
+| TypeScript | tsc | commit | `git commit --no-verify` |
+| ESLint | eslint | commit | `git commit --no-verify` |
+| Prettier | prettier | commit | `git commit --no-verify` |
+| Pre-commit | pre-commit | commit | `git commit --no-verify` |
+| Bandit | bandit | push | — |
+
+Run manually:
+
+```bash
 .\scripts\qa_gate.ps1            # Windows
 pre-commit run --all-files       # any platform
 ```
 
-## Quality gates
+## CI/CD
 
 | Gate | Tool | When |
 |------|------|------|
@@ -26,44 +71,13 @@ pre-commit run --all-files       # any platform
 | Unit tests (includes ADR compliance checks) | pytest | CI |
 | Coverage | pytest-cov | CI |
 
-## Database
+- **Linting** — TypeScript, ESLint, Prettier, markdownlint
+- **Security** — Bandit static analysis
+- **Testing** — Jest unit tests
+- **Coverage** — Coverage reports
 
-Office Hero uses PostgreSQL with row-level security (RLS) for tenant
-isolation.  A running database is required for most integration tests and for
-local development migrations.
+## Documentation
 
-Before running any of the commands below you must export the
-``DATABASE_URL`` environment variable, e.g.:
-
-```bash
-export DATABASE_URL="postgresql+asyncpg://user:pass@localhost/dbname"
-# Windows PowerShell
-$Env:DATABASE_URL = "postgresql+asyncpg://user:pass@localhost/dbname"
-```
-
-The following make targets are provided:
-
-* ``make db-migrate`` – apply all outstanding Alembic migrations to the
-  database pointed at by ``DATABASE_URL``.
-* ``make db-shell`` – drop into a ``psql`` shell connected to that URL.
-
-Integration tests will automatically skip when ``DATABASE_URL`` is not set.
-CI provisions a temporary branch and configures this variable appropriately.
-
-The Python library exposes ``office_hero.db.session.get_session`` which
-accepts an optional ``tenant_id`` keyword argument.  When supplied the
-session will execute ``SET LOCAL app.tenant_id`` on the connection, which is
-required for PostgreSQL row-level security.  Example:
-
-```python
-async with get_session(engine, tenant_id=some_uuid) as session:
-    await session.execute("SELECT ...")
-```
-
-## CI
-
-GitHub Actions runs on every push and PR:
-
-* **Lint** — pre-commit (black, ruff, markdownlint, file checks)
-* **Security** — bandit static analysis
-* **Test** — pytest with coverage report
+- [SETUP.md](SETUP.md) — Detailed setup & rehydration guide (⭐ **read this first!**)
+- [BACKEND_INTEGRATION_GUIDE.md](BACKEND_INTEGRATION_GUIDE.md) — Backend API details
+- [REAL_DEVICE_TESTING_2026-03-09.md](REAL_DEVICE_TESTING_2026-03-09.md) — Real device testing results
