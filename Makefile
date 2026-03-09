@@ -17,6 +17,7 @@ install:
 dev:
 	pip install -e ".[dev]"
 	git config core.hooksPath .githooks
+	python -c "import stat, pathlib; [f.chmod(f.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) for f in pathlib.Path('.githooks').iterdir() if f.is_file() and not f.name.startswith('.')]"
 
 test:
 	python -m pytest -q --tb=short
@@ -26,13 +27,9 @@ lint:
 
 security:
 	@echo "--- bandit ---"
-	@if find src -name "*.py" 2>/dev/null | grep -q .; then \
-		python -m bandit -r src -ll; \
-	else \
-		echo "No Python files in src/ yet."; \
-	fi
+	python -m bandit -r src -ll
 	@echo "--- pip-audit ---"
-	pip-audit --desc
+	python -m pip_audit --desc
 
 qa: lint security test
 	@echo "All quality gates passed."

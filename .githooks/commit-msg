@@ -1,0 +1,13 @@
+#!/bin/sh
+# commit-msg hook — managed by repository
+# Runs commit-msg stage hooks from .pre-commit-config.yaml (pip-audit CVE scan)
+# Activated automatically after: bash scripts/setup-dev.sh
+# Or manually: git config core.hooksPath .githooks && chmod +x .githooks/*
+HERE="$(cd "$(dirname "$0")" && pwd)"
+ARGS=(hook-impl --config=.pre-commit-config.yaml --hook-type=commit-msg --hook-dir "$HERE" -- "$@")
+if command -v pre-commit > /dev/null; then
+    exec pre-commit "${ARGS[@]}"
+else
+    echo '`pre-commit` not found. Run: pip install pre-commit' 1>&2
+    exit 1
+fi
