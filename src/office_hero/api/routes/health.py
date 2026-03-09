@@ -6,6 +6,7 @@ import os
 
 import httpx
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from office_hero.api.state import get_engine
@@ -24,6 +25,7 @@ async def health_check():
     ors_status = "ok"
 
     # DB reachability: execute SELECT 1
+    # Catch all exceptions: health checks must not crash; any DB error is a failure signal
     try:
         engine = get_engine()
         async with get_session(engine) as session:
@@ -33,6 +35,7 @@ async def health_check():
         db_status = "error"
 
     # ORS reachability: HTTP GET to configured health URL
+    # Catch all exceptions: timeouts, connection errors, etc. are health failures
     ors_url = os.getenv("ORS_HEALTH_URL", "http://localhost:5000/health")
     try:
         async with httpx.AsyncClient(timeout=2.0) as client:
@@ -45,8 +48,6 @@ async def health_check():
 
     overall = "ok" if db_status == "ok" and ors_status == "ok" else "unhealthy"
     status_code = 200 if overall == "ok" else 503
-
-    from fastapi.responses import JSONResponse
 
     return JSONResponse(
         status_code=status_code,
