@@ -1,6 +1,6 @@
 {
   "name": "office-hero-frontend",
-  "version": "0.1.12",
+  "version": "0.1.15",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -10,7 +10,13 @@
     "dev": "pnpm -r run dev",
     "build": "pnpm -r run build",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "pnpm -F admin-web run test",
+    "test:e2e": "pnpm -F admin-web run test:e2e",
+    "test:e2e:record": "pnpm -F admin-web run test:e2e:record",
+    "test:e2e:ui": "pnpm -F admin-web run test:e2e:ui",
+    "demo": "pnpm -F admin-web run demo",
+    "demo:report": "pnpm -F admin-web run demo:report"
   },
   "devDependencies": {
     "@types/node": "^20.4.1",

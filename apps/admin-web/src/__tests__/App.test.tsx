@@ -1,8 +1,18 @@
 
 // mock API client before any component imports
 const mockLogin = jest.fn();
+const mockClient = {
+  interceptors: {
+    response: {
+      use: jest.fn().mockReturnValue(1),
+      eject: jest.fn()
+    }
+  },
+  defaults: { headers: { common: {} } }
+};
 jest.mock('@office-hero/api-client', () => ({
-  login: mockLogin
+  login: mockLogin,
+  client: mockClient
 }));
 
 import React from 'react';
@@ -21,7 +31,7 @@ describe('Admin web authentication and navigation', () => {
     mockLogin.mockResolvedValue({
       access_token: 'fake-token',
       refresh_token: 'r',
-      token_type: 'bearer'
+      user: { id: '1', email: 'me@example.com', role: 'admin' }
     });
 
     render(<App />);
@@ -69,7 +79,7 @@ describe('Admin web authentication and navigation', () => {
     mockLogin.mockResolvedValue({
       access_token: 'fake-token',
       refresh_token: 'r',
-      token_type: 'bearer'
+      user: { id: '1', email: 'me@example.com', role: 'admin' }
     });
 
     render(<App />);

@@ -6,25 +6,39 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: [
+    ['html'],
+    ['json', { outputFile: 'test-results/results.json' }],
+    ['junit', { outputFile: 'test-results/junit.xml' }]
+  ],
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
-    screenshot: 'only-on-failure'
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure'  // Record video on test failures
   },
 
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
+      use: { 
+        ...devices['Desktop Chrome'],
+        video: process.env.RECORD_VIDEO ? 'on' : 'retain-on-failure'
+      }
     },
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] }
+      use: { 
+        ...devices['Desktop Firefox'],
+        video: process.env.RECORD_VIDEO ? 'on' : 'retain-on-failure'
+      }
     },
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] }
+      use: { 
+        ...devices['Desktop Safari'],
+        video: process.env.RECORD_VIDEO ? 'on' : 'retain-on-failure'
+      }
     }
   ],
 
