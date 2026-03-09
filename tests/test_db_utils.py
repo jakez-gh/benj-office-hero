@@ -27,8 +27,8 @@ def test_create_async_engine_from_env(monkeypatch):
 
 
 def test_enable_rls_and_tenant_column():
-    sql = rls.enable_rls("foo_table")
-    assert "ALTER TABLE foo_table ENABLE ROW LEVEL SECURITY" in sql
+    sql = rls.enable_rls("users")  # Use a whitelisted table name
+    assert "ALTER TABLE users ENABLE ROW LEVEL SECURITY" in sql
     assert "CREATE POLICY tenant_isolation" in sql
 
     col = rls.tenant_id_column()
@@ -99,4 +99,15 @@ def test_get_session_sets_tenant(monkeypatch):
 
     asyncio.run(runner())
     assert executed, "no SQL was executed"
-    assert "SET LOCAL app.tenant_id" in executed[0]
+    # Convert TextClause to string for assertion
+    executed_sql = str(executed[0])
+    assert "SET LOCAL app.tenant_id" in executed_sql
+
+
+def test_rls_whitelist_validation():
+    # Verify that non-whitelisted table names raise ValueError
+    with pytest.raises(ValueError) as exc_info:
+        rls.enable_rls("malicious_table")
+
+    assert "not whitelisted" in str(exc_info.value)
+    assert "malicious_table" in str(exc_info.value)

@@ -33,6 +33,12 @@ async def get_session(
     async with maker() as session:  # type: AsyncSession
         if tenant_id is not None:
             # ``SET LOCAL`` only affects the current transaction/connection.
-            # Use parameterized query to prevent SQL injection.
-            await session.execute(text("SET LOCAL app.tenant_id = :tid"), {"tid": tenant_id})
+            # PostgreSQL SET LOCAL doesn't support prepared statements with asyncpg,
+            # so we escape the value and use execution_options(no_params=True) to send raw SQL.
+            # The tenant_id comes from JWT extraction, so it's already validated as a UUID string.
+            escaped_id = tenant_id.replace("'", "''")  # Simple SQL escape for single quotes
+            stmt = text(f"SET LOCAL app.tenant_id = '{escaped_id}'").execution_options(
+                no_params=True
+            )
+            await session.execute(stmt)
         yield session
