@@ -377,7 +377,7 @@ When handing off to a human or another agent:
 
 Use this for every PR:
 
-```
+```text
 [ ] Title/description references slice or issue
 [ ] CI all green
 [ ] Branch naming convention OK
