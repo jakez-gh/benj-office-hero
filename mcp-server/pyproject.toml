@@ -6,7 +6,8 @@ requires-python = ">=3.11"
 dependencies = [
     "mcp>=1.26",
     "httpx>=0.24",
-    "pydantic>=2.5"
+    "pydantic>=2.5",
+    "pydantic-settings>=2.0"
 ]
 
 [tool.poetry] # placeholder to satisfy some tooling
