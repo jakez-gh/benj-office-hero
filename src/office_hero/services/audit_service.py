@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
@@ -50,7 +51,7 @@ class AuditService:
                 "tenant_id": str(tenant_id),
                 "user_id": str(user_id) if user_id else None,
                 "event_type": event_type,
-                "details": details,
+                "details": json.dumps(details),
                 "request_id": str(request_id),
             },
         )
