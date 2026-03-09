@@ -1,8 +1,7 @@
 import re
 import sys
+import tomllib  # stdlib (Python 3.11+ requirement)
 from pathlib import Path
-
-import toml
 
 
 def test_python_version_matches_adr():
@@ -20,7 +19,8 @@ def test_python_version_matches_adr():
 
     # pyproject check
     pyproject = Path(__file__).parent.parent / "pyproject.toml"
-    data = toml.loads(pyproject.read_text())
+    # use stdlib tomllib (requires Python 3.11+ as per ADR 057)
+    data = tomllib.loads(pyproject.read_text())
     requires = data.get("project", {}).get("requires-python", "")
     assert requires, "pyproject.toml must specify requires-python"
     assert re.search(
