@@ -5,6 +5,46 @@ Format: `## YYYYMMDD` date header followed by brief session notes.
 
 ---
 
+## 20260309 (session 4)
+
+- **Orchestrator session — PR review fix cycle across all 4 open PRs:**
+
+  All fixes applied directly from Orchestrator worktrees (no agent relay required).
+  A temporary `office-hero-slice4` worktree was created for PR #6 fixes, then removed.
+
+  | PR | Branch | CI Before | Changes Applied | CI Outcome |
+  |---|---|---|---|---|
+  | #6 | phase-6/slice-4-implementation | 2 ❌ lint | Fixed `json.dumps(details)` in `audit_service`, moved `_cache` to `self._cache` in `rate_limit_manager`, added `tests/test_rate_limit_manager.py` (100% coverage), fixed bcrypt docstrings, added `.ps1` exclude to `mixed-line-ending` hook, moved `PR_2_DEFECTS_RESOLVED.md` → `docs/llm/` | Triggered; expected ✅ |
+  | #1 | stream/backoffice | 4 ❌ lint+test | Fixed `CryptContext` bcrypt→pbkdf2_sha256 (ADR 060), added `asyncio_mode = "auto"` to pytest config (fixes async fixture errors), replaced all f-string logging with lazy `%s` args, replaced `"completed_at": "now"` sentinel with real ISO timestamp, added `.ps1` exclude to `mixed-line-ending` | Triggered; expected ✅ |
+  | #2 | stream/backend-core | 2 ❌ lint+test | Replaced raw `bcrypt` (`hashpw`/`gensalt`/`checkpw`) with `passlib.CryptContext(pbkdf2_sha256)` (ADR 060), replaced `datetime.utcnow()` with `datetime.now(timezone.utc)` in service and tests, added `.ps1` exclude to `mixed-line-ending` | Triggered; expected ✅ |
+  | #7 | stream/mobile | 2 ❌ lint+test | Moved 8 session/AI-context docs from repo root to `docs/llm/`, fixed `pyproject.toml` build-backend (`_legacy:_Backend` → `setuptools.build_meta`), fixed `catch (err: any)` to `instanceof Error` narrowing in `LoginScreen.tsx`, added two error-path tests (Error instance + non-Error value) to `LoginScreen.test.tsx`, added `.ps1` exclude to `mixed-line-ending` | Triggered; expected ✅ |
+
+- **Root cause pattern identified:** All 4 PRs had the same `mixed-line-ending --fix=lf`
+  pre-commit hook failing in CI because `.ps1` files (marked `eol=crlf` in `.gitattributes`)
+  were being converted, causing exit code 1. Fix applied consistently across all branches:
+  `exclude: '\.(ps1|bat)$'` added to the hook.
+
+- **CI blocker discovered in PR #1 (not flagged in session 3 review):**
+  `passlib==1.7.4` + `bcrypt==5.0.0` breaks (`bcrypt.__about__` removed in v5) and
+  `TestPasswordHashing` hit the bcrypt 72-byte limit. Fixed by switching to
+  `pbkdf2_sha256` (consistent with ADR 060 and phase-6 implementation).
+
+- **CI blocker discovered in PR #7 (not flagged in session 3 review):**
+  `pyproject.toml` build-backend was `setuptools.backends._legacy:_Backend` which does
+  not support editable installs; `pip install -e ".[dev]"` failed in all CI jobs.
+  Fixed to `setuptools.build_meta`.
+
+- **Next steps (pending CI results):**
+  - When PR #6 CI goes green: `gh pr review 6 --approve` then `gh pr merge 6 --squash --delete-branch`
+  - When PR #1 CI goes green: `gh pr review 1 --approve` then `gh pr merge 1 --squash --delete-branch`
+  - When PR #2 CI goes green: `gh pr review 2 --approve` then `gh pr merge 2 --squash --delete-branch`
+  - When PR #7 CI goes green: `gh pr review 7 --approve` then `gh pr merge 7 --squash --delete-branch`
+  - After each merge: confirm with Jake to close the corresponding VS Code instance,
+    then `git worktree remove` + `git branch -d`.
+  - `stream/ai` and `stream/frontend` worktrees remain open — no open PRs yet.
+
+---
+
 ## 20260309 (session 3)
 
 - **Phase 6 (Implementation) — Slice 4 (Observability) complete:**
