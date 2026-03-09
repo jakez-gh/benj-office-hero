@@ -5,6 +5,28 @@ Format: `## YYYYMMDD` date header followed by brief session notes.
 
 ---
 
+## 20260309 (session 3)
+
+- **Phase 6 (Implementation) — Slice 4 (Observability) complete:**
+  - PR #5 (Slice 1–3 QA hardening) merged to main via squash
+  - PR #6 (`phase-6/slice-4-implementation`) rebased onto updated main, force-pushed; CI unblocked
+  - phase-6 cleanup commits: fixed `EXPO_PUBLIC_*` env docs, corrected `Makefile` `run` target,
+    updated `docs/worktrees.md` with hooks rehydration guidance
+  - `stream/backend-core`: SQL injection fix committed — `enable_rls()` now uses `bindparams` with
+    `FORBID_LITERAL_BINDS` so raw table names cannot leak into parameterized queries
+  - Established tooling directive: use `gh` CLI exclusively for all GitHub operations (no GitKraken MCP)
+
+- **Full PR review pass — all 4 open PRs reviewed:**
+
+  | PR | Branch | Key Findings | Verdict |
+  |---|---|---|---|
+  | #6 | phase-6/slice-4-implementation | 🔴 `audit_service.py` details dict not `json.dumps()`-serialized before JSONB INSERT; 🟡 `rate_limit_manager.py` global `_cache` breaks test isolation; 🟡 no `test_rate_limit_manager.py`; 🟡 misleading bcrypt docstring in `hash_password()` | Changes requested |
+  | #2 | stream/backend-core | 🔴 `auth_service.py` uses raw `bcrypt` (intentionally removed dependency); 🟡 `datetime.utcnow()` deprecated (Python 3.12+) in service and tests | Changes requested |
+  | #1 | stream/backoffice | ✅ Saga core clean (StrEnum, dataclasses, Protocol); SagaService compensation/rollback correct; full TDD suite (lifecycle, resilience, idempotency); 🟡 f-string logging (prefer lazy %s); 🟡 `"completed_at": "now"` sentinel should be real ISO timestamp | Approved (minor notes) |
+  | #7 | stream/mobile | 🔴 8 session/status markdown docs committed at repo root — must move to `docs/llm/`; 🟡 `catch (err: any)` needs type-safe narrowing; 🟡 missing login-failure error-path test | Changes requested |
+
+---
+
 ## 20260308 (session 2 - continuation 3 & 4)
 
 - **Phase 5 (Task Breakdown) Complete for ALL Foundation Slices:**
