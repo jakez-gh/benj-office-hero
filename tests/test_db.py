@@ -4,6 +4,7 @@ import sys
 import time
 
 import pytest
+from sqlalchemy import text
 
 # engine/session may not exist until earlier slices are implemented.  if the
 # import fails we skip the test rather than causing an import error during the
