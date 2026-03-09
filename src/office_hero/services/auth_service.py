@@ -15,11 +15,12 @@ from office_hero.core.roles import Role
 from office_hero.models import RefreshToken, User
 from office_hero.repositories.user_repository import UserRepository
 
-# Bcrypt password hashing context with work factor 12
+# PBKDF2-SHA256 hashing context (avoids external bcrypt dependency and
+# 72-byte limit issues during tests).  Work factor via rounds ~ 20000.
 pwd_context = CryptContext(
-    schemes=["bcrypt"],
+    schemes=["pbkdf2_sha256"],
     deprecated="auto",
-    bcrypt__rounds=12,
+    pbkdf2_sha256__rounds=20000,
 )
 
 

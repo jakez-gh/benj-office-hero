@@ -6,12 +6,21 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
+from office_hero.api.exception_handlers import register_exception_handlers
+from office_hero.api.limiter import limiter
 from office_hero.api.middleware.auth import JWTAuthMiddleware
+from office_hero.api.middleware.logging import LoggingMiddleware
+from office_hero.api.middleware.security_headers import SecurityHeadersMiddleware
 from office_hero.api.middleware.tenant import TenantContextMiddleware
 from office_hero.api.routes import auth as auth_routes
+from office_hero.api.routes import health as health_routes
 from office_hero.api.state import set_auth_service, set_engine
 from office_hero.core.config import Settings, get_settings
+from office_hero.core.logging import configure_logging
 from office_hero.db.engine import create_async_engine
 from office_hero.services.auth_service import AuthService
 
@@ -19,7 +28,8 @@ from office_hero.services.auth_service import AuthService
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage app lifecycle: startup and shutdown."""
-    # Startup
+    configure_logging()
+
     settings = get_settings()
     engine = create_async_engine(settings.database_url)
     auth_service = AuthService(settings)
@@ -29,7 +39,6 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # Shutdown
     if engine:
         await engine.dispose()
 
@@ -53,29 +62,43 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Add CORS middleware
+    # Attach rate limiter to app state
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+    # Register domain exception handlers (before middleware so they apply globally)
+    register_exception_handlers(app)
+
+    # Middleware stack — added in reverse execution order (last added = outermost)
+    # Execution order: CORS → security headers → auth → logging → tenant → handler
+
+    # Innermost: tenant RLS context (needs auth state set first)
+    app.add_middleware(TenantContextMiddleware)
+
+    # Logging middleware (needs request_id + tenant from auth)
+    app.add_middleware(LoggingMiddleware)
+
+    # JWT auth middleware (sets request.state.user_id/tenant_id/role)
+    auth_service = AuthService(settings)
+    app.add_middleware(JWTAuthMiddleware, auth_service=auth_service)
+
+    # Security headers on all responses
+    app.add_middleware(SecurityHeadersMiddleware)
+
+    # CORS outermost
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # In production, restrict to specific origins
+        allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
-    # Add tenant RLS context middleware
-    app.add_middleware(TenantContextMiddleware)
+    # slowapi middleware
+    app.add_middleware(SlowAPIMiddleware)
 
-    # Add JWT auth middleware
-    auth_service = AuthService(settings)
-    app.add_middleware(JWTAuthMiddleware, auth_service=auth_service)
-
-    # Add health check endpoint
-    @app.get("/health")
-    async def health_check():
-        """Simple health check endpoint."""
-        return {"status": "ok"}
-
-    # Include auth routes
+    # Routes
+    app.include_router(health_routes.router)
     app.include_router(auth_routes.router)
 
     return app
