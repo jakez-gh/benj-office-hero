@@ -1,11 +1,7 @@
 import fetch from 'cross-fetch';
 import type { LoginResponse, Route, AcknowledgeResponse } from '@office-hero/types';
 
-// Support both Expo (EXPO_PUBLIC_*) and standard Node env vars
-const BASE_URL = (globalThis as any).__EXPO_PUBLIC_OFFICE_HERO_API_URL ||
-                 process.env.EXPO_PUBLIC_OFFICE_HERO_API_URL ||
-                 process.env.OFFICE_HERO_API_URL ||
-                 'http://localhost:8000';
+const BASE_URL = process.env.OFFICE_HERO_API_URL || 'http://localhost:8000';
 
 export interface Credentials {
   username: string;
@@ -13,7 +9,7 @@ export interface Credentials {
 }
 
 export async function login(creds: Credentials): Promise<LoginResponse> {
-  const resp = await fetch(BASE_URL + '/auth/login', {
+  const resp = await fetch(BASE_URL + '/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(creds),

@@ -31,7 +31,14 @@ the detailed design for one vertical slice before implementation begins (Phase 4
 
 | File | Slice | Status |
 | ---- | ----- | ------ |
-| `001-slice.example.md` | — | Example only — delete when creating first real slice |
+| `001-slice.example.md` | — | Example only (reference) |
+| `004-slice.python-scaffold.md` | 1 + 1a | in_progress |
+| `005-slice.database-foundation.md` | 2 | in_progress |
+| `006-slice.auth-rbac.md` | 3 | not_started |
+| `007-slice.observability.md` | 4 | not_started |
+| `008-slice.frontend-scaffold.md` | 5 | not_started |
+| `009-slice.admin-web-shell.md` | 5a | not_started |
+| `010-slice.mobile-scaffold.md` | 6 | not_started |
 
 ## When to create a slice file
 

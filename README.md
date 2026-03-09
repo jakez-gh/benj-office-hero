@@ -61,7 +61,15 @@ pre-commit run --all-files       # any platform
 
 ## CI/CD
 
-GitHub Actions pipeline on every push and PR:
+| Gate | Tool | When |
+|------|------|------|
+| Markdown lint | markdownlint | commit |
+| Python format | black | commit |
+| Python lint | ruff | commit |
+| File hygiene | pre-commit-hooks | commit |
+| Security scan | bandit | push |
+| Unit tests (includes ADR compliance checks) | pytest | CI |
+| Coverage | pytest-cov | CI |
 
 - **Linting** — TypeScript, ESLint, Prettier, markdownlint
 - **Security** — Bandit static analysis
