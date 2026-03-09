@@ -16,7 +16,7 @@ from office_hero.models import RefreshToken, User
 from office_hero.repositories.user_repository import UserRepository
 
 # PBKDF2-SHA256 hashing context (avoids external bcrypt dependency and
-# 72-byte limit issues during tests).  Work factor via rounds ~ 20000.
+# 72-byte limit issues during tests). Work factor via rounds ~ 20000.
 pwd_context = CryptContext(
     schemes=["pbkdf2_sha256"],
     deprecated="auto",

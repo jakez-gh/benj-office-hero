@@ -5,6 +5,68 @@ Format: `## YYYYMMDD` date header followed by brief session notes.
 
 ---
 
+## 20260309 (session 4)
+
+- **Orchestrator session — PR review fix cycle across all 4 open PRs:**
+
+  All fixes applied directly from Orchestrator worktrees (no agent relay required).
+  A temporary `office-hero-slice4` worktree was created for PR #6 fixes, then removed.
+
+  | PR | Branch | CI Before | Changes Applied | CI Outcome |
+  |---|---|---|---|---|
+  | #6 | phase-6/slice-4-implementation | 2 ❌ lint | Fixed `json.dumps(details)` in `audit_service`, moved `_cache` to `self._cache` in `rate_limit_manager`, added `tests/test_rate_limit_manager.py` (100% coverage), fixed bcrypt docstrings, added `.ps1` exclude to `mixed-line-ending` hook, moved `PR_2_DEFECTS_RESOLVED.md` → `docs/llm/` | Triggered; expected ✅ |
+  | #1 | stream/backoffice | 4 ❌ lint+test | Fixed `CryptContext` bcrypt→pbkdf2_sha256 (ADR 060), added `asyncio_mode = "auto"` to pytest config (fixes async fixture errors), replaced all f-string logging with lazy `%s` args, replaced `"completed_at": "now"` sentinel with real ISO timestamp, added `.ps1` exclude to `mixed-line-ending` | Triggered; expected ✅ |
+  | #2 | stream/backend-core | 2 ❌ lint+test | Replaced raw `bcrypt` (`hashpw`/`gensalt`/`checkpw`) with `passlib.CryptContext(pbkdf2_sha256)` (ADR 060), replaced `datetime.utcnow()` with `datetime.now(timezone.utc)` in service and tests, added `.ps1` exclude to `mixed-line-ending` | Triggered; expected ✅ |
+  | #7 | stream/mobile | 2 ❌ lint+test | Moved 8 session/AI-context docs from repo root to `docs/llm/`, fixed `pyproject.toml` build-backend (`_legacy:_Backend` → `setuptools.build_meta`), fixed `catch (err: any)` to `instanceof Error` narrowing in `LoginScreen.tsx`, added two error-path tests (Error instance + non-Error value) to `LoginScreen.test.tsx`, added `.ps1` exclude to `mixed-line-ending` | Triggered; expected ✅ |
+
+- **Root cause pattern identified:** All 4 PRs had the same `mixed-line-ending --fix=lf`
+  pre-commit hook failing in CI because `.ps1` files (marked `eol=crlf` in `.gitattributes`)
+  were being converted, causing exit code 1. Fix applied consistently across all branches:
+  `exclude: '\.(ps1|bat)$'` added to the hook.
+
+- **CI blocker discovered in PR #1 (not flagged in session 3 review):**
+  `passlib==1.7.4` + `bcrypt==5.0.0` breaks (`bcrypt.__about__` removed in v5) and
+  `TestPasswordHashing` hit the bcrypt 72-byte limit. Fixed by switching to
+  `pbkdf2_sha256` (consistent with ADR 060 and phase-6 implementation).
+
+- **CI blocker discovered in PR #7 (not flagged in session 3 review):**
+  `pyproject.toml` build-backend was `setuptools.backends._legacy:_Backend` which does
+  not support editable installs; `pip install -e ".[dev]"` failed in all CI jobs.
+  Fixed to `setuptools.build_meta`.
+
+- **Next steps (pending CI results):**
+  - When PR #6 CI goes green: `gh pr review 6 --approve` then `gh pr merge 6 --squash --delete-branch`
+  - When PR #1 CI goes green: `gh pr review 1 --approve` then `gh pr merge 1 --squash --delete-branch`
+  - When PR #2 CI goes green: `gh pr review 2 --approve` then `gh pr merge 2 --squash --delete-branch`
+  - When PR #7 CI goes green: `gh pr review 7 --approve` then `gh pr merge 7 --squash --delete-branch`
+  - After each merge: confirm with Jake to close the corresponding VS Code instance,
+    then `git worktree remove` + `git branch -d`.
+  - `stream/ai` and `stream/frontend` worktrees remain open — no open PRs yet.
+
+---
+
+## 20260309 (session 3)
+
+- **Phase 6 (Implementation) — Slice 4 (Observability) complete:**
+  - PR #5 (Slice 1–3 QA hardening) merged to main via squash
+  - PR #6 (`phase-6/slice-4-implementation`) rebased onto updated main, force-pushed; CI unblocked
+  - phase-6 cleanup commits: fixed `EXPO_PUBLIC_*` env docs, corrected `Makefile` `run` target,
+    updated `docs/worktrees.md` with hooks rehydration guidance
+  - `stream/backend-core`: SQL injection fix committed — `enable_rls()` now uses `bindparams` with
+    `FORBID_LITERAL_BINDS` so raw table names cannot leak into parameterized queries
+  - Established tooling directive: use `gh` CLI exclusively for all GitHub operations (no GitKraken MCP)
+
+- **Full PR review pass — all 4 open PRs reviewed:**
+
+  | PR | Branch | Key Findings | Verdict |
+  |---|---|---|---|
+  | #6 | phase-6/slice-4-implementation | 🔴 `audit_service.py` details dict not `json.dumps()`-serialized before JSONB INSERT; 🟡 `rate_limit_manager.py` global `_cache` breaks test isolation; 🟡 no `test_rate_limit_manager.py`; 🟡 misleading bcrypt docstring in `hash_password()` | Changes requested |
+  | #2 | stream/backend-core | 🔴 `auth_service.py` uses raw `bcrypt` (intentionally removed dependency); 🟡 `datetime.utcnow()` deprecated (Python 3.12+) in service and tests | Changes requested |
+  | #1 | stream/backoffice | ✅ Saga core clean (StrEnum, dataclasses, Protocol); SagaService compensation/rollback correct; full TDD suite (lifecycle, resilience, idempotency); 🟡 f-string logging (prefer lazy %s); 🟡 `"completed_at": "now"` sentinel should be real ISO timestamp | Approved (minor notes) |
+  | #7 | stream/mobile | 🔴 8 session/status markdown docs committed at repo root — must move to `docs/llm/`; 🟡 `catch (err: any)` needs type-safe narrowing; 🟡 missing login-failure error-path test | Changes requested |
+
+---
+
 ## 20260308 (session 2 - continuation 3 & 4)
 
 - **Phase 5 (Task Breakdown) Complete for ALL Foundation Slices:**
