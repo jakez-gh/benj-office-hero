@@ -34,6 +34,7 @@ pnpm exec playwright test
 ```
 
 **Output:**
+
 - Test report: `apps/admin-web/playwright-report/index.html`
 - Videos (on failure): `apps/admin-web/test-results/`
 - JSON results: `apps/admin-web/test-results/results.json`
@@ -50,6 +51,7 @@ pnpm exec playwright test --ui
 ```
 
 This opens an interactive browser where you can:
+
 - Run individual tests
 - Step through code execution
 - Inspect page elements
@@ -69,6 +71,7 @@ RECORD_VIDEO=on pnpm exec playwright test --project=chromium
 ## Demo Recording Script
 
 The demo recording script automatically:
+
 1. Logs in with test user
 2. Navigates through all pages
 3. Tests hook rehydration (page reload)
@@ -86,6 +89,7 @@ pnpm demo
 ```
 
 **Output:**
+
 - Video: `apps/admin-web/demo-recordings/demo-YYYY-MM-DD...webm`
 - Screenshots: `apps/admin-web/demo-recordings/screenshots-YYYY-MM-DD.../`
 
@@ -125,7 +129,7 @@ The most important tests that verify proper hook design:
 ### Authentication Flow Tests
 
 1. **Valid Credentials**
-   - Email: test@example.com
+   - Email: <test@example.com>
    - Password: password123
    - Expected: Redirect to /jobs
 
@@ -141,6 +145,7 @@ The most important tests that verify proper hook design:
 ### Navigation Tests
 
 All pages accessible when authenticated:
+
 - /jobs
 - /dispatch
 - /vehicles
@@ -161,6 +166,7 @@ pnpm exec playwright test --project=chromium --project=firefox
 **GitHub workflow:** `.github/workflows/frontend-ci.yml`
 
 Tests run on:
+
 - Every push to main/develop branches
 - Every pull request
 - Manual trigger via GitHub Actions tab
@@ -202,6 +208,7 @@ pnpm exec playwright show-trace trace.zip
 ### Video Not Generating
 
 Video recording requires:
+
 - Playwright browsers to be installed: `pnpm exec playwright install`
 - Sufficient disk space
 - Proper permissions in demo-recordings directory
@@ -303,6 +310,7 @@ CI=true pnpm test:e2e
 ### Writing New Tests
 
 1. **Use semantic locators**
+
    ```typescript
    // ✓ Good
    page.getByRole('button', { name: /login/i })
@@ -314,6 +322,7 @@ CI=true pnpm test:e2e
    ```
 
 2. **Wait for state changes**
+
    ```typescript
    // ✓ Good
    await expect(page).toHaveURL('/jobs')
@@ -325,6 +334,7 @@ CI=true pnpm test:e2e
    ```
 
 3. **Test user journeys, not implementation**
+
    ```typescript
    // ✓ Good: User perspective
    await page.getByLabel(/email/).fill('test@example.com')
