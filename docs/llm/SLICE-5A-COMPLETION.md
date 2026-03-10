@@ -6,32 +6,37 @@
 ## Work Completed This Session
 
 ### Backend Integration (Task 5a.9)
+
 ✅ **COMPLETE**
 
-- Successfully started FastAPI backend on http://localhost:8000
+- Successfully started FastAPI backend on <http://localhost:8000>
 - Configured PostgreSQL connection via Django async PostgreSQL driver (`postgresql+asyncpg://`)
 - Initialized database schema using SQLAlchemy ORM models
 - Created test database with:
   - Tenant: "Test Company"
-  - User: test@example.com / password123
+  - User: <test@example.com> / password123
 - Verified health endpoint responds: `{"status":"unhealthy","db":"ok","ors":"error"}`
 - Backend auth endpoints ready for testing
 
 **Files Created:**
+
 - `C:\Users\jake\dev\office-hero-backend-core\init_testdata.py` - Database initialization script
 
 ### Frontend Integration
+
 ✅ **COMPLETE**
 
-- Vite dev server running on http://localhost:3000
+- Vite dev server running on <http://localhost:3000>
 - LoginPage component connected to backend auth endpoints via Vite proxy
-- /api route proxied to http://localhost:8000 via vite.config.ts
-- Test credentials available: test@example.com / password123
+- /api route proxied to <http://localhost:8000> via vite.config.ts
+- Test credentials available: <test@example.com> / password123
 
 ### Deployment Infrastructure (Task 5a.10)
+
 ✅ **COMPLETE**
 
 **Files Created:**
+
 - `Dockerfile` - Multi-stage production build
   - Builder: Node 20 Alpine with pnpm and build steps
   - Production: Serves dist/ via `serve` package
@@ -47,6 +52,7 @@
 - `.env.example` - Updated with VITE_API_BASE_URL for Fly deployment
 
 ### Documentation (Task 5a.11)
+
 ✅ **COMPLETE**
 
 - Updated `project-documents/user/tasks/009-tasks.admin-web-shell.md`
@@ -67,11 +73,13 @@ Role: admin
 ## Access Points
 
 **Local Development:**
-- Frontend: http://localhost:3000
-- Backend: http://localhost:8000
-- Backend API Docs: http://localhost:8000/docs
+
+- Frontend: <http://localhost:3000>
+- Backend: <http://localhost:8000>
+- Backend API Docs: <http://localhost:8000/docs>
 
 **Docker/Fly.io (ready to deploy):**
+
 ```bash
 # Build production image
 docker build -t office-hero-admin-web:latest .
@@ -84,7 +92,7 @@ flyctl deploy
 
 ✅ Backend running and responding to health checks  
 ✅ Frontend dev server running with Vite  
-✅ API proxy configured (/api → http://localhost:8000)  
+✅ API proxy configured (/api → <http://localhost:8000>)  
 ✅ Test database initialized with schema and test user  
 ✅ Auth context prepared with 401 → refresh retry flow  
 ✅ LoginPage component ready for manual testing  
@@ -93,6 +101,7 @@ flyctl deploy
 ## Configuration Files
 
 ### fly.toml
+
 ```toml
 app = "office-hero-admin-web"
 primary_region = "sjc"
@@ -103,6 +112,7 @@ primary_region = "sjc"
 ```
 
 ### Dockerfile
+
 ```dockerfile
 # Multi-stage build with Node 20 Alpine
 # Builder stage: installs deps, runs pnpm build
@@ -110,6 +120,7 @@ primary_region = "sjc"
 ```
 
 ### vite.config.ts (existing)
+
 ```typescript
 server: {
   proxy: {
@@ -124,7 +135,7 @@ server: {
 
 ## Next Steps (Outside This Session)
 
-1. **Manual Testing:** Open http://localhost:3000 and test login
+1. **Manual Testing:** Open <http://localhost:3000> and test login
 2. **E2E Tests:** Run `pnpm -F admin-web exec playwright test`
 3. **Backend Deployment:** Deploy backend to Fly.io with backend-core Dockerfile
 4. **Frontend Deployment:** Update VITE_API_BASE_URL in fly.toml to backend URL, then `flyctl deploy`
@@ -153,6 +164,7 @@ server: {
 ## Technical Details
 
 **Frontend Stack:**
+
 - React 18.3.1 + React Router 6.30.3
 - Vite 7.3.1 with HMR
 - Axios with response interceptors
@@ -160,12 +172,14 @@ server: {
 - Jest + Vitest + Playwright testing
 
 **Backend Stack:**
+
 - FastAPI with Uvicorn on :8000
 - PostgreSQL 15 (Docker container)
 - JWT Auth with RS256
 - SQLAlchemy async ORM
 
 **Infrastructure:**
+
 - Docker multi-stage builds
 - Fly.io serverless deployment
 - GitHub Actions CI/CD ready
