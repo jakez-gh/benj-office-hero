@@ -3,6 +3,8 @@ import sys
 
 import pytest
 
+pytest.importorskip("mcp", reason="mcp package not installed — run from mcp-server/")
+
 try:
     from fastapi import FastAPI
     from fastapi.testclient import TestClient

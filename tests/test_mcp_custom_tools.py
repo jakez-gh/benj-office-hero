@@ -1,5 +1,9 @@
 import asyncio
 
+import pytest
+
+pytest.importorskip("mcp", reason="mcp package not installed — run from mcp-server/")
+
 from office_hero_mcp.client import client
 from office_hero_mcp.tools.custom import health, routing
 

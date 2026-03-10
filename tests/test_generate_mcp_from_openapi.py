@@ -3,6 +3,9 @@ import sys
 from typing import Any
 
 import pytest
+
+pytest.importorskip("mcp", reason="mcp package not installed — run from mcp-server/")
+
 from office_hero_mcp.client import client
 from pydantic import ValidationError
 

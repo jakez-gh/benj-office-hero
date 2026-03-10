@@ -1,5 +1,9 @@
 import asyncio
 
+import pytest
+
+pytest.importorskip("mcp", reason="mcp package not installed — run from mcp-server/")
+
 from office_hero_mcp.server import load_tools, server
 
 
