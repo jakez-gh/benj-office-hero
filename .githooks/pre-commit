@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # pre-commit hook — managed by repository
 # Run once to activate: bash scripts/setup-dev.sh
 # Or: git config core.hooksPath .githooks
