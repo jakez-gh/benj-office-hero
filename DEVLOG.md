@@ -5,6 +5,52 @@ Format: `## YYYYMMDD` date header followed by brief session notes.
 
 ---
 
+## 20260309 (session 4 — continued: conflict resolution + final merges)
+
+- **All 4 open PRs successfully merged into main.** Extended resolution required after PR
+  #1 merged mid-session, causing cascading conflicts in PRs #2, #6, and #7.
+
+  **Final main commits (in merge order):**
+  | SHA | PR | Branch |
+  |---|---|---|
+  | `e65965a` | #1 | stream/backoffice — Back-Office Service, BackOfficeAdapter, Saga foundation |
+  | `3c4048d` | #6 | phase-6/slice-4-implementation — Observability, rate limiting, audit events |
+  | `462ec6d` | #7 | stream/mobile — Phase 2 E2E testing, rehydration infrastructure |
+  | `2a4a9ee` | #2 | stream/backend-core — Database foundation, auth/RBAC infrastructure |
+
+- **Merge strategy used throughout:** `git merge -X theirs origin/main` to accept
+  main's version for all conflict files while preserving each branch's unique additions.
+
+- **PR #2 (backend-core) fixes required across 4 rounds:**
+  1. `setuptools.build_meta` + ruff UTC aliases + missing SQLAlchemy/passlib deps
+  2. Merge with main (PR #1 merged) — `text` import fix in test_db.py
+  3. Missing DB layer abstractions needed by test_db_utils.py:
+     - `engine.py`: `_create_async_engine` module alias (monkeypatch target)
+     - `rls.py`: `enable_rls()` (whitelisted-table guard), `tenant_id_column()`
+     - `session.py`: expose `async_sessionmaker`; add `tenant_id` param; `SET LOCAL`
+       via f-string (asyncpg rejects parameterized `SET LOCAL`); remove explicit `commit()`
+     - `test_auth.py`: replaced `AuthService(private_key, ...)` interface with
+       `_TestSettings` stub + `issue_jwt` / `validate_jwt`; `Role.User → Role.Technician`
+  4. black reformat `rls.py`; re-merge with main after PRs #6 and #7 merged
+
+- **Key technical learnings:**
+  - asyncpg does not support bind parameter placeholders (`$1`) in `SET LOCAL` →
+    must use string interpolation (safe for UUID values)
+  - `async_sessionmaker` session context manager handles lifecycle; explicit
+    `await session.commit()` inside `get_session` breaks test-doubles
+  - When exposing a SQLAlchemy factory for monkeypatching, the function body must
+    reference the module-level alias name (not the imported-as binding), so
+    `setattr(module, "alias", fake)` takes effect at call time
+
+- **Worktrees remaining (need manual cleanup):**
+  - `../office-hero-backoffice` (stream/backoffice) — requires VS Code window close
+  - `../office-hero-slice4` (phase-6/slice-4-implementation) — can be removed now
+  - `../office-hero-backend-core` (stream/backend-core) — can be removed now
+  - `../office-hero-mobile` (stream/mobile) — can be removed now
+  - `stream/ai` and `stream/frontend` — open, no PR yet
+
+---
+
 ## 20260309 (session 4)
 
 - **Orchestrator session — PR review fix cycle across all 4 open PRs:**
