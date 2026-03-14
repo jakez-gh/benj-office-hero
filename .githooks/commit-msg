@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # commit-msg hook — managed by repository
 # Reserved for future commit-message validation (e.g. commitlint, Conventional Commits).
 # No hooks are currently configured for the commit-msg stage in .pre-commit-config.yaml.
