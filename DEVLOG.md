@@ -11,6 +11,7 @@ Format: `## YYYYMMDD` date header followed by brief session notes.
   #1 merged mid-session, causing cascading conflicts in PRs #2, #6, and #7.
 
   **Final main commits (in merge order):**
+
   | SHA | PR | Branch |
   |---|---|---|
   | `e65965a` | #1 | stream/backoffice — Back-Office Service, BackOfficeAdapter, Saga foundation |

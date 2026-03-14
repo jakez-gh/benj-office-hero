@@ -7,9 +7,28 @@ on:
     branches: ["**"]
 
 jobs:
+  sync-check:
+    name: Branch up-to-date check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: fetch main
+        run: git fetch origin main
+      - name: check behind
+        run: |
+          behind=$(git rev-list --left-right --count origin/main...HEAD | awk '{print $1}')
+          echo "behind=$behind"
+          if [ "$behind" -ne 0 ]; then
+            echo "Branch is behind main by $behind commit(s); merge latest main before proceeding.";
+            exit 1
+          fi
+
   lint:
     name: Lint & format
     runs-on: ubuntu-latest
+    needs: sync-check
     steps:
       - uses: actions/checkout@v4
 
