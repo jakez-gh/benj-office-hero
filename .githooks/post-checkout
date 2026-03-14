@@ -1,0 +1,32 @@
+#!/bin/bash
+# post-checkout hook — ensure environment is ready after branch changes
+
+set -e
+
+# Source the common functions if available
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Check if we're on an interactive terminal
+if [ -t 1 ]; then
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    NC='\033[0m'
+else
+    GREEN=''
+    YELLOW=''
+    NC=''
+fi
+
+echo -e "${YELLOW}🔧 Post-checkout: Verifying project state...${NC}"
+
+# Check if dependencies need updating
+if [ -f ".env.local" ]; then
+    echo -e "${GREEN}✅ Environment file present${NC}"
+else
+    echo -e "${YELLOW}ℹ️  .env.local missing (expected for development)${NC}"
+fi
+
+# Suggest running install if node_modules is out of sync
+if [ -f "package.json" ] && [ ! -d "node_modules" ]; then
+    echo -e "${YELLOW}⚠️  Run 'pnpm install' to restore dependencies${NC}"
+fi

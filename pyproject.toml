@@ -16,6 +16,8 @@ dependencies = [
     "python-jose[cryptography]>=3.3",
     "passlib[bcrypt]>=1.7",
     "slowapi>=0.1",
+    "structlog>=24.0",
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]
