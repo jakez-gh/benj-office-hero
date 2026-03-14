@@ -16,9 +16,10 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
     try {
       const res = await login({ username, password });
       onLogin(res.token);
-    } catch (err: any) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       console.error(err);
-      Alert.alert('Login failed', err.message || String(err));
+      Alert.alert('Login failed', message);
     } finally {
       setBusy(false);
     }

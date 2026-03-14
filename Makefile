@@ -46,3 +46,19 @@ clean:
 	find . -name "*.pyc" -delete 2>/dev/null || true
 	find . -name coverage.xml -delete 2>/dev/null || true
 	find . -name .coverage -delete 2>/dev/null || true
+
+# database convenience targets
+
+# Apply all pending Alembic migrations using the DATABASE_URL environment variable
+# (the URL must point to the desired database or branch). This target is a no-op
+# when the schema is already up-to-date.
+db-migrate:
+	alembic upgrade head
+
+# Open a psql shell connected to DATABASE_URL.  Requires the `psql` client to
+# be installed and on PATH.  Use ``make db-shell`` after exporting
+# DATABASE_URL to explore the test/production database.
+db-shell:
+	@python -c "import os, subprocess, sys; url=os.environ.get('DATABASE_URL');
+	if not url: sys.exit('DATABASE_URL not set');
+	subprocess.run(['psql', url])"
