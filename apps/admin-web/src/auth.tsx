@@ -2,7 +2,7 @@ import React, { createContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { client } from '@office-hero/api-client';
 import { login as apiLogin, refresh as apiRefresh, LoginRequest, AuthUser } from '@office-hero/api-client';
-import type { AxiosError } from 'axios';
+import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 interface AuthContextType {
   token: string | null;
@@ -23,9 +23,24 @@ export const AuthContext = createContext<AuthContextType>({
 let isRefreshing = false;
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(null);
-  const [refreshToken, setRefreshToken] = useState<string | null>(null);
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [token, setToken] = useState<string | null>(() => {
+    const stored = localStorage.getItem('access_token');
+    if (stored) {
+      client.defaults.headers.common['Authorization'] = `Bearer ${stored}`;
+    }
+    return stored;
+  });
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        return JSON.parse(storedUser) as AuthUser;
+      } catch {
+        localStorage.removeItem('user');
+      }
+    }
+    return null;
+  });
   const [isRefreshingState, setIsRefreshing] = useState(false);
 
   // Setup axios interceptor to handle 401 and refresh token
@@ -33,7 +48,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const interceptor = client.interceptors.response.use(
       response => response,
       async (error: AxiosError) => {
-        const originalRequest = error.config as any;
+        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
         // Only retry once per request
         if (error.response?.status === 401 && !originalRequest._retry) {
@@ -66,7 +81,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('refresh_token');
                 setToken(null);
-                setRefreshToken(null);
                 setUser(null);
                 isRefreshing = false;
                 setIsRefreshing(false);
@@ -93,33 +107,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
-  useEffect(() => {
-    const stored = localStorage.getItem('access_token');
-    const storedRefresh = localStorage.getItem('refresh_token');
-    const storedUser = localStorage.getItem('user');
-    if (stored) {
-      setToken(stored);
-      client.defaults.headers.common['Authorization'] = `Bearer ${stored}`;
-    }
-    if (storedRefresh) {
-      setRefreshToken(storedRefresh);
-    }
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        localStorage.removeItem('user');
-      }
-    }
-  }, []);
-
   const login = async (creds: LoginRequest) => {
     const data = await apiLogin(creds);
     localStorage.setItem('access_token', data.access_token);
     localStorage.setItem('refresh_token', data.refresh_token);
     localStorage.setItem('user', JSON.stringify(data.user));
     setToken(data.access_token);
-    setRefreshToken(data.refresh_token);
     setUser(data.user);
     client.defaults.headers.common['Authorization'] = `Bearer ${data.access_token}`;
   };
@@ -129,7 +122,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
     setToken(null);
-    setRefreshToken(null);
     setUser(null);
     delete client.defaults.headers.common['Authorization'];
   };

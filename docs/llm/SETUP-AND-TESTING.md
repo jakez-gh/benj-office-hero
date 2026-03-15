@@ -91,7 +91,7 @@ useEffect(() => {
   const stored = localStorage.getItem('access_token');
   const storedRefresh = localStorage.getItem('refresh_token');
   const storedUser = localStorage.getItem('user');
-  
+
   if (stored) {
     setToken(stored);
     client.defaults.headers.common['Authorization'] = `Bearer ${stored}`;
@@ -113,7 +113,7 @@ useEffect(() => {
       // ...
     }
   );
-  
+
   // Cleanup: remove interceptor on unmount
   return () => {
     client.interceptors.response.eject(interceptor);
@@ -420,5 +420,5 @@ pnpm format                           # Auto-format code
 
 ---
 
-**Last Updated:** March 9, 2026  
+**Last Updated:** March 9, 2026
 **Status:** Production Ready ✅
