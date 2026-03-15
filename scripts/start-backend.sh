@@ -9,7 +9,7 @@
 #
 # Prerequisites:
 #   1. Copy .env.example to .env and fill in real values
-#   2. Run: pip install -e ".[dev]"
+#   2. Run: poetry install --with dev
 #
 # Usage:
 #   bash scripts/start-backend.sh          # random port
@@ -86,7 +86,6 @@ pick_random_port() {
 BACKEND_PORT="${BACKEND_PORT:-$(pick_random_port)}"
 
 # ── Start server ─────────────────────────────────────────────────────────────
-export PYTHONPATH="$PROJECT_ROOT/src"
 
 echo ""
 echo "🚀 Starting Office Hero API on http://127.0.0.1:${BACKEND_PORT}"
@@ -94,7 +93,7 @@ echo "   Docs:   http://127.0.0.1:${BACKEND_PORT}/docs"
 echo "   Health: http://127.0.0.1:${BACKEND_PORT}/health"
 echo ""
 
-python -m uvicorn office_hero.main:app --reload --host 127.0.0.1 --port "$BACKEND_PORT" &
+poetry run uvicorn office_hero.main:app --reload --host 127.0.0.1 --port "$BACKEND_PORT" &
 BACKEND_PID=$!
 
 # Write PID file so hooks / other scripts can find & kill us
