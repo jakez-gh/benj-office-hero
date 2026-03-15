@@ -21,11 +21,16 @@ def test_python_version_matches_adr():
     pyproject = Path(__file__).parent.parent / "pyproject.toml"
     # use stdlib tomllib (requires Python 3.11+ as per ADR 057)
     data = tomllib.loads(pyproject.read_text())
+    # Support both PEP 621 [project] and Poetry [tool.poetry.dependencies]
     requires = data.get("project", {}).get("requires-python", "")
-    assert requires, "pyproject.toml must specify requires-python"
+    if not requires:
+        requires = (
+            data.get("tool", {}).get("poetry", {}).get("dependencies", {}).get("python", "")
+        )
+    assert requires, "pyproject.toml must specify python version (requires-python or poetry python)"
     assert re.search(
         r"3\.11", requires
-    ), "pyproject.toml requires-python should include '3.11' per ADR057"
+    ), "pyproject.toml python constraint should include '3.11' per ADR057"
 
     # Dockerfile check (if the repo has one)
     dockerfile = Path(__file__).parent.parent / "Dockerfile"

@@ -13,10 +13,10 @@ help:
 	@echo "  make clean      Remove build/cache artifacts"
 
 install:
-	pip install -e .
+	poetry install --no-root
 
 dev:
-	pip install -e ".[dev]"
+	poetry install
 	git config core.hooksPath .githooks
 	python -c "import stat, pathlib; [f.chmod(f.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) for f in pathlib.Path('.githooks').iterdir() if f.is_file() and not f.name.startswith('.')]"
 	python -c "import stat, pathlib; [f.chmod(f.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) for f in pathlib.Path('scripts').iterdir() if f.suffix == '.sh']"
@@ -25,16 +25,14 @@ run:
 	bash scripts/start-backend.sh
 
 test:
-	python -m pytest -q --tb=short
+	poetry run pytest -q --tb=short
 
 lint:
-	python -m pre_commit run --all-files
+	poetry run pre-commit run --all-files
 
 security:
 	@echo "--- bandit ---"
-	python -m bandit -r src -ll
-	@echo "--- pip-audit ---"
-	python -m pip_audit --desc
+	poetry run bandit -r src -ll
 
 qa: lint security test
 	@echo "All quality gates passed."
@@ -53,7 +51,7 @@ clean:
 # (the URL must point to the desired database or branch). This target is a no-op
 # when the schema is already up-to-date.
 db-migrate:
-	alembic upgrade head
+	poetry run alembic upgrade head
 
 # Open a psql shell connected to DATABASE_URL.  Requires the `psql` client to
 # be installed and on PATH.  Use ``make db-shell`` after exporting

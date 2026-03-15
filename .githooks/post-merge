@@ -1,133 +1,107 @@
-#!/bin/bash
-# post-merge hook — ensure backend is running after git operations
-# This runs after merge/rebase/pull to verify the backend server is available
+#!/usr/bin/env bash
+# post-merge hook — auto-launch backend + frontend on deploy.
+#
+# Behaviour:
+#   1. Kill any existing Office Hero servers (backend + admin-web)
+#   2. Install dependencies (poetry + pnpm)
+#   3. Start backend on a random available port
+#   4. Start admin-web dev server on random port (Vite port: 0)
+#   5. Write .server-ports file with actual ports for dev tooling
+#
+# Triggered automatically when:
+#   - git merge (post-merge hook)
+#   - git pull  (which runs merge internally)
 
-set -e
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+PORTS_FILE="$ROOT/.server-ports"
+PID_FILE="$ROOT/.server-pids"
 
 # Color output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-BACKEND_PORT=8000
-BACKEND_TIMEOUT=10
+echo -e "${YELLOW}🔄 post-merge hook: restarting servers...${NC}"
 
-# Function to check if backend is running
-backend_running() {
-    if command -v curl > /dev/null; then
-        curl -s http://localhost:$BACKEND_PORT/health > /dev/null 2>&1
-        return $?
-    else
-        netstat -tuln 2>/dev/null | grep -q ":$BACKEND_PORT " 2>/dev/null
-        return $?
-    fi
-}
-
-# Function to start backend
-start_backend() {
-    echo -e "${YELLOW}ℹ️  Backend not running. Starting...${NC}"
-
-    # Look for backend in common locations
-    if [ -d "../../office-hero-backend-core" ]; then
-        BACKEND_DIR="../../office-hero-backend-core"
-    elif [ -d "../office-hero-backend-core" ]; then
-        BACKEND_DIR="../office-hero-backend-core"
-    elif [ -d "office-hero-backend-core" ]; then
-        BACKEND_DIR="office-hero-backend-core"
-    else
-        echo -e "${RED}❌ Backend directory not found${NC}"
-        return 1
-    fi
-
-    if [ -f "$BACKEND_DIR/start_backend.ps1" ]; then
-        # PowerShell on Windows
-        powershell -File "$BACKEND_DIR/start_backend.ps1" &
-        BACKEND_PID=$!
-    elif [ -f "$BACKEND_DIR/start_backend.sh" ]; then
-        # Bash script
-        bash "$BACKEND_DIR/start_backend.sh" &
-        BACKEND_PID=$!
-    else
-        echo -e "${YELLOW}⚠️  Backend startup script not found in $BACKEND_DIR${NC}"
-        return 1
-    fi
-
-    # Wait for backend to start
-    echo -e "${YELLOW}Waiting for backend to start (up to ${BACKEND_TIMEOUT}s)...${NC}"
-    for i in $(seq 1 $BACKEND_TIMEOUT); do
-        if backend_running; then
-            echo -e "${GREEN}✅ Backend is running${NC}"
-            return 0
-        fi
-        sleep 1
-    done
-
-    echo -e "${RED}❌ Backend failed to start${NC}"
-    return 1
-}
-
-# Main logic
-if backend_running; then
-    echo -e "${GREEN}✅ Backend is running${NC}"
-else
-    start_backend
+# ── Kill old servers ──────────────────────────────────────────────
+if [[ -f "$PID_FILE" ]]; then
+  echo -e "${YELLOW}⏹  Killing old server processes...${NC}"
+  while IFS= read -r pid; do
+    kill "$pid" 2>/dev/null || true
+  done < "$PID_FILE"
+  rm -f "$PID_FILE"
 fi
 
-#!/usr/bin/env pwsh
-# post-merge hook for Windows PowerShell
-# Auto-start backend if not running
+# Also kill any orphan uvicorn / vite processes for this project
+pkill -f "uvicorn office_hero" 2>/dev/null || true
+pkill -f "vite.*admin-web" 2>/dev/null || true
+sleep 1
 
-$BackendPort = 8000
-$BackendTimeout = 10
+# ── Install dependencies ──────────────────────────────────────────
+echo "📦 Installing Python dependencies..."
+cd "$ROOT"
+poetry install --no-root --quiet 2>/dev/null || true
 
-function Test-BackendRunning {
-    try {
-        $response = Invoke-WebRequest -Uri "http://localhost:$BackendPort/health" -ErrorAction SilentlyContinue
-        return $response.StatusCode -eq 200
-    } catch {
-        return $false
-    }
+echo "📦 Installing Node dependencies..."
+cd "$ROOT"
+pnpm install --silent 2>/dev/null || true
+
+# ── Find random available port ───────────────────────────────────
+get_random_port() {
+  python3 -c "
+import socket
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(('', 0))
+port = s.getsockname()[1]
+s.close()
+print(port)
+"
 }
 
-function Start-BackendServer {
-    Write-Host "ℹ️  Backend not running. Starting..." -ForegroundColor Yellow
+BACKEND_PORT=$(get_random_port)
 
-    $BackendDir = $null
-    @("..\..\office-hero-backend-core", "..\office-hero-backend-core", "office-hero-backend-core") | ForEach-Object {
-        if (Test-Path $_ -PathType Container) {
-            $BackendDir = $_
-        }
-    }
+# ── Start backend ────────────────────────────────────────────────
+echo "🚀 Starting backend on port $BACKEND_PORT..."
+cd "$ROOT"
+poetry run uvicorn office_hero.main:app \
+  --host 0.0.0.0 \
+  --port "$BACKEND_PORT" \
+  --reload \
+  > "$ROOT/.backend.log" 2>&1 &
+BACKEND_PID=$!
 
-    if (-not $BackendDir) {
-        Write-Host "❌ Backend directory not found" -ForegroundColor Red
-        return $false
-    }
+# ── Start admin-web ──────────────────────────────────────────────
+echo "🚀 Starting admin-web (Vite, random port)..."
+cd "$ROOT/apps/admin-web"
+VITE_API_BASE_URL="http://localhost:$BACKEND_PORT" npx vite \
+  --host 0.0.0.0 \
+  > "$ROOT/.frontend.log" 2>&1 &
+FRONTEND_PID=$!
 
-    $StartScript = Join-Path $BackendDir "start_backend.ps1"
-    if (Test-Path $StartScript) {
-        & $StartScript -NoNewWindow -PassThru | Out-Null
+# Wait for Vite to print port (it picks one randomly via port: 0)
+sleep 3
+FRONTEND_PORT=$(grep -oP 'localhost:\K[0-9]+' "$ROOT/.frontend.log" 2>/dev/null | head -1)
+FRONTEND_PORT=${FRONTEND_PORT:-"(check .frontend.log)"}
 
-        Write-Host "Waiting for backend to start..." -ForegroundColor Yellow
-        $startTime = Get-Date
-        while ((Get-Date) - $startTime -lt [TimeSpan]::FromSeconds($BackendTimeout)) {
-            if (Test-BackendRunning) {
-                Write-Host "✅ Backend is running" -ForegroundColor Green
-                return $true
-            }
-            Start-Sleep -Milliseconds 500
-        }
+# ── Write state files ────────────────────────────────────────────
+echo "$BACKEND_PID" > "$PID_FILE"
+echo "$FRONTEND_PID" >> "$PID_FILE"
 
-        Write-Host "❌ Backend failed to start" -ForegroundColor Red
-        return $false
-    }
+cat > "$PORTS_FILE" << EOF
+# Auto-generated by post-merge hook — $(date -Iseconds)
+BACKEND_PORT=$BACKEND_PORT
+BACKEND_PID=$BACKEND_PID
+BACKEND_URL=http://localhost:$BACKEND_PORT
+FRONTEND_PORT=$FRONTEND_PORT
+FRONTEND_PID=$FRONTEND_PID
+FRONTEND_URL=http://localhost:$FRONTEND_PORT
+EOF
 
-    return $false
-}
-
-if (Test-BackendRunning) {
-    Write-Host "✅ Backend is running" -ForegroundColor Green
-} else {
-    Start-BackendServer
-}
+echo ""
+echo -e "${GREEN}✅ Servers started!${NC}"
+echo "   Backend:  http://localhost:$BACKEND_PORT  (PID $BACKEND_PID)"
+echo "   Frontend: http://localhost:$FRONTEND_PORT  (PID $FRONTEND_PID)"
+echo "   Ports:    $PORTS_FILE"
+echo "   Logs:     .backend.log / .frontend.log"
