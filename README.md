@@ -31,18 +31,11 @@ bash scripts/setup-dev.sh        # Linux / macOS / Git Bash
 
 A milestone is only done when **all** items below are true:
 
-1. **Feature scope complete**
-	- The planned UI behavior for that milestone is implemented and accessible from the app navigation.
-2. **Quality gates pass**
-	- Relevant checks are green (TypeScript, ESLint, Prettier, and any affected tests).
-3. **No regressions observed**
-	- Existing core flows still work (login, shell navigation, and previously completed pages).
-4. **Verified screenshot evidence exists (mandatory)**
-	- At least one screenshot per milestone is captured.
-	- Screenshot must clearly show the milestone behavior (not just a page shell).
-	- Screenshot must be reviewed and explicitly marked as verified in the PR description/checklist.
-5. **PR notes are complete**
-	- PR includes what was delivered, what was tested, and the screenshot verification note.
+1. **Feature scope complete**: The planned UI behavior for that milestone is implemented and accessible from the app navigation.
+2. **Quality gates pass**: Relevant checks are green (TypeScript, ESLint, Prettier, and any affected tests).
+3. **No regressions observed**: Existing core flows still work (login, shell navigation, and previously completed pages).
+4. **Verified screenshot evidence exists (mandatory)**: At least one screenshot per milestone is captured; the screenshot clearly shows milestone behavior (not just a page shell); and it is reviewed and explicitly marked as verified in the PR description/checklist.
+5. **PR notes are complete**: The PR includes what was delivered, what was tested, and the screenshot verification note.
 
 ### Recommended frontend milestone checkpoints
 
