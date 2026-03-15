@@ -12,6 +12,7 @@ class Role(StrEnum):
     """
 
     Owner = "owner"
+    Admin = "admin"
     Operator = "operator"
     OperatorStaff = "operator_staff"
     TenantAdmin = "tenant_admin"

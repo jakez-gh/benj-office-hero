@@ -2,7 +2,10 @@
 # Integration Testing & Demo Recording Script
 # Run complete E2E testing and capture demo video
 
-set -e
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT_DIR"
 
 echo "=========================================="
 echo "Office Hero Frontend - E2E Testing Setup"
@@ -18,23 +21,25 @@ pnpm --version
 echo "✓ Installing dependencies..."
 pnpm install --frozen-lockfile
 
-# 3. Verify backend is running
-echo "✓ Checking backend availability..."
-if ! curl -s http://localhost:8000/health > /dev/null; then
-  echo "✗ Backend not running on http://localhost:8000"
-  echo "  Please start backend: cd ../office-hero-backend-core && python -m uvicorn src.office_hero.main:app --host 0.0.0.0 --port 8000"
-  exit 1
-fi
-echo "✓ Backend health: $(curl -s http://localhost:8000/health)"
+# 3. Start managed backend+frontend with random conflict-safe ports
+echo "✓ Starting managed test servers..."
+python3 tools/server_manager.py start
 
-# 4. Verify frontend dev server is running
-echo "✓ Checking frontend dev server..."
-if ! curl -s http://localhost:3000 > /dev/null 2>&1; then
-  echo "  Starting frontend dev server..."
-  pnpm dev &
-  sleep 3
-fi
-echo "✓ Frontend accessible at http://localhost:3000"
+cleanup() {
+  python3 tools/server_manager.py stop --quiet || true
+}
+trap cleanup EXIT
+
+source .runtime/test-ports.env
+
+# 4. Verify randomized server health
+echo "✓ Checking backend availability..."
+curl -s "http://127.0.0.1:${BACKEND_PORT}/health" > /dev/null
+echo "✓ Backend available on ${BACKEND_PORT}"
+
+echo "✓ Checking frontend availability..."
+curl -s "http://127.0.0.1:${FRONTEND_PORT}" > /dev/null
+echo "✓ Frontend available on ${FRONTEND_PORT}"
 
 # 5. Run E2E tests with video recording
 echo ""
@@ -45,6 +50,8 @@ echo "=========================================="
 cd apps/admin-web
 
 # Run tests with video enabled
+PLAYWRIGHT_BASE_URL="http://127.0.0.1:${FRONTEND_PORT}" \
+SKIP_PLAYWRIGHT_WEBSERVER=1 \
 pnpm exec playwright test --project=chromium --record-video=on
 
 # 6. Display results

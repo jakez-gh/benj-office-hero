@@ -3,10 +3,25 @@
 # Runs pre-push stage hooks from .pre-commit-config.yaml (bandit, pytest-check, pip-audit)
 # Activated automatically after: bash scripts/setup-dev.sh
 # Or manually: git config core.hooksPath .githooks && chmod +x .githooks/*
+set -euo pipefail
+
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ARGS=(hook-impl --config=.pre-commit-config.yaml --hook-type=pre-push --hook-dir "$HERE" -- "$@")
+
+if command -v python3 > /dev/null; then
+    python3 tools/server_manager.py start --quiet
+else
+    echo '`python3` not found. Cannot launch managed test servers.' 1>&2
+    exit 1
+fi
+
+cleanup() {
+    python3 tools/server_manager.py stop --quiet || true
+}
+trap cleanup EXIT
+
 if command -v pre-commit > /dev/null; then
-    exec pre-commit "${ARGS[@]}"
+    pre-commit "${ARGS[@]}"
 else
     echo '`pre-commit` not found. Run: pip install pre-commit' 1>&2
     exit 1
