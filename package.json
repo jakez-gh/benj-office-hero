@@ -1,11 +1,12 @@
 {
   "name": "office-hero-mobile",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
+  "scripts": {},
   "devDependencies": {
     "typescript": "^5.9.2"
   }
