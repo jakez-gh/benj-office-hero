@@ -38,12 +38,10 @@ class AuditService:
         if request_id is None:
             request_id = uuid4()
 
-        stmt = text(
-            """
+        stmt = text("""
             INSERT INTO audit_events (id, tenant_id, user_id, event_type, details, request_id)
             VALUES (:id, :tenant_id, :user_id, :event_type, :details, :request_id)
-            """
-        )
+            """)
         await session.execute(
             stmt,
             {
