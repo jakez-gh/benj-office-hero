@@ -6,7 +6,11 @@
     "packages/*",
     "apps/*"
   ],
-  "scripts": {},
+  "scripts": {
+    "lint": "echo 'lint step configured via pre-commit in CI'",
+    "build": "pnpm --filter admin-web build",
+    "test": "pnpm --filter admin-web test"
+  },
   "devDependencies": {
     "@types/node": "^20.4.1",
     "@typescript-eslint/eslint-plugin": "^6.8.0",
