@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { mobileLogin, RateLimitError } from '@office-hero/api-client';
+import { mobileLogin } from '@office-hero/api-client';
 
 export type LoginScreenProps = {
   onLogin: (token: string) => void;
