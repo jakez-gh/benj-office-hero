@@ -6,7 +6,11 @@
     "apps/*",
     "packages/*"
   ],
-  "scripts": {},
+  "scripts": {
+    "lint": "echo 'lint step configured via pre-commit in CI'",
+    "build": "pnpm --filter admin-web build",
+    "test": "pnpm --filter admin-web test"
+  },
   "devDependencies": {
     "typescript": "^5.9.2"
   }
