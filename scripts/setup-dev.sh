@@ -37,8 +37,8 @@ write_success "Submodules initialized"
 
 # 4. Install Python dev dependencies
 echo -e "\n${CYAN}4️⃣  Installing Python dev dependencies...${NC}"
-pip install -e ".[dev]"
-write_success "Python dependencies installed"
+poetry install --with dev --no-interaction
+write_success "Python dependencies installed (Poetry)"
 
 # 5. Install Node dependencies
 echo -e "\n${CYAN}5️⃣  Installing Node.js dependencies...${NC}"
@@ -73,7 +73,7 @@ if command -v pre-commit &> /dev/null; then
     pre-commit install
     write_success "pre-commit framework installed"
 else
-    write_warning "pre-commit not installed (optional) — install with: pip install pre-commit"
+    write_warning "pre-commit not installed (optional) — install with: poetry add --group dev pre-commit"
 fi
 
 # 8. Verify hook installation

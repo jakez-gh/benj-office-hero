@@ -1,6 +1,6 @@
 # Pre-commit hooks for benj.office-hero
-# Install: pip install pre-commit && pre-commit install
-# Run manually: pre-commit run --all-files
+# Install: poetry install --with dev && poetry run pre-commit install
+# Run manually: poetry run pre-commit run --all-files
 
 repos:
   # Markdown linting + auto-fix
@@ -22,7 +22,7 @@ repos:
     hooks:
       - id: pip-audit
         name: pip-audit dependency scan
-        entry: bash -c '.venv/bin/python -m pip_audit --desc'
+        entry: bash -c 'poetry run pip-audit --desc'
         language: system
         pass_filenames: false
         always_run: true
@@ -73,9 +73,17 @@ repos:
   # Security scan + tests — run on push (slow; skip with SKIP=bandit,pytest-check)
   - repo: local
     hooks:
+      - id: poetry-check
+        name: poetry config validation
+        entry: poetry check --no-interaction
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       - id: bandit
         name: bandit security scan
-        entry: bash -c '.venv/bin/python -m bandit -r src -ll'
+        entry: bash -c 'poetry run bandit -r src -ll'
         language: system
         pass_filenames: false
         always_run: true
@@ -83,7 +91,7 @@ repos:
 
       - id: pytest-check
         name: pytest (TDD gate)
-        entry: bash -c '.venv/bin/python -m pytest --tb=short -q'
+        entry: bash -c 'poetry run pytest --tb=short -q'
         language: system
         pass_filenames: false
         always_run: true
