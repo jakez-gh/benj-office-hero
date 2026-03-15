@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": "./",
+    "paths": {
+      "@office-hero/types": ["packages/types/src"],
+      "@office-hero/api-client": ["packages/api-client/src"]
+    }
+  },
+  "include": ["packages/**/*", "apps/**/*"],
+  "references": [
+    { "path": "packages/types" },
+    { "path": "packages/api-client" }
+  ]
+}

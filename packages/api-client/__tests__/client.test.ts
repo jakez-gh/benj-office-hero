@@ -12,9 +12,9 @@ describe('api-client', () => {
     process.env.OFFICE_HERO_API_URL = 'http://test';
   });
 
-  it('login posts credentials', async () => {
+  it('mobileLogin posts credentials', async () => {
     mockedFetch.mockResolvedValue({ ok: true, json: async () => ({ token: 't' }) } as any);
-    const res = await client.login({ username: 'u', password: 'p' });
+    const res = await client.mobileLogin({ username: 'u', password: 'p' });
     expect(mockedFetch).toHaveBeenCalledWith('http://test/login', expect.any(Object));
     expect(res.token).toBe('t');
   });
@@ -41,7 +41,7 @@ describe('api-client', () => {
   // 429 Rate Limit Handling (Slice 4)
   // -----------------------------------------------------------------------
 
-  it('login throws RateLimitError on 429 with Retry-After header', async () => {
+  it('mobileLogin throws RateLimitError on 429 with Retry-After header', async () => {
     mockedFetch.mockResolvedValue({
       ok: false,
       status: 429,
@@ -49,10 +49,10 @@ describe('api-client', () => {
       json: async () => ({ detail: 'Too many requests', retry_after: 30, request_id: null }),
     } as any);
 
-    await expect(client.login({ username: 'u', password: 'p' })).rejects.toThrow(RateLimitError);
+    await expect(client.mobileLogin({ username: 'u', password: 'p' })).rejects.toThrow(RateLimitError);
 
     try {
-      await client.login({ username: 'u', password: 'p' });
+      await client.mobileLogin({ username: 'u', password: 'p' });
     } catch (err) {
       expect(err).toBeInstanceOf(RateLimitError);
       expect((err as RateLimitError).retryAfter).toBe(30);
@@ -88,7 +88,7 @@ describe('api-client', () => {
       headers: { get: () => null },
     } as any);
 
-    await expect(client.login({ username: 'u', password: 'p' })).rejects.toThrow('login failed: 500');
+    await expect(client.mobileLogin({ username: 'u', password: 'p' })).rejects.toThrow('login failed: 500');
   });
 
   // -----------------------------------------------------------------------

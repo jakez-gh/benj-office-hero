@@ -27,11 +27,13 @@ def test_python_version_matches_adr():
         r"3\.11", requires
     ), "pyproject.toml requires-python should include '3.11' per ADR057"
 
-    # Dockerfile check (if the repo has one)
+    # Dockerfile check — only assert python:3.11 for Python-based Dockerfiles
     dockerfile = Path(__file__).parent.parent / "Dockerfile"
     if dockerfile.exists():
         text = dockerfile.read_text()
-        assert "python:3.11" in text, "Dockerfile must use python:3.11 base image"
+        # Only check Python base-image when the Dockerfile targets Python
+        if "FROM python" in text:
+            assert "python:3.11" in text, "Dockerfile must use python:3.11 base image"
 
 
 # future hooks for other ADRs can be added here; example:

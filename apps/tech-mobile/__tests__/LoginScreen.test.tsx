@@ -17,8 +17,8 @@ describe('LoginScreen', () => {
     expect(getByText('Log in')).toBeTruthy();
   });
 
-  it('calls api.login and invokes onLogin on success', async () => {
-    const fakeLogin = jest.spyOn(api, 'login').mockResolvedValue({ token: 'tok' });
+  it('calls api.mobileLogin and invokes onLogin on success', async () => {
+    const fakeLogin = jest.spyOn(api, 'mobileLogin').mockResolvedValue({ token: 'tok' });
     const onLogin = jest.fn();
 
     const { getByPlaceholderText, getByText } = render(
@@ -34,7 +34,7 @@ describe('LoginScreen', () => {
   });
 
   it('shows alert on login failure (Error instance)', async () => {
-    jest.spyOn(api, 'login').mockRejectedValue(new Error('Network error'));
+    jest.spyOn(api, 'mobileLogin').mockRejectedValue(new Error('Network error'));
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     const onLogin = jest.fn();
 
@@ -55,7 +55,7 @@ describe('LoginScreen', () => {
   });
 
   it('shows string representation when error is not an Error instance', async () => {
-    jest.spyOn(api, 'login').mockRejectedValue('unexpected string error');
+    jest.spyOn(api, 'mobileLogin').mockRejectedValue('unexpected string error');
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     const onLogin = jest.fn();
 
@@ -80,7 +80,7 @@ describe('LoginScreen', () => {
 
   it('shows rate limit toast when login returns 429', async () => {
     const rateLimitErr = new RateLimitError(30);
-    jest.spyOn(api, 'login').mockRejectedValue(rateLimitErr);
+    jest.spyOn(api, 'mobileLogin').mockRejectedValue(rateLimitErr);
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     const onLogin = jest.fn();
 
