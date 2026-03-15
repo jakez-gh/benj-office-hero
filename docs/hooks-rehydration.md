@@ -31,7 +31,7 @@ This single command will:
 |---|---|---|
 | **pre-commit** | Lint, format, file hygiene | Before each commit |
 | **commit-msg** | Reserved — no hooks configured yet | After commit message is written |
-| **pre-push** | Tests + bandit + pip-audit | Before pushing to remote |
+| **pre-push** | Managed server startup + tests + bandit + pip-audit | Before pushing to remote |
 
 > **Note:** The `commit-msg` shim is wired up but no hooks are configured for
 > that stage in `.pre-commit-config.yaml`. It is reserved for future commit
@@ -133,7 +133,8 @@ Clone → setup-dev.sh / .ps1 → configure hooksPath → init submodules → in
 1. Edit files
 2. `git add` — stage changes
 3. `git commit` — pre-commit hook runs lint/format/hygiene; auto-fixes are applied inline
-4. `git push` — pre-push hook runs `pytest`, `bandit`, `pip-audit` (slow; ~30–90 s)
+4. `git push` — pre-push hook starts managed backend/frontend test servers on random ports,
+   then runs `pytest`, `bandit`, `pip-audit`, and finally tears servers down
 
 ### Skip Hooks (Emergency Only)
 
