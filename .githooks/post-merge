@@ -1,94 +1,33 @@
-#!/bin/bash
-# post-merge hook — auto-start backend after git pull / merge
-#
-# Slice 4 enhancements:
-#   • Reads .backend.pid to discover running instance
-#   • Kills previous backend, starts fresh via scripts/start-backend.sh
-#   • Random port selection delegated to start-backend.sh
-#   • Force-kills stale processes that refuse SIGTERM
+#!/usr/bin/env bash
+# post-merge hook — ensure backend is available after git pull/merge
 
-set -e
+set -euo pipefail
 
-# Color output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+HEALTH_URL="http://127.0.0.1:8000/health"
 
-PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-PID_FILE="$PROJECT_ROOT/.backend.pid"
-BACKEND_TIMEOUT=15
+if command -v curl > /dev/null && curl -sSf "$HEALTH_URL" > /dev/null 2>&1; then
+  echo "✅ Backend is already running on port 8000"
+  exit 0
+fi
 
-# ── Read current backend state from PID file ─────────────────────────────────
-read_pid_file() {
-    if [[ -f "$PID_FILE" ]]; then
-        EXISTING_PID="$(awk 'NR==1' "$PID_FILE")"
-        EXISTING_PORT="$(awk 'NR==2' "$PID_FILE")"
-    else
-        EXISTING_PID=""
-        EXISTING_PORT=""
-    fi
-}
+echo "ℹ️  Backend not detected on port 8000; attempting startup..."
 
-# ── Check if backend is healthy ──────────────────────────────────────────────
-backend_healthy() {
-    local port="${1:-$EXISTING_PORT}"
-    [[ -n "$port" ]] || return 1
-    if command -v curl > /dev/null; then
-        curl -sf "http://127.0.0.1:${port}/health" > /dev/null 2>&1
-        return $?
-    fi
-    return 1
-}
+if [[ -x "scripts/start-backend.sh" ]]; then
+  nohup bash scripts/start-backend.sh > /tmp/office-hero-backend.log 2>&1 &
+elif [[ -f "scripts/start-backend.sh" ]]; then
+  nohup bash scripts/start-backend.sh > /tmp/office-hero-backend.log 2>&1 &
+else
+  echo "⚠️  scripts/start-backend.sh not found; skipping backend auto-start"
+  exit 0
+fi
 
-# ── Kill existing backend (graceful then forced) ─────────────────────────────
-kill_existing() {
-    read_pid_file
-    if [[ -n "$EXISTING_PID" ]] && kill -0 "$EXISTING_PID" 2>/dev/null; then
-        echo -e "${YELLOW}⏳ Stopping previous backend (PID $EXISTING_PID, port $EXISTING_PORT)…${NC}"
-        kill "$EXISTING_PID" 2>/dev/null || true
-        for _ in $(seq 1 10); do
-            kill -0 "$EXISTING_PID" 2>/dev/null || break
-            sleep 0.5
-        done
-        if kill -0 "$EXISTING_PID" 2>/dev/null; then
-            echo -e "${RED}⚠️  Force-killing PID $EXISTING_PID${NC}"
-            kill -9 "$EXISTING_PID" 2>/dev/null || true
-        fi
-        echo -e "${GREEN}✅ Previous backend stopped${NC}"
-    fi
-    rm -f "$PID_FILE"
-}
+for _ in $(seq 1 20); do
+  if command -v curl > /dev/null && curl -sSf "$HEALTH_URL" > /dev/null 2>&1; then
+    echo "✅ Backend is running on port 8000"
+    exit 0
+  fi
+  sleep 1
+done
 
-# ── Start backend via the canonical script ────────────────────────────────────
-start_backend() {
-    local SCRIPT="$PROJECT_ROOT/scripts/start-backend.sh"
-    if [[ ! -f "$SCRIPT" ]]; then
-        echo -e "${RED}❌ scripts/start-backend.sh not found${NC}"
-        return 1
-    fi
-
-    echo -e "${YELLOW}ℹ️  Starting backend (random port)…${NC}"
-    bash "$SCRIPT" &
-    disown
-
-    # Wait for PID file to appear, then health-check
-    for i in $(seq 1 "$BACKEND_TIMEOUT"); do
-        if [[ -f "$PID_FILE" ]]; then
-            read_pid_file
-            if backend_healthy "$EXISTING_PORT"; then
-                echo -e "${GREEN}✅ Backend is running on port $EXISTING_PORT (PID $EXISTING_PID)${NC}"
-                return 0
-            fi
-        fi
-        sleep 1
-    done
-
-    echo -e "${RED}❌ Backend failed to start within ${BACKEND_TIMEOUT}s${NC}"
-    return 1
-}
-
-# ── Main ──────────────────────────────────────────────────────────────────────
-# Always kill + restart after a merge to pick up code changes
-kill_existing
-start_backend || echo -e "${YELLOW}⚠️  Backend auto-start skipped (missing .env?)${NC}"
+echo "⚠️  Backend did not become healthy within timeout"
+exit 0

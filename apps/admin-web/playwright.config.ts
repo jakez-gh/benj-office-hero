@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const managedBaseUrl = process.env.PLAYWRIGHT_BASE_URL;
+const skipWebServer = process.env.SKIP_PLAYWRIGHT_WEBSERVER === '1';
+const defaultBaseUrl = 'http://127.0.0.1:3000';
+const baseURL = managedBaseUrl ?? defaultBaseUrl;
+
 export default defineConfig({
   testDir: './src/e2e',
   fullyParallel: true,
@@ -12,10 +17,10 @@ export default defineConfig({
     ['junit', { outputFile: 'test-results/junit.xml' }]
   ],
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure'  // Record video on test failures
+    video: 'retain-on-failure' // Record video on test failures
   },
 
   projects: [
@@ -42,9 +47,11 @@ export default defineConfig({
     }
   ],
 
-  webServer: {
-    command: 'pnpm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI
-  }
+  webServer: skipWebServer
+    ? undefined
+    : {
+        command: 'pnpm run dev -- --host 127.0.0.1 --port 3000 --strictPort',
+        url: defaultBaseUrl,
+        reuseExistingServer: !process.env.CI
+      }
 });

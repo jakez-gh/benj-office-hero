@@ -1,45 +1,48 @@
 """Office Hero FastAPI application factory (SOLID: SRP, DIP)."""
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
-from office_hero.api.exception_handlers import register_exception_handlers
-from office_hero.api.limiter import limiter
-from office_hero.api.middleware.logging import LoggingMiddleware
-from office_hero.api.middleware.security_headers import SecurityHeadersMiddleware
-from office_hero.api.routes import admin, health, sagas
+from office_hero.api.routes import admin, auth, health, sagas
+from office_hero.api.state import set_auth_service, set_engine
+from office_hero.core.config import get_settings
+from office_hero.db.engine import create_engine
+from office_hero.services.auth_service import AuthService
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Initialize shared services for request handlers and clean up on shutdown."""
+    engine = create_engine()
+    settings = get_settings()
+    auth_service = AuthService(settings)
+
+    set_engine(engine)
+    set_auth_service(auth_service)
+
+    try:
+        yield
+    finally:
+        await engine.dispose()
 
 
 def create_app() -> FastAPI:
-    """Create and configure the FastAPI application.
-
-    Wires middleware (order matters — outermost first), exception handlers,
-    the slowapi rate limiter, and all route routers.
-    """
-    application = FastAPI(
+    """Build and configure the FastAPI application."""
+    app = FastAPI(
         title="Office Hero",
         description="Back-office management API for office services",
         version="0.1.0",
+        lifespan=lifespan,
     )
 
-    # --- Middleware (outermost ➜ innermost) ---
-    # Security headers must wrap everything so every response gets them.
-    application.add_middleware(SecurityHeadersMiddleware)
-    # Logging after security so request_id is available for error responses.
-    application.add_middleware(LoggingMiddleware)
+    # Include routers
+    app.include_router(health.router)
+    app.include_router(auth.router)
+    app.include_router(sagas.router, prefix="/sagas", tags=["sagas"])
+    app.include_router(admin.router, prefix="/admin", tags=["admin"])
 
-    # --- Exception handlers ---
-    register_exception_handlers(application)
-
-    # --- slowapi rate limiter state ---
-    application.state.limiter = limiter
-
-    # --- Routers ---
-    application.include_router(health.router, tags=["health"])
-    application.include_router(sagas.router, prefix="/sagas", tags=["sagas"])
-    application.include_router(admin.router, prefix="/admin", tags=["admin"])
-
-    return application
+    return app
 
 
-# Module-level instance used by TestClient and uvicorn
 app = create_app()
