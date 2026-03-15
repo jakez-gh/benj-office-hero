@@ -8,6 +8,7 @@ Provides:
 
 from __future__ import annotations
 
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Path, Query
@@ -118,7 +119,7 @@ def create_admin_router(
         description="Move failed event back to pending (Operator only)",
     )
     async def retry_dead_letter(
-        event_id: UUID = Path(..., description="Event ID"),
+        event_id: Annotated[UUID, Path(description="Event ID")],
     ) -> DeadLetterRetryResponse:
         """Retry a dead-lettered event — reset to pending for reprocessing."""
         event = outbox_repo.events.get(event_id)
@@ -146,7 +147,7 @@ def create_admin_router(
         description="Retrieve detailed saga step execution history (Operator only)",
     )
     async def get_saga_logs(
-        saga_id: UUID = Path(..., description="Saga ID"),
+        saga_id: Annotated[UUID, Path(description="Saga ID")],
     ) -> SagaLogResponse:
         """Retrieve saga execution log and current state."""
         saga_ctx = await saga_service.get_saga_status(saga_id)

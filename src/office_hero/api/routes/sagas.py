@@ -9,6 +9,7 @@ Provides:
 
 from __future__ import annotations
 
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Path
@@ -98,7 +99,7 @@ def create_saga_router(*, saga_service: SagaService) -> APIRouter:
         summary="Get saga state",
         description="Retrieve current saga status and context",
     )
-    async def get_saga_state(saga_id: UUID = Path(..., description="Saga ID")) -> SagaStateResponse:
+    async def get_saga_state(saga_id: Annotated[UUID, Path(description="Saga ID")]) -> SagaStateResponse:
         """Get the current state of a saga."""
         saga_ctx = await saga_service.get_saga_status(saga_id)
         if saga_ctx is None:
