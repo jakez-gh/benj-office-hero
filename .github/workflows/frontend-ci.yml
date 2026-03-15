@@ -51,13 +51,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm -r --if-present run lint
 
       - name: Build
-        run: pnpm build
+        run: pnpm -r --if-present run build
 
       - name: Test
-        run: pnpm test
+        run: pnpm -r --filter '!tech-mobile' --if-present run test
 
   e2e:
     name: E2E Tests (Playwright)

@@ -6,11 +6,7 @@
     "apps/*",
     "packages/*"
   ],
-  "scripts": {
-    "lint": "pnpm -r --if-present run lint",
-    "build": "pnpm -r --if-present run build",
-    "test": "pnpm -r --if-present run test"
-  },
+  "scripts": {},
   "devDependencies": {
     "typescript": "^5.9.2"
   }
