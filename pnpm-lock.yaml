@@ -149,6 +149,9 @@ importers:
 
   packages/api-client:
     dependencies:
+      axios:
+        specifier: ^1.13.6
+        version: 1.13.6
       cross-fetch:
         specifier: ^3.1.5
         version: 3.2.0

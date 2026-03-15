@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { login } from '@office-hero/api-client';
+import { mobileLogin } from '@office-hero/api-client';
 
 export type LoginScreenProps = {
   onLogin: (token: string) => void;
@@ -14,7 +14,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const handleSubmit = async () => {
     setBusy(true);
     try {
-      const res = await login({ username, password });
+      const res = await mobileLogin({ username, password });
       onLogin(res.token);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
