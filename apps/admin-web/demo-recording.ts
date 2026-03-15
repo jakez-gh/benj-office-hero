@@ -4,13 +4,13 @@ import * as path from 'path';
 
 /**
  * Demo Recording Script - Automated E2E Testing with Screen Recording
- * 
+ *
  * This script:
  * 1. Starts automated browser session with video recording
  * 2. Tests complete login and navigation flow
  * 3. Records all interactions
  * 4. Saves recordings and screenshots
- * 
+ *
  * Run with: npx ts-node demo-recording.ts
  */
 
@@ -152,7 +152,7 @@ async function recordDemoFlow() {
     await page.reload({ waitUntil: 'networkidle' });
     await page.waitForTimeout(1000);
     await screenshot('12-after-reload');
-    
+
     // Verify still authenticated
     const isStillAuth = await page.getByRole('navigation').isVisible();
     console.log(`  Still authenticated: ${isStillAuth ? '✓' : '✗'}`);
@@ -164,7 +164,7 @@ async function recordDemoFlow() {
     await page.waitForURL('/', { timeout: 3000 });
     await page.waitForTimeout(1000);
     await screenshot('13-after-logout');
-    
+
     // Verify logged out
     const loginHeading = await page.getByRole('heading', { name: /login/i }).isVisible();
     console.log(`  Back to login: ${loginHeading ? '✓' : '✗'}`);

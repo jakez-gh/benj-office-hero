@@ -32,8 +32,10 @@ const AppContent: React.FC = () => {
   );
 };
 
-export default () => (
+const App: React.FC = () => (
   <AuthProvider>
     <AppContent />
   </AuthProvider>
 );
+
+export default App;

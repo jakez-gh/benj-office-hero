@@ -18,7 +18,6 @@ jest.mock('@office-hero/api-client', () => ({
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from '../App';
-import * as api from '@office-hero/api-client';
 
 describe('Admin web authentication and navigation', () => {
   beforeEach(() => {

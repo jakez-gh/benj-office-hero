@@ -7,16 +7,9 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "pnpm -r run dev",
-    "build": "pnpm -r run build",
-    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
-    "format": "prettier --write .",
-    "test": "pnpm -F admin-web run test",
-    "test:e2e": "pnpm -F admin-web run test:e2e",
-    "test:e2e:record": "pnpm -F admin-web run test:e2e:record",
-    "test:e2e:ui": "pnpm -F admin-web run test:e2e:ui",
-    "demo": "pnpm -F admin-web run demo",
-    "demo:report": "pnpm -F admin-web run demo:report"
+    "lint": "pnpm -r --if-present run lint",
+    "build": "pnpm -r --if-present run build",
+    "test": "pnpm -r --if-present run test"
   },
   "devDependencies": {
     "@types/node": "^20.4.1",

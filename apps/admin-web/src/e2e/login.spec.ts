@@ -7,7 +7,7 @@ const TEST_USER = {
 };
 
 test.describe('Admin Web - Login & Auth Flow', () => {
-  
+
   test('should display login form on initial load', async ({ page }) => {
     await page.goto('/');
 
@@ -45,7 +45,7 @@ test.describe('Admin Web - Login & Auth Flow', () => {
 
     // Should redirect to jobs page
     await expect(page).toHaveURL('/jobs', { timeout: 3000 });
-    
+
     // Should display nav shell
     await expect(page.getByRole('navigation')).toBeVisible();
     await expect(page.getByRole('button', { name: /logout/i })).toBeVisible();
@@ -84,7 +84,7 @@ test.describe('Admin Web - Login & Auth Flow', () => {
 
     // Wait for successful redirect
     await expect(page).toHaveURL('/jobs', { timeout: 3000 });
-    
+
     // Get tokens from localStorage
     const tokens = await page.evaluate(() => ({
       accessToken: localStorage.getItem('access_token'),
@@ -96,7 +96,7 @@ test.describe('Admin Web - Login & Auth Flow', () => {
 
     // Should still be authenticated and on jobs page (not redirected to login)
     await expect(page).toHaveURL('/jobs', { timeout: 3000 });
-    
+
     // Nav should be visible
     await expect(page.getByRole('navigation')).toBeVisible();
     await expect(page.getByRole('button', { name: /logout/i })).toBeVisible();
@@ -150,7 +150,7 @@ test.describe('Admin Web - Login & Auth Flow', () => {
 
     // Should redirect to login page
     await expect(page).toHaveURL('/', { timeout: 2000 });
-    
+
     // Login form should be visible
     await expect(page.getByRole('heading', { name: /login/i })).toBeVisible();
 
@@ -181,7 +181,7 @@ test.describe('Admin Web - Login & Auth Flow', () => {
     await expect(versionBadge).toBeVisible();
   });
 
-  test('should handle 401 errors with automatic refresh', async ({ page, context }) => {
+  test('should handle 401 errors with automatic refresh', async ({ page, context: _context }) => {
     // Login first
     await page.goto('/');
     await page.getByLabel(/email/i).fill(TEST_USER.email);
@@ -190,11 +190,6 @@ test.describe('Admin Web - Login & Auth Flow', () => {
 
     // Wait for successful login
     await expect(page).toHaveURL('/jobs', { timeout: 3000 });
-
-    // Get current access token
-    const initialToken = await page.evaluate(() => 
-      localStorage.getItem('access_token')
-    );
 
     // Simulate expired token by replacing it with invalid token
     await page.evaluate(() => {

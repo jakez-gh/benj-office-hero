@@ -21,21 +21,21 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { 
+      use: {
         ...devices['Desktop Chrome'],
         video: process.env.RECORD_VIDEO ? 'on' : 'retain-on-failure'
       }
     },
     {
       name: 'firefox',
-      use: { 
+      use: {
         ...devices['Desktop Firefox'],
         video: process.env.RECORD_VIDEO ? 'on' : 'retain-on-failure'
       }
     },
     {
       name: 'webkit',
-      use: { 
+      use: {
         ...devices['Desktop Safari'],
         video: process.env.RECORD_VIDEO ? 'on' : 'retain-on-failure'
       }
