@@ -108,9 +108,7 @@ def create_admin_router(
             for evt in page
         ]
 
-        return DeadLetterListResponse(
-            items=items, total=total, limit=limit, offset=offset
-        )
+        return DeadLetterListResponse(items=items, total=total, limit=limit, offset=offset)
 
     @router.post(
         "/dead-letters/{event_id}/retry",
@@ -157,9 +155,9 @@ def create_admin_router(
         return SagaLogResponse(
             saga_id=str(saga_ctx.saga_id),
             saga_type=saga_ctx.saga_type,
-            status=saga_ctx.status.value
-            if hasattr(saga_ctx.status, "value")
-            else str(saga_ctx.status),
+            status=(
+                saga_ctx.status.value if hasattr(saga_ctx.status, "value") else str(saga_ctx.status)
+            ),
             current_step=saga_ctx.current_step,
             context=saga_ctx.context,
             last_error=saga_ctx.last_error,
