@@ -112,7 +112,7 @@ def create_saga_router(*, saga_service: SagaService) -> APIRouter:
         summary="Advance saga",
         description="Resume or advance saga execution (Operator only)",
     )
-    async def transition_saga(saga_id: UUID = Path(..., description="Saga ID")) -> SagaStateResponse:
+    async def transition_saga(saga_id: Annotated[UUID, Path(description="Saga ID")]) -> SagaStateResponse:
         """Transition saga to next state. Requires Operator RBAC."""
         saga_ctx = await saga_service.get_saga_status(saga_id)
         if saga_ctx is None:
@@ -125,7 +125,7 @@ def create_saga_router(*, saga_service: SagaService) -> APIRouter:
         summary="Manually compensate saga",
         description="Trigger manual compensation rollback (Operator only)",
     )
-    async def compensate_saga(saga_id: UUID = Path(..., description="Saga ID")) -> SagaStateResponse:
+    async def compensate_saga(saga_id: Annotated[UUID, Path(description="Saga ID")]) -> SagaStateResponse:
         """Manually trigger saga compensation. Requires Operator RBAC."""
         saga_ctx = await saga_service.get_saga_status(saga_id)
         if saga_ctx is None:
