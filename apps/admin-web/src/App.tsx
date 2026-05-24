@@ -1,41 +1,41 @@
-/**
- * App — root layout with sidebar navigation + routed pages.
- */
-
+import React, { useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Navigation } from './components/Navigation';
-import { DispatchPage } from './pages/DispatchPage';
+import { AuthProvider, AuthContext } from './auth';
+import { LoginPage } from './components/LoginPage';
+import { NavShell } from './components/NavShell';
 import { JobsPage } from './pages/JobsPage';
+import { DispatchPage } from './pages/DispatchPage';
 import { VehiclesPage } from './pages/VehiclesPage';
 import { UsersPage } from './pages/UsersPage';
 
-export function App() {
+const AppContent: React.FC = () => {
+  const { token } = useContext(AuthContext);
+
+  if (!token) {
+    return <LoginPage />;
+  }
+
   return (
     <BrowserRouter>
-      <div style={layoutStyle}>
-        <Navigation />
-        <main style={mainStyle}>
-          <Routes>
-            <Route path="/" element={<Navigate to="/dispatch" replace />} />
-            <Route path="/dispatch" element={<DispatchPage />} />
-            <Route path="/jobs" element={<JobsPage />} />
-            <Route path="/vehicles" element={<VehiclesPage />} />
-            <Route path="/users" element={<UsersPage />} />
-          </Routes>
-        </main>
-      </div>
+      <NavShell>
+        <Routes>
+          <Route path="/" element={<JobsPage />} />
+          <Route path="/jobs" element={<JobsPage />} />
+          <Route path="/dispatch" element={<DispatchPage />} />
+          <Route path="/vehicles" element={<VehiclesPage />} />
+          <Route path="/users" element={<UsersPage />} />
+          <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route path="/*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </NavShell>
     </BrowserRouter>
   );
-}
-
-const layoutStyle: React.CSSProperties = {
-  display: 'flex',
-  minHeight: '100vh',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 };
 
-const mainStyle: React.CSSProperties = {
-  flex: 1,
-  padding: '2rem',
-  background: '#f9fafb',
-};
+const App: React.FC = () => (
+  <AuthProvider>
+    <AppContent />
+  </AuthProvider>
+);
+
+export default App;

@@ -52,8 +52,8 @@ secrets.*
 node_modules/
 npm-debug.log*
 yarn-error.log*
-# Auto-launch hook runtime files
-.server-ports
-.server-pids
-.backend.log
-.frontend.log
+
+# Playwright / E2E test artifacts
+playwright-report/
+test-results/
+test-login.json

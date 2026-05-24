@@ -3,6 +3,7 @@ name = "benj-office-hero"
 version = "0.1.0"
 description = "Office Hero web application"
 authors = ["Jake <jake@officehero.dev>"]
+readme = "README.md"
 packages = [{include = "office_hero", from = "src"}]
 
 [tool.poetry.dependencies]
@@ -33,6 +34,7 @@ bandit = ">=1.8"
 hypothesis = ">=6.88"
 pytest-xdist = ">=3.5"
 pytest-timeout = ">=2.2"
+pip-audit = ">=2.7"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

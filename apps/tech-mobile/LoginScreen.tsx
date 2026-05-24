@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { login } from '@office-hero/api-client';
+import { mobileLogin, RateLimitError } from '@office-hero/api-client';
 
 export type LoginScreenProps = {
   onLogin: (token: string) => void;
@@ -14,12 +14,19 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const handleSubmit = async () => {
     setBusy(true);
     try {
-      const res = await login({ username, password });
+      const res = await mobileLogin({ username, password });
       onLogin(res.token);
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(err);
-      Alert.alert('Login failed', message);
+      if (err instanceof RateLimitError) {
+        Alert.alert(
+          'Too Many Requests',
+          `You are being rate limited. Please wait ${err.retryAfter} seconds before trying again.`,
+        );
+      } else {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(err);
+        Alert.alert('Login failed', message);
+      }
     } finally {
       setBusy(false);
     }

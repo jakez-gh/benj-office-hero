@@ -1,6 +1,6 @@
 # Pre-commit hooks for benj.office-hero
-# Install: pip install pre-commit && pre-commit install
-# Run manually: pre-commit run --all-files
+# Install: poetry install --with dev && poetry run pre-commit install
+# Run manually: poetry run pre-commit run --all-files
 
 repos:
   # Markdown linting + auto-fix
@@ -15,7 +15,6 @@ repos:
     rev: 24.10.0
     hooks:
       - id: black
-        language_version: python3.11
         args: [--line-length=100]
 
   # CVE scanning on push only (slow; skip with SKIP=pip-audit)
@@ -23,7 +22,7 @@ repos:
     hooks:
       - id: pip-audit
         name: pip-audit dependency scan
-        entry: python -m pip_audit --desc
+        entry: bash -c 'poetry run pip-audit --desc'
         language: system
         pass_filenames: false
         always_run: true
@@ -35,6 +34,24 @@ repos:
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
+
+  # Node tooling for frontend versioning and dev server management
+  - repo: local
+    hooks:
+      - id: bump-version
+        name: bump semver patch
+        entry: node scripts/bump-version.js
+        language: node
+        additional_dependencies: ['semver']
+        pass_filenames: false
+        stages: [pre-commit]
+      - id: restart-frontend
+        name: restart frontend dev server
+        entry: node scripts/restart-frontend.js
+        language: node
+        additional_dependencies: ['kill-port']
+        pass_filenames: false
+        stages: [post-commit]
 
   # General file hygiene
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -56,9 +73,17 @@ repos:
   # Security scan + tests — run on push (slow; skip with SKIP=bandit,pytest-check)
   - repo: local
     hooks:
+      - id: poetry-check
+        name: poetry config validation
+        entry: poetry check --no-interaction
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       - id: bandit
         name: bandit security scan
-        entry: python -m bandit -r src -ll
+        entry: bash -c 'poetry run bandit -r src -ll'
         language: system
         pass_filenames: false
         always_run: true
@@ -66,7 +91,7 @@ repos:
 
       - id: pytest-check
         name: pytest (TDD gate)
-        entry: python -m pytest --tb=short -q
+        entry: bash -c 'poetry run pytest --tb=short -q'
         language: system
         pass_filenames: false
         always_run: true

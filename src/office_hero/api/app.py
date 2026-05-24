@@ -1,59 +1,45 @@
-"""Office Hero FastAPI application factory with dependency injection."""
-
-from __future__ import annotations
+"""Office Hero FastAPI application factory (SOLID: SRP, DIP)."""
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
 
-from office_hero.repositories.mocks import MockOutboxRepository, MockSagaRepository
-from office_hero.repositories.protocols import OutboxRepository
-from office_hero.services.saga_service import SagaService
+from office_hero.api.exception_handlers import register_exception_handlers
+from office_hero.api.limiter import limiter
+from office_hero.api.middleware.logging import LoggingMiddleware
+from office_hero.api.middleware.security_headers import SecurityHeadersMiddleware
+from office_hero.api.routes import admin, health, sagas
 
 
-def create_app(
-    *,
-    saga_service: SagaService | None = None,
-    outbox_repo: OutboxRepository | None = None,
-) -> FastAPI:
-    """Create FastAPI app with optional dependency injection for testability.
+def create_app() -> FastAPI:
+    """Create and configure the FastAPI application.
 
-    Args:
-        saga_service: SagaService instance (defaults to mock-backed for dev).
-        outbox_repo: OutboxRepository instance (defaults to mock for dev).
+    Wires middleware (order matters — outermost first), exception handlers,
+    the slowapi rate limiter, and all route routers.
     """
-    if saga_service is None:
-        saga_service = SagaService(saga_repo=MockSagaRepository())
-    if outbox_repo is None:
-        outbox_repo = MockOutboxRepository()
-
-    from office_hero.api.routes.admin import create_admin_router
-    from office_hero.api.routes.sagas import create_saga_router
-
     application = FastAPI(
         title="Office Hero",
         description="Back-office management API for office services",
         version="0.1.0",
     )
 
-    @application.get("/health", tags=["health"])
-    async def health_check():
-        """Health check endpoint."""
-        return JSONResponse({"status": "ok"})
+    # --- Middleware (outermost ➜ innermost) ---
+    # Security headers must wrap everything so every response gets them.
+    application.add_middleware(SecurityHeadersMiddleware)
+    # Logging after security so request_id is available for error responses.
+    application.add_middleware(LoggingMiddleware)
 
-    # Include routers with injected dependencies
-    application.include_router(
-        create_saga_router(saga_service=saga_service),
-        prefix="/sagas",
-        tags=["sagas"],
-    )
-    application.include_router(
-        create_admin_router(saga_service=saga_service, outbox_repo=outbox_repo),
-        prefix="/admin",
-        tags=["admin"],
-    )
+    # --- Exception handlers ---
+    register_exception_handlers(application)
+
+    # --- slowapi rate limiter state ---
+    application.state.limiter = limiter
+
+    # --- Routers ---
+    application.include_router(health.router, tags=["health"])
+    application.include_router(sagas.router, prefix="/sagas", tags=["sagas"])
+    application.include_router(admin.router, prefix="/admin", tags=["admin"])
 
     return application
 
 
-# Module-level app for uvicorn / existing imports
+# Module-level instance used by TestClient and uvicorn
 app = create_app()
