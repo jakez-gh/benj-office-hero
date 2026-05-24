@@ -1,6 +1,12 @@
 import fetch from 'cross-fetch';
 import axios from 'axios';
-import type { LoginResponse as MobileLoginResponse, Route, AcknowledgeResponse } from '@office-hero/types';
+import type {
+  LoginResponse as MobileLoginResponse,
+  Route,
+  AcknowledgeResponse,
+  AuditEventsPage,
+  RateLimitErrorBody,
+} from '@office-hero/types';
 
 // --- Base URLs ---
 
@@ -124,6 +130,53 @@ export async function listVehicles(): Promise<AdminVehicle[]> {
 
 // --- Mobile SDK (cross-fetch based — username auth, direct URL) ---
 
+// ---------------------------------------------------------------------------
+// Custom error for 429 responses so UI can show user-friendly feedback
+// ---------------------------------------------------------------------------
+
+export class RateLimitError extends Error {
+  /** Seconds the client should wait before retrying. */
+  retryAfter: number;
+
+  constructor(retryAfter: number, message?: string) {
+    super(message ?? `Rate limited. Retry after ${retryAfter}s.`);
+    this.name = 'RateLimitError';
+    this.retryAfter = retryAfter;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/** Throw RateLimitError for 429, generic Error for other failures. */
+async function assertOk(resp: Response, label: string): Promise<void> {
+  if (resp.ok) return;
+
+  if (resp.status === 429) {
+    let retryAfter = 60; // default
+    const retryHeader = resp.headers.get('Retry-After');
+    if (retryHeader) {
+      const parsed = parseInt(retryHeader, 10);
+      if (!isNaN(parsed)) retryAfter = parsed;
+    }
+    // Try to read body for detail
+    try {
+      const body: RateLimitErrorBody = await resp.json();
+      if (body.retry_after) retryAfter = body.retry_after;
+    } catch {
+      // ignore parse errors
+    }
+    throw new RateLimitError(retryAfter);
+  }
+
+  throw new Error(`${label} failed: ${resp.status}`);
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
 export interface Credentials {
   username: string;
   password: string;
@@ -135,7 +188,7 @@ export async function mobileLogin(creds: Credentials): Promise<MobileLoginRespon
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(creds),
   });
-  if (!resp.ok) throw new Error(`login failed: ${resp.status}`);
+  await assertOk(resp, 'login');
   return resp.json();
 }
 
@@ -143,7 +196,7 @@ export async function getDailyRoute(token: string): Promise<Route> {
   const resp = await fetch(BASE_URL + '/technician/route', {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!resp.ok) throw new Error(`getDailyRoute failed: ${resp.status}`);
+  await assertOk(resp, 'getDailyRoute');
   return resp.json();
 }
 
@@ -152,7 +205,7 @@ export async function acknowledgeStop(token: string, stopId: string): Promise<Ac
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
   });
-  if (!resp.ok) throw new Error(`acknowledgeStop failed: ${resp.status}`);
+  await assertOk(resp, 'acknowledgeStop');
   return resp.json();
 }
 
@@ -162,7 +215,7 @@ export async function postLocation(token: string, vehicleId: string, lat: number
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ latitude: lat, longitude: lng }),
   });
-  if (!resp.ok) throw new Error(`postLocation failed: ${resp.status}`);
+  await assertOk(resp, 'postLocation');
 }
 
 export interface CreateJobRequest {
@@ -183,6 +236,34 @@ export async function createJob(token: string, job: CreateJobRequest): Promise<C
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(job),
   });
-  if (!resp.ok) throw new Error(`createJob failed: ${resp.status}`);
+  await assertOk(resp, 'createJob');
+  return resp.json();
+}
+
+// ---------------------------------------------------------------------------
+// Audit Events — Admin panel (Slice 4)
+// ---------------------------------------------------------------------------
+
+export interface AuditEventsParams {
+  limit?: number;
+  offset?: number;
+  event_type?: string;
+  tenant_id?: string;
+}
+
+export async function getAuditEvents(
+  token: string,
+  params: AuditEventsParams = {},
+): Promise<AuditEventsPage> {
+  const qs = new URLSearchParams();
+  if (params.limit != null) qs.set('limit', String(params.limit));
+  if (params.offset != null) qs.set('offset', String(params.offset));
+  if (params.event_type) qs.set('event_type', params.event_type);
+  if (params.tenant_id) qs.set('tenant_id', params.tenant_id);
+
+  const resp = await fetch(`${BASE_URL}/admin/audit-events?${qs.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  await assertOk(resp, 'getAuditEvents');
   return resp.json();
 }

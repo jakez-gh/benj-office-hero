@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
-import { getDailyRoute, acknowledgeStop } from '@office-hero/api-client';
+import { View, Text, Button, FlatList, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { getDailyRoute, acknowledgeStop, RateLimitError } from '@office-hero/api-client';
 import type { Route, Stop } from '@office-hero/types';
 
 export type RouteScreenProps = {
@@ -25,7 +25,14 @@ export default function RouteScreen({ token, navigation }: RouteScreenProps) {
         );
       }
       } catch (err) {
-        console.error('failed to load route', err);
+        if (err instanceof RateLimitError) {
+          Alert.alert(
+            'Too Many Requests',
+            `You are being rate limited. Please wait ${err.retryAfter} seconds before trying again.`,
+          );
+        } else {
+          console.error('failed to load route', err);
+        }
       } finally {
         setLoading(false);
       }
@@ -47,7 +54,14 @@ export default function RouteScreen({ token, navigation }: RouteScreenProps) {
           : r
       );
     } catch (err) {
-      console.error('ack failed', err);
+      if (err instanceof RateLimitError) {
+        Alert.alert(
+          'Too Many Requests',
+          `You are being rate limited. Please wait ${err.retryAfter} seconds before trying again.`,
+        );
+      } else {
+        console.error('ack failed', err);
+      }
     } finally {
       setAckInProgress(null);
     }

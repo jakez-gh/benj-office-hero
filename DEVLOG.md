@@ -5,6 +5,39 @@ Format: `## YYYYMMDD` date header followed by brief session notes.
 
 ---
 
+## 20260310 (session 5 — Slice 4 Implementation: Production Hardening)
+
+- **Slice 4 (Observability & Rate Limiting) fully implemented — TDD, SOLID:**
+
+  **Backend changes:**
+  - Refactored `app.py` from flat module-level `app = FastAPI()` to `create_app()` factory
+    (SOLID: DIP — middleware, handlers, limiter wired via composition, not global state)
+  - Added `rate_limit_error_handler` to `exception_handlers.py` — 429 + `Retry-After` header +
+    structured JSON body (`detail`, `retry_after`, `request_id`)
+  - Added `GET /admin/audit-events` endpoint with pagination (`limit`/`offset`) and filtering
+    (`event_type`, `tenant_id`); returns contract shape (DB query wired when session injected)
+  - Wired `SecurityHeadersMiddleware`, `LoggingMiddleware`, `RateLimitExceeded` handler
+    into `create_app()` factory
+
+  **Frontend/types changes:**
+  - Added `AuditEvent`, `AuditEventsPage`, `RateLimitErrorBody` types to `packages/types`
+  - Added `RateLimitError` class + `assertOk()` helper to `packages/api-client`
+  - Added `getAuditEvents()` function to API client
+  - Updated all 3 mobile screens (Login, JobEntry, Route) with 429 toast alerts
+  - Added 7 new API client tests (429 handling + audit events)
+  - Added rate-limit toast test to `LoginScreen.test.tsx`
+
+  **Infrastructure:**
+  - Rewrote `scripts/start-backend.sh` — random port (49152–65535), PID file, kill-on-deploy
+    (SIGTERM + 5s wait + SIGKILL fallback)
+  - Rewrote `.githooks/post-merge` — PID-based kill+restart after merge
+  - Created `scripts/ensure-backend.sh` — idempotent pre-test backend startup
+
+  **Test results:** 131 passed, 1 skipped, 0 failed; black clean; ruff clean
+  **Note:** `apps/tech-mobile` Jest tests pre-existing broken (`jest-expo@48` vs `react-native@0.83`)
+
+---
+
 ## 20260309 (session 4 — continued: conflict resolution + final merges)
 
 - **All 4 open PRs successfully merged into main.** Extended resolution required after PR

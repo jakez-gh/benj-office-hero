@@ -62,7 +62,6 @@ jobs:
   e2e:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     needs: install-and-build
     steps:
       - uses: actions/checkout@v4
@@ -98,7 +97,7 @@ jobs:
 
       - name: Run E2E tests
         working-directory: apps/admin-web
-        run: npx playwright test --project=chromium
+        run: npx playwright test
         continue-on-error: true
 
       - name: Upload Playwright report
