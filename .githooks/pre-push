@@ -8,6 +8,6 @@ ARGS=(hook-impl --config=.pre-commit-config.yaml --hook-type=pre-push --hook-dir
 if command -v pre-commit > /dev/null; then
     exec pre-commit "${ARGS[@]}"
 else
-    echo '`pre-commit` not found. Run: pip install pre-commit' 1>&2
+    echo '`pre-commit` not found. Run: poetry install --with dev' 1>&2
     exit 1
 fi

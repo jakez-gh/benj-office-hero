@@ -3,38 +3,38 @@
 help:
 	@echo "benj.office-hero — developer targets"
 	@echo ""
-	@echo "  make install    Install runtime dependencies"
-	@echo "  make dev        Install dev dependencies + activate hooks"
+	@echo "  make install    Install runtime dependencies (Poetry)"
+	@echo "  make dev        Install all dependencies + activate hooks"
 	@echo "  make run        Start FastAPI dev server (requires .env)"
-	@echo "  make test       Run pytest"
+	@echo "  make test       Run pytest via Poetry"
 	@echo "  make lint       Run pre-commit on all files"
 	@echo "  make security   Run bandit + pip-audit"
 	@echo "  make qa         Run all quality gates (lint + security + test)"
 	@echo "  make clean      Remove build/cache artifacts"
 
 install:
-	pip install -e .
+	poetry install --no-interaction
 
 dev:
-	pip install -e ".[dev]"
+	poetry install --with dev --no-interaction
 	git config core.hooksPath .githooks
-	python -c "import stat, pathlib; [f.chmod(f.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) for f in pathlib.Path('.githooks').iterdir() if f.is_file() and not f.name.startswith('.')]"
-	python -c "import stat, pathlib; [f.chmod(f.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) for f in pathlib.Path('scripts').iterdir() if f.suffix == '.sh']"
+	chmod +x .githooks/* 2>/dev/null || true
+	chmod +x scripts/*.sh 2>/dev/null || true
 
 run:
 	bash scripts/start-backend.sh
 
 test:
-	python -m pytest -q --tb=short
+	poetry run pytest -q --tb=short
 
 lint:
-	python -m pre_commit run --all-files
+	poetry run pre-commit run --all-files
 
 security:
 	@echo "--- bandit ---"
-	python -m bandit -r src -ll
+	poetry run bandit -r src -ll
 	@echo "--- pip-audit ---"
-	python -m pip_audit --desc
+	poetry run pip-audit --desc
 
 qa: lint security test
 	@echo "All quality gates passed."

@@ -1,10 +1,48 @@
-"""Admin routes for dead-letter and saga management."""
+"""Admin routes for dead-letter, saga management, and audit events."""
+
+from __future__ import annotations
 
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Path, Query
 
 router = APIRouter()
+
+
+# ---------------------------------------------------------------------------
+# Audit Events — Slice 4 (Observability)
+# ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/audit-events",
+    response_model=dict,
+    summary="List audit events",
+    description="Paginated, filterable audit event listing for admin panel",
+)
+async def list_audit_events(
+    limit: int = Query(50, ge=1, le=1000, description="Max results per page"),
+    offset: int = Query(0, ge=0, description="Pagination offset"),
+    event_type: str | None = Query(None, description="Filter by event type"),
+    tenant_id: str | None = Query(None, description="Filter by tenant ID"),
+) -> dict:
+    """List audit events with pagination and optional filters.
+
+    Returns paginated audit events from the append-only audit_events table.
+    Supports filtering by event_type and tenant_id for efficient admin
+    investigation.
+
+    **Note:** DB-backed query wired when async session is available in
+    the admin dependency. Returns an empty result set until then.
+    """
+    # TODO: Wire real DB query via AuditService when session is injected.
+    # For now, return the contract shape so the admin panel can bind to it.
+    return {
+        "items": [],
+        "total": 0,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @router.get(

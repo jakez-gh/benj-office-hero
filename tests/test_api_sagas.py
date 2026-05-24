@@ -10,10 +10,19 @@ client = TestClient(app)
 
 
 def test_health_check():
-    """Test health check endpoint."""
+    """Test health check endpoint returns structured response.
+
+    In test env without DB/ORS the probes fail, so status is 'unhealthy' (503).
+    We verify the response shape rather than the status code, since the real
+    health route performs live probes.
+    """
     response = client.get("/health")
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    body = response.json()
+    assert "status" in body
+    assert "db" in body
+    assert "ors" in body
+    # Without a running DB the expected result is 503 unhealthy
+    assert response.status_code in (200, 503)
 
 
 def test_get_saga_state_not_implemented():
