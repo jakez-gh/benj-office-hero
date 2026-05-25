@@ -229,6 +229,22 @@ The admin-web ships with one CSS rule today (see `UI_UX_REPORT_2026-05-24.md` in
 
 ---
 
+## Scheduled remote orchestrator
+
+A claude.ai routine runs this orchestration loop once per hour. Independent of any local session.
+
+- **Routine ID:** `trig_016kxXhmZQhycdUDtFXdnzLS`
+- **Dashboard:** <https://claude.ai/code/routines/trig_016kxXhmZQhycdUDtFXdnzLS>
+- **Cadence:** `17 * * * *` UTC (every hour at minute :17)
+- **Model:** `claude-opus-4-7`
+- **Source:** `jakez-gh/benj-office-hero` (clean clone each tick)
+- **Per-tick budget:** at most ONE worker dispatch + ONE reviewer dispatch + ONE merge
+- **Tick log:** `orchestration-tick-log.md` at the repo root, committed periodically on `chore/tick-log`
+
+If the routine is making bad decisions, update or pause it via the dashboard. If the orchestration logic in this file changes meaningfully, also update the routine's embedded prompt — the routine carries a fallback copy of the priority order in case this file isn't on `main` yet at tick time.
+
+---
+
 ## How to resume in a new session
 
 Any future agent or human picks up like this:
