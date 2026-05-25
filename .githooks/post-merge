@@ -9,7 +9,21 @@
 
 set -euo pipefail
 
-HEALTH_URL="http://127.0.0.1:8000/health"
+# ── ANSI colors (degrade to empty strings when stdout is not a tty) ──────────
+# Without `nounset`-safe defaults the references below would abort the hook
+# on every pull. We emit empty strings rather than escape codes when stderr
+# isn't a tty (e.g. git GUI clients, CI logs).
+if [[ -t 1 ]]; then
+    GREEN="\033[0;32m"
+    YELLOW="\033[1;33m"
+    RED="\033[0;31m"
+    NC="\033[0m"
+else
+    GREEN=""
+    YELLOW=""
+    RED=""
+    NC=""
+fi
 
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 PID_FILE="$PROJECT_ROOT/.backend.pid"
