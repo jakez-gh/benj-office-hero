@@ -12,9 +12,7 @@ try:
 except ImportError:  # pragma: no cover - fastapi may not be installed in CI
     pytest.skip("fastapi not available, skipping integration tests", allow_module_level=True)
 
-from office_hero_mcp.client import client
-
-from tools.generate_mcp_from_openapi import generate
+from tools.generate_mcp_from_openapi import generate  # noqa: E402
 
 
 class Tokens(BaseModel):
@@ -29,7 +27,7 @@ def create_auth_app() -> FastAPI:
         email: str
         password: str
 
-    @app.post("/auth/login", response_model=Tokens)
+    @app.post("/auth/login", response_model=Tokens, operation_id="auth_login")
     def login(req: LoginRequest):
         # echo back some dummy tokens
         return {"access_token": "x", "refresh_token": "y"}
@@ -37,18 +35,18 @@ def create_auth_app() -> FastAPI:
     class RefreshRequest(BaseModel):
         refresh_token: str
 
-    @app.post("/auth/refresh", response_model=Tokens)
+    @app.post("/auth/refresh", response_model=Tokens, operation_id="auth_refresh")
     def refresh(req: RefreshRequest):
         return {"access_token": "x2", "refresh_token": "y2"}
 
-    @app.post("/auth/logout")
+    @app.post("/auth/logout", operation_id="auth_logout")
     def logout():
         return {"ok": True}
 
     return app
 
 
-def test_generate_and_call_against_fastapi(tmp_path):
+def test_generate_and_call_against_fastapi(tmp_path, monkeypatch):
     # spin up the test FastAPI app and grab spec
     app = create_auth_app()
     client_app = TestClient(app)
@@ -71,26 +69,31 @@ def test_generate_and_call_against_fastapi(tmp_path):
     try:
         import auth_login
 
-        # patch the client to use HTTP calls against our testserver
-        called = []
+        # patch the per-request client factory inside the generated module
+        # so the tool actually calls the FastAPI TestClient instead of
+        # opening a real httpx connection.
+        called: list[tuple[str, dict]] = []
 
-        def http_post(path, **kwargs):
-            called.append((path, kwargs))
-            # forward to TestClient
-            r = client_app.post(path, json=kwargs.get("json"), params=kwargs.get("params"))
-            r.raise_for_status()
-            return r.json()
+        class _Bridge:
+            async def post(self, path, **kwargs):
+                called.append((path, kwargs))
+                r = client_app.post(path, json=kwargs.get("json"), params=kwargs.get("params"))
+                r.raise_for_status()
+                return r.json()
 
-        # simple sync wrapper to match async signature
-        async def fake_post(path, **kwargs):
-            return http_post(path, **kwargs)
+            async def get(self, path, **kwargs):
+                called.append((path, kwargs))
+                r = client_app.get(path, params=kwargs.get("params"))
+                r.raise_for_status()
+                return r.json()
 
-        pytest.monkeypatch.setattr(client, "post", fake_post)
+        bridge = _Bridge()
+        monkeypatch.setattr(auth_login, "get_client", lambda ctx=None: bridge)
 
         import asyncio
 
         inp = auth_login.AuthLoginInput(email="a@example.com", password="pw")
-        res = asyncio.run(auth_login.auth_login(inp))
+        res = asyncio.run(auth_login.auth_login(inp, ctx=None))
         assert res["access_token"] == "x"
         assert called and called[0][0] == "/auth/login"
     finally:

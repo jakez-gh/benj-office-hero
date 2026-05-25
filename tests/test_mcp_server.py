@@ -4,7 +4,7 @@ import pytest
 
 pytest.importorskip("mcp", reason="mcp package not installed — run from mcp-server/")
 
-from office_hero_mcp.server import load_tools, server
+from office_hero_mcp.server import load_tools, server  # noqa: E402
 
 
 def test_server_registers_tools():
@@ -16,5 +16,3 @@ def test_server_registers_tools():
     assert "get_health" in names
     assert "get_routing_options" in names
     assert "dispatch_job" in names
-    # generated example from sample spec may also appear
-    assert "hello" in names

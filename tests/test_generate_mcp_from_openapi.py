@@ -6,10 +6,9 @@ import pytest
 
 pytest.importorskip("mcp", reason="mcp package not installed — run from mcp-server/")
 
-from office_hero_mcp.client import client
-from pydantic import ValidationError
+from pydantic import ValidationError  # noqa: E402
 
-from tools import generate_mcp_from_openapi as gen
+from tools import generate_mcp_from_openapi as gen  # noqa: E402
 
 
 def make_auth_spec() -> dict[str, Any]:
@@ -63,6 +62,22 @@ def make_auth_spec() -> dict[str, Any]:
     }
 
 
+class _FakeClient:
+    """Records calls and returns canned responses."""
+
+    def __init__(self, response):
+        self._response = response
+        self.calls: list[tuple[str, dict]] = []
+
+    async def post(self, path, **kwargs):
+        self.calls.append((path, kwargs))
+        return self._response
+
+    async def get(self, path, **kwargs):
+        self.calls.append((path, kwargs))
+        return self._response
+
+
 def test_generate_auth_tools(tmp_path, monkeypatch):
     spec_path = tmp_path / "spec.json"
     spec_path.write_text(json.dumps(make_auth_spec()))
@@ -77,8 +92,11 @@ def test_generate_auth_tools(tmp_path, monkeypatch):
     # inspect login file content
     login_content = (out_dir / "auth_login.py").read_text()
     assert "async def auth_login" in login_content
-    assert "client.post" in login_content
+    # generated tools must use the per-request client factory (ADR 061)
+    assert "get_client(ctx).post" in login_content
     assert "/auth/login" in login_content
+    # tools must accept Context so JWT passthrough works
+    assert "ctx: Context" in login_content
 
     # dynamic import and invocation
     sys.path.insert(0, str(out_dir))
@@ -89,23 +107,18 @@ def test_generate_auth_tools(tmp_path, monkeypatch):
         login_in = auth_login.AuthLoginInput(email="a", password="b")
         assert login_in.email == "a"
 
-        # monkeypatch client methods
-        called = []
-
-        async def fake_post(path, **kwargs):
-            called.append((path, kwargs))
-            return {"ok": True}
-
-        # use fixture passed into outer test
-        monkeypatch.setattr(client, "post", fake_post)
+        # patch the get_client factory inside the generated module so the
+        # tool uses our fake instead of opening a real httpx connection.
+        fake = _FakeClient({"ok": True})
+        monkeypatch.setattr(auth_login, "get_client", lambda ctx=None: fake)
 
         # actually call the async function by running loop
         import asyncio
 
-        out = asyncio.run(auth_login.auth_login(login_in))
+        out = asyncio.run(auth_login.auth_login(login_in, ctx=None))
         assert out == {"ok": True}
-        assert called[0][0] == "/auth/login"
-        assert "json" in called[0][1]
+        assert fake.calls[0][0] == "/auth/login"
+        assert "json" in fake.calls[0][1]
 
         # invalid input should raise ValidationError
         with pytest.raises(ValidationError):

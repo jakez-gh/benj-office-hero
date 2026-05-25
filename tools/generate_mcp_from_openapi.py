@@ -1,9 +1,11 @@
 r"""Generate MCP tools from a FastAPI OpenAPI spec.
 
-This is a more capable generator than the simple one in ``scripts``; it
-understands HTTP methods, path parameters, query parameters and request
-bodies and produces a concrete call to ``office_hero_mcp.client`` with the
-correct method, URL and payload.
+This is the canonical generator. It understands HTTP methods, path
+parameters, query parameters and request bodies and produces a concrete
+call to ``office_hero_mcp.client`` with the correct method, URL and
+payload. Each generated tool accepts the FastMCP ``Context`` and obtains a
+per-request ``RESTClient`` via ``get_client(ctx)`` so the caller's JWT is
+forwarded to the REST API (ADR 061 lines 80-81).
 
 Intended usage (workspace root):
 
@@ -12,8 +14,8 @@ Intended usage (workspace root):
         mcp-server/src/office_hero_mcp/tools/generated
 
 The script is deliberately "dumb" about types (all fields are typed as
-``Any``) to avoid having to replicate the entire OpenAPI model machinery.  It
-is run during development when the REST API is changing; the generated
+``Any``) to avoid having to replicate the entire OpenAPI model machinery.
+It is run during development when the REST API is changing; the generated
 modules are committed so that the MCP server can load them at runtime.
 """
 
@@ -37,6 +39,11 @@ def format_path(path_template: str, path_params: list[str]) -> str:
     for p in path_params:
         result = result.replace("{" + p + "}", "{input." + p + "}")
     return result
+
+
+def method_lower(m: str) -> str:
+    # helper to map HTTP verb to client method name, e.g. POST -> post
+    return m.lower()
 
 
 def generate(openapi_path: Path, output_dir: Path) -> None:
@@ -86,8 +93,11 @@ def generate(openapi_path: Path, output_dir: Path) -> None:
             lines: list[str] = []
             lines.append("# AUTO-GENERATED from openapi spec - DO NOT EDIT")
             lines.append("from typing import Any")
+            lines.append("")
+            lines.append("from mcp.server.fastmcp import Context")
             lines.append("from pydantic import BaseModel")
-            lines.append("from office_hero_mcp.client import client")
+            lines.append("")
+            lines.append("from office_hero_mcp.client import get_client")
             lines.append("from office_hero_mcp.server import tool\n")
 
             lines.append(f"class {model_name}(BaseModel):")
@@ -105,7 +115,7 @@ def generate(openapi_path: Path, output_dir: Path) -> None:
             formatted_path = format_path(raw_path, path_params)
 
             lines.append(f'@tool(name="{tool_name}", description="{description}")')
-            lines.append(f"async def {tool_name}(input: {model_name}) -> Any:")
+            lines.append(f"async def {tool_name}(input: {model_name}, ctx: Context) -> Any:")
             # prepare call arguments
             call_args: list[str] = []
             if path_params or query_params:
@@ -115,25 +125,19 @@ def generate(openapi_path: Path, output_dir: Path) -> None:
                 call_args.append("json=input.model_dump(exclude_none=True)")
             call_arg_str = ", ".join(call_args)
 
+            verb = method_lower(method_upper)
             if call_arg_str:
                 lines.append(
-                    f'    return await client.{method_lower(method_upper)}(f"{formatted_path}", {call_arg_str})'
+                    f'    return await get_client(ctx).{verb}(f"{formatted_path}", {call_arg_str})'
                 )
             else:
-                lines.append(
-                    f'    return await client.{method_lower(method_upper)}(f"{formatted_path}")'
-                )
+                lines.append(f'    return await get_client(ctx).{verb}(f"{formatted_path}")')
             lines.append("")
 
             path_py = output_dir / f"{tool_name}.py"
             with path_py.open("w", encoding="utf-8") as f:
                 f.write("\n".join(lines))
             print(f"generated {path_py}")
-
-
-def method_lower(m: str) -> str:
-    # helper to map HTTP verb to client method name, e.g. POST -> post
-    return m.lower()
 
 
 def main(argv: list[str]) -> None:
