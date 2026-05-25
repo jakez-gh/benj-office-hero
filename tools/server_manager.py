@@ -12,7 +12,6 @@ import argparse
 import contextlib
 import json
 import os
-import random
 import shlex
 import shutil
 import signal
@@ -31,8 +30,7 @@ STATE_FILE = RUNTIME_DIR / "test-servers.json"
 PORTS_FILE = RUNTIME_DIR / "test-ports.env"
 
 HOST = "127.0.0.1"
-PORT_MIN = 20000
-PORT_MAX = 60999
+_MAX_PORT_ATTEMPTS = 32
 
 
 @dataclass(slots=True)
@@ -64,8 +62,13 @@ def _load_dotenv(dotenv_path: Path) -> dict[str, str]:
 
 
 def _port_available(port: int) -> bool:
+    """Return ``True`` when ``port`` can be bound on :data:`HOST`.
+
+    Retained for test compatibility — the production code path now uses
+    :func:`find_random_free_port` which lets the kernel pick the port and
+    eliminates the TOCTOU race that ``_port_available`` previously had.
+    """
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
             sock.bind((HOST, port))
         except OSError:
@@ -75,22 +78,33 @@ def _port_available(port: int) -> bool:
 
 def find_random_free_port(
     used_ports: set[int] | None = None,
-    min_port: int = PORT_MIN,
-    max_port: int = PORT_MAX,
-    attempts: int = 256,
+    attempts: int = _MAX_PORT_ATTEMPTS,
 ) -> int:
-    """Find a free TCP port within a high, low-collision range."""
+    """Ask the kernel for a free TCP port.
+
+    Binds to port ``0`` and reads back the OS-assigned port via
+    ``getsockname()``. This eliminates the previous bind-then-close race: the
+    returned port is held in ``TIME_WAIT`` by the kernel for ~a few ms, so
+    callers should hand it to the actual server immediately.
+
+    ``used_ports`` filters out ports already handed out in the current run
+    (e.g. when backend and frontend are allocated back-to-back). The kernel
+    has so many ephemeral ports available that retrying on a collision will
+    almost always succeed on the first attempt.
+    """
     reserved = used_ports or set()
-    rng = random.SystemRandom()
 
     for _ in range(attempts):
-        candidate = rng.randint(min_port, max_port)
-        if candidate in reserved:
-            continue
-        if _port_available(candidate):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind((HOST, 0))
+            candidate = sock.getsockname()[1]
+        if candidate not in reserved:
             return candidate
 
-    raise RuntimeError("Unable to find a free random port after multiple attempts")
+    raise RuntimeError(
+        "Unable to find a free random port after multiple attempts "
+        f"(reserved={sorted(reserved)})"
+    )
 
 
 def _is_pid_alive(pid: int) -> bool:
@@ -288,14 +302,38 @@ def _spawn_process(name: str, command: list[str], env: dict[str, str]) -> subpro
     return proc
 
 
+_REQUIRED_BACKEND_ENV = ("JWT_PRIVATE_KEY", "JWT_PUBLIC_KEY", "JWT_ALGORITHM")
+
+
 def _base_env() -> dict[str, str]:
+    """Build the environment for the managed backend process.
+
+    Configuration priority (lowest → highest):
+      1. The parent process environment.
+      2. ``.env`` (developer's local secrets).
+      3. ``.env.test`` (test-specific overrides; not committed).
+
+    JWT material is *not* defaulted by this function — ADR 060 specifies
+    asymmetric RS256 keys, so silently substituting a symmetric ``dev-secret``
+    would normalize the wrong shape. If the resolved environment is missing
+    any of the required variables we raise ``RuntimeError`` with a pointer to
+    ``.env.example`` so the operator fixes the configuration rather than
+    discovers a misconfigured test server later.
+    """
     env = dict(os.environ)
     env.update(_load_dotenv(PROJECT_ROOT / ".env"))
+    env.update(_load_dotenv(PROJECT_ROOT / ".env.test"))
     env.setdefault("DATABASE_URL", "postgresql+asyncpg://postgres:pass@127.0.0.1:55432/test")
-    env.setdefault("JWT_PRIVATE_KEY", "dev-secret")
-    env.setdefault("JWT_PUBLIC_KEY", "dev-secret")
-    env.setdefault("JWT_ALGORITHM", "HS256")
     env.setdefault("PYTHONPATH", str(PROJECT_ROOT / "src"))
+
+    missing = [name for name in _REQUIRED_BACKEND_ENV if not env.get(name)]
+    if missing:
+        raise RuntimeError(
+            "server_manager: missing required backend env vars "
+            f"{missing}. Populate `.env.test` (or `.env`) with the values "
+            "documented in `.env.example` — see ADR 060 for the RS256 contract."
+        )
+
     return env
 
 
