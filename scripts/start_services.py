@@ -44,8 +44,9 @@ def ensure_mcp_server(port: int = 8001) -> subprocess.Popen | None:
     print(f"starting MCP server on port {port}")
     env = os.environ.copy()
     env["MCP_SERVER_PORT"] = str(port)
-    # run in same python environment
-    return start_process([sys.executable, "-m", "mcp-server.start"], env=env)
+    # `mcp-server` contains a hyphen and is not a valid Python module identifier.
+    # Invoke the entry script directly so the subprocess can be started.
+    return start_process([sys.executable, "mcp-server/start.py"], env=env)
 
 
 def main():

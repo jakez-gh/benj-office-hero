@@ -1,7 +1,11 @@
 import json
 import sys
 
-from scripts import generate_tools
+import pytest
+
+pytest.importorskip("mcp", reason="mcp package not installed — run from mcp-server/")
+
+from tools import generate_mcp_from_openapi as generate_tools  # noqa: E402
 
 
 def test_generate_tools_creates_python_modules(tmp_path, monkeypatch):
@@ -38,6 +42,8 @@ def test_generate_tools_creates_python_modules(tmp_path, monkeypatch):
     assert "class GetCustomersInput" in content
     assert "search" in content
     assert '@tool(name="get_customers"' in content
+    # the canonical generator must emit the correct HTTP method + path, not a stub
+    assert 'get_client(ctx).get(f"/customers"' in content
 
     # import the module dynamically to ensure it's valid Python
     sys.path.insert(0, str(out_dir))
@@ -77,3 +83,6 @@ def test_generator_handles_request_body(tmp_path):
     generate_tools.generate(spec_file, out_dir)
     gen = (out_dir / "create_job.py").read_text()
     assert "title" in gen
+    # POST endpoints must use the post verb, not the stub GET ""
+    assert "get_client(ctx).post" in gen
+    assert "/jobs" in gen
