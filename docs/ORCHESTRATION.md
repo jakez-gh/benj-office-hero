@@ -163,7 +163,7 @@ The admin-web ships with one CSS rule today (see `UI_UX_REPORT_2026-05-24.md` in
          │ Yes
          ▼
 ┌─────────────────┐
-│ Merge           │  Orchestrator merges via `gh pr merge <#> --squash --delete-branch`
+│ Merge           │  Orchestrator merges via `gh pr merge `{N}` --squash --delete-branch`
 └─────────────────┘
 ```
 
@@ -184,7 +184,7 @@ The admin-web ships with one CSS rule today (see `UI_UX_REPORT_2026-05-24.md` in
 > - `poetry run pytest -q` passes
 > - `poetry run pre-commit run --all-files` passes
 > - `pnpm -r --filter !tech-mobile run test` passes
-> - `gh pr checks <#>` is all green
+> - `gh pr checks `{N}`` is all green
 > 
 > **Workflow:** read PR review → read affected files → fix in priority order → run quality checks → commit semantically → push to existing branch → comment on PR addressing each finding.
 > 
@@ -198,9 +198,9 @@ The admin-web ships with one CSS rule today (see `UI_UX_REPORT_2026-05-24.md` in
 
 > You are a code reviewer with no prior context on this conversation.
 > 
-> Review PR #<N> on jakez-gh/benj-office-hero. The repo is at `/home/jake/Documents/src/office-hero/benj-office-hero/main/`.
+> Review PR #`{N}` on jakez-gh/benj-office-hero. The repo is at `/home/jake/Documents/src/office-hero/benj-office-hero/main/`.
 > 
-> Read the actual code changes: `gh pr view <N> --json files` and `git diff origin/main..origin/<branch>` (from the main worktree).
+> Read the actual code changes: `gh pr view `{N}` --json files` and `git diff origin/main..origin/<branch>` (from the main worktree).
 > 
 > Assess: code quality, security, completeness, test coverage, ADR compliance (ADRs in `project-documents/user/architecture/`), separation of concerns, error handling.
 > 
@@ -211,21 +211,21 @@ The admin-web ships with one CSS rule today (see `UI_UX_REPORT_2026-05-24.md` in
 > - **Specific files to look at** (with line numbers)
 > - **Recommended next steps**
 > 
-> Save the review to `/tmp/pr<N>-review-<timestamp>.md` and post it as a PR comment with `gh pr comment <N> --body-file <path>`.
+> Save the review to `/tmp/pr`{N}`-review-<timestamp>.md` and post it as a PR comment with `gh pr comment `{N}` --body-file <path>`.
 
 ### Slice design template (Phase 4 work in Wave 2)
 
-> You are writing a slice design document for Slice <N> of the Office Hero project.
+> You are writing a slice design document for Slice `{N}` of the Office Hero project.
 > 
-> Read the slice description in `project-documents/user/project-guides/003-slices.office-hero.md` for Slice <N>.
+> Read the slice description in `project-documents/user/project-guides/003-slices.office-hero.md` for Slice `{N}`.
 > 
 > Read the existing design doc pattern in `project-documents/user/slices/006-slice.auth-rbac.md` and match its structure.
 > 
-> Write a new slice design doc at `project-documents/user/slices/<NNN>-slice.<name>.md`. Include: goals, structure (files to create), failing tests (TDD list), dependencies, effort estimate.
+> Write a new slice design doc at `project-documents/user/slices/{NNN}-slice.{name}.md`. Include: goals, structure (files to create), failing tests (TDD list), dependencies, effort estimate.
 > 
 > Reference relevant ADRs in `project-documents/user/architecture/`.
 > 
-> Commit on a `phase-4/slice-<N>-design` branch and open a PR.
+> Commit on a `phase-4/slice-`{N}`-design` branch and open a PR.
 
 ---
 
@@ -238,7 +238,7 @@ Any future agent or human picks up like this:
 3. **Run `gh pr list --state open --json number,title,headRefName`** to see active PRs.
 4. **Read the "Current state" section above.** If the snapshot is stale (PRs merged, new wave started), update it.
 5. **Identify the active wave** from the work queue. Pick up wherever the previous session stopped.
-6. **For active PRs in the worker loop:** check `gh pr view <N> --comments` to see whether a worker or reviewer ran last. If worker last, dispatch reviewer. If reviewer last (with findings), dispatch worker.
+6. **For active PRs in the worker loop:** check `gh pr view `{N}` --comments` to see whether a worker or reviewer ran last. If worker last, dispatch reviewer. If reviewer last (with findings), dispatch worker.
 7. **For waves not started yet:** read the wave's exit criteria, decompose into discrete tasks, dispatch workers.
 
 ---
