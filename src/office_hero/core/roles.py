@@ -12,6 +12,12 @@ class Role(StrEnum):
     """
 
     Owner = "owner"
+    # ``Admin`` is the role string emitted by the admin-web shell (see
+    # ``apps/admin-web/src/__tests__/App.test.tsx`` and
+    # ``apps/admin-web/src/__tests__/UsersPage.test.tsx``). It is reserved for
+    # the ADR-060 tenant-admin work and treated as opaque on the API side until
+    # then; do not remove without updating those frontend tests first.
+    Admin = "admin"
     Operator = "operator"
     OperatorStaff = "operator_staff"
     TenantAdmin = "tenant_admin"

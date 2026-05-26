@@ -211,7 +211,7 @@ These are addressed as **Foundation Work** slices (the first slices implemented)
 | ------- | -------- |
 | Structured logging | `structlog` — JSON output, request-id correlation |
 | Error handling | Global FastAPI exception handler; maps domain exceptions to HTTP status codes |
-| Health checks | `GET /health` — DB connectivity, routing engine reachability |
+| Health checks | Split per liveness vs readiness semantics: `GET /health` is a lightweight liveness probe used by Fly.io and the server-manager hook (returns `{"status": "ok"}`, no I/O); `GET /health/ready` is a readiness probe that verifies DB connectivity and routing engine (ORS) reachability and returns `{status, db, ors}` with HTTP 200 when healthy, 503 otherwise |
 | Request tracing | Middleware injects `X-Request-ID`; propagated to all log lines |
 | Observability | Fly.io metrics + structured logs; Sentry for error tracking |
 | Config management | `pydantic-settings`; all config from env vars; `.env` for local dev |

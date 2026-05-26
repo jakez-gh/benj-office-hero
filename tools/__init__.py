@@ -1,0 +1,1 @@
+"""Office Hero tools package."""
