@@ -130,10 +130,32 @@ class MockOutboxRepository:
         return self.events[event_id]["attempt_count"]
 
     async def get_dead_letters(self, tenant_id: UUID) -> list[dict[str, Any]]:
+        target = str(tenant_id)
         return [
-            e for e in self.events.values() if e["tenant_id"] == tenant_id and e["status"] == "dead"
+            e
+            for e in self.events.values()
+            if str(e["tenant_id"]) == target and e["status"] == "dead"
         ]
 
     async def retry_dead_letter(self, event_id: UUID) -> None:
         self.events[event_id]["status"] = "pending"
         self.events[event_id]["attempt_count"] = 0
+
+    async def list_events(
+        self,
+        *,
+        status: str | None = None,
+        tenant_id: UUID | str | None = None,
+        limit: int = 1000,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        """List outbox events with optional filtering (mock impl)."""
+        target_tenant = str(tenant_id) if tenant_id is not None else None
+        matched = [
+            e
+            for e in self.events.values()
+            if (status is None or e["status"] == status)
+            and (target_tenant is None or str(e["tenant_id"]) == target_tenant)
+        ]
+        matched.sort(key=lambda e: e.get("created_at") or "")
+        return matched[offset : offset + limit]

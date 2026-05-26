@@ -8,6 +8,7 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from office_hero.api.app import create_app
+from office_hero.api.routes.sagas import require_operator as require_operator_saga
 from office_hero.repositories.mocks import MockOutboxRepository, MockSagaRepository
 from office_hero.services.saga_service import SagaService
 
@@ -16,6 +17,8 @@ _saga_repo = MockSagaRepository()
 _saga_service = SagaService(saga_repo=_saga_repo)
 _outbox_repo = MockOutboxRepository()
 app = create_app(saga_service=_saga_service, outbox_repo=_outbox_repo)
+# Bypass Operator RBAC for these unit tests (auth is exercised in test_auth.py).
+app.dependency_overrides[require_operator_saga] = lambda: "operator"
 client = TestClient(app)
 
 

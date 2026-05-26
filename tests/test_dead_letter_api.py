@@ -17,6 +17,7 @@ from fastapi.testclient import TestClient
 from office_hero.api.app import create_app
 from office_hero.repositories.mocks import MockOutboxRepository, MockSagaRepository
 from office_hero.services.saga_service import SagaService
+from tests.conftest import override_admin_auth
 
 
 @pytest.fixture()
@@ -35,8 +36,14 @@ def saga_service(saga_repo):
 
 
 @pytest.fixture()
-def client(saga_service, outbox_repo):
+def tenant_id():
+    return uuid4()
+
+
+@pytest.fixture()
+def client(saga_service, outbox_repo, tenant_id):
     app = create_app(saga_service=saga_service, outbox_repo=outbox_repo)
+    override_admin_auth(app, tenant_id=tenant_id)
     return TestClient(app)
 
 
@@ -53,9 +60,8 @@ class TestListDeadLetters:
         assert data["total"] == 0
 
     @pytest.mark.asyncio
-    async def test_list_dead_letters_with_events(self, client, outbox_repo):
+    async def test_list_dead_letters_with_events(self, client, outbox_repo, tenant_id):
         """Dead-letter events are returned in the list."""
-        tenant_id = uuid4()
         event = await outbox_repo.create(
             tenant_id=tenant_id,
             event_type="dispatch_job",
@@ -85,9 +91,8 @@ class TestRetryDeadLetter:
     """POST /admin/dead-letters/{event_id}/retry — resets dead-letter to pending."""
 
     @pytest.mark.asyncio
-    async def test_retry_dead_letter_success(self, client, outbox_repo):
+    async def test_retry_dead_letter_success(self, client, outbox_repo, tenant_id):
         """Retrying a dead-letter event returns 200 and resets status."""
-        tenant_id = uuid4()
         event = await outbox_repo.create(
             tenant_id=tenant_id,
             event_type="dispatch_job",
@@ -110,9 +115,8 @@ class TestRetryDeadLetter:
         assert response.status_code == 404
 
     @pytest.mark.asyncio
-    async def test_retried_event_removed_from_dead_letters(self, client, outbox_repo):
+    async def test_retried_event_removed_from_dead_letters(self, client, outbox_repo, tenant_id):
         """After retry, event no longer appears in dead-letter list."""
-        tenant_id = uuid4()
         event = await outbox_repo.create(
             tenant_id=tenant_id,
             event_type="sync_customer",

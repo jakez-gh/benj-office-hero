@@ -1,73 +1,99 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-const mockListRoutes = jest.fn();
-const mockClient = {
-  interceptors: { response: { use: jest.fn().mockReturnValue(1), eject: jest.fn() } },
-  defaults: { headers: { common: {} } },
-};
-jest.mock('@office-hero/api-client', () => ({
-  listRoutes: mockListRoutes,
-  client: mockClient,
+const mockCreateSaga = jest.fn();
+const mockGetSagaState = jest.fn();
+
+jest.mock('../api', () => ({
+  createSaga: (...args: unknown[]) => mockCreateSaga(...args),
+  getSagaState: (...args: unknown[]) => mockGetSagaState(...args),
 }));
 
 import { DispatchPage } from '../pages/DispatchPage';
 
 describe('DispatchPage', () => {
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.resetAllMocks();
   });
 
-  it('shows loading state initially', () => {
-    mockListRoutes.mockReturnValue(new Promise(() => {})); // never resolves
-    render(<DispatchPage />);
-    expect(screen.getByText('Loading routes…')).toBeInTheDocument();
+  afterEach(() => {
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+    jest.useRealTimers();
   });
 
-  it('renders route data in a table on success', async () => {
-    mockListRoutes.mockResolvedValue([
-      { id: 'r-1', vehicle_id: 'v-10', technician_id: 't-5', status: 'active' },
-      { id: 'r-2', vehicle_id: 'v-11', technician_id: 't-6', status: 'complete' },
-    ]);
+  const fillForm = (): void => {
+    fireEvent.change(screen.getByLabelText(/Tenant ID/i), {
+      target: { value: 'tenant-1' },
+    });
+    fireEvent.change(screen.getByLabelText(/Job ID/i), {
+      target: { value: 'job-1' },
+    });
+    fireEvent.change(screen.getByLabelText(/Technician ID/i), {
+      target: { value: 'tech-1' },
+    });
+  };
 
+  it('renders the dispatch form', () => {
     render(<DispatchPage />);
 
-    await waitFor(() => {
-      expect(screen.getByText('Live routes: 2')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Dispatch/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Dispatch Job/i })).toBeInTheDocument();
+  });
+
+  it('submits the form and shows the saga status badge', async () => {
+    mockCreateSaga.mockResolvedValue({
+      saga_id: 'saga-1',
+      saga_type: 'dispatch_job',
+      status: 'running',
+      current_step: 0,
+      context: { tenant_id: 'tenant-1' },
+      last_error: null,
+      created_at: null,
+      updated_at: null,
+    });
+    mockGetSagaState.mockResolvedValue({
+      saga_id: 'saga-1',
+      saga_type: 'dispatch_job',
+      status: 'done',
+      current_step: 1,
+      context: { tenant_id: 'tenant-1' },
+      last_error: null,
+      created_at: null,
+      updated_at: null,
     });
 
-    expect(screen.getByText('r-1')).toBeInTheDocument();
-    expect(screen.getByText('v-10')).toBeInTheDocument();
-    expect(screen.getByText('t-5')).toBeInTheDocument();
-    expect(screen.getByText('active')).toBeInTheDocument();
-    expect(screen.getByText('r-2')).toBeInTheDocument();
-  });
-
-  it('shows empty message when no routes exist', async () => {
-    mockListRoutes.mockResolvedValue([]);
-
     render(<DispatchPage />);
+    fillForm();
+    fireEvent.click(screen.getByRole('button', { name: /Dispatch Job/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('No dispatch routes found.')).toBeInTheDocument();
+      expect(mockCreateSaga).toHaveBeenCalledWith({
+        saga_type: 'dispatch_job',
+        context: {
+          tenant_id: 'tenant-1',
+          job_id: 'job-1',
+          technician_id: 'tech-1',
+        },
+      });
+    });
+
+    // Saga status badge should appear (status text appears in the badge).
+    await waitFor(() => {
+      expect(screen.getByTestId('saga-status-badge')).toBeInTheDocument();
     });
   });
 
-  it('displays error message on API failure', async () => {
-    mockListRoutes.mockRejectedValue(new Error('Failed to load routes (500)'));
+  it('shows an error when createSaga fails', async () => {
+    mockCreateSaga.mockRejectedValue({ status: 500, detail: 'boom' });
 
     render(<DispatchPage />);
+    fillForm();
+    fireEvent.click(screen.getByRole('button', { name: /Dispatch Job/i }));
 
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('Failed to load routes (500)');
-  });
-
-  it('handles non-Error thrown values', async () => {
-    mockListRoutes.mockRejectedValue('network timeout');
-
-    render(<DispatchPage />);
-
-    const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('network timeout');
+    expect(alert).toHaveTextContent('boom');
   });
 });

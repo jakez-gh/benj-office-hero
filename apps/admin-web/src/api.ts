@@ -5,7 +5,35 @@
  * Handles JSON serialization, auth headers, and error responses.
  */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+/**
+ * Resolve the API base URL.
+ *
+ * Vite injects ``import.meta.env`` at build time; jest (with ts-jest using
+ * CommonJS) doesn't support ``import.meta`` so we look up the env via the
+ * Vite-injected ``__VITE_ENV__`` only when it exists, then fall back to a
+ * ``process.env`` lookup (Node test env) and finally to localhost.
+ */
+function resolveBaseUrl(): string {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const meta = (Function('return import.meta') as any)();
+    if (meta?.env?.VITE_API_BASE_URL) {
+      return meta.env.VITE_API_BASE_URL as string;
+    }
+  } catch {
+    // import.meta is not available in this runtime (e.g. jest/CommonJS).
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const proc = (globalThis as any).process;
+  if (proc?.env?.VITE_API_BASE_URL) {
+    return proc.env.VITE_API_BASE_URL as string;
+  }
+
+  return 'http://localhost:8000';
+}
+
+const BASE_URL = resolveBaseUrl();
 
 export interface ApiError {
   status: number;

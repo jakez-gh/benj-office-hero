@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from office_hero.api.app import create_app
 from office_hero.repositories.mocks import MockOutboxRepository, MockSagaRepository
 from office_hero.services.saga_service import SagaService
+from tests.conftest import override_admin_auth
 
 
 @pytest.fixture()
@@ -19,10 +20,16 @@ def outbox_repo():
 
 
 @pytest.fixture()
-def client(outbox_repo):
+def tenant_id():
+    return uuid4()
+
+
+@pytest.fixture()
+def client(outbox_repo, tenant_id):
     saga_repo = MockSagaRepository()
     saga_svc = SagaService(saga_repo=saga_repo)
     app = create_app(saga_service=saga_svc, outbox_repo=outbox_repo)
+    override_admin_auth(app, tenant_id=tenant_id)
     return TestClient(app)
 
 
@@ -59,9 +66,8 @@ def test_get_saga_logs_not_found(client):
 
 
 @pytest.mark.asyncio
-async def test_retry_dead_letter_success(client, outbox_repo):
+async def test_retry_dead_letter_success(client, outbox_repo, tenant_id):
     """Test POST /admin/dead-letters/{event_id}/retry resets event to pending."""
-    tenant_id = uuid4()
     event = await outbox_repo.create(
         tenant_id=tenant_id,
         event_type="dispatch_job",

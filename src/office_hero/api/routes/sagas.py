@@ -1,10 +1,10 @@
 """Saga state and management routes.
 
 Provides:
-  - POST /sagas — create and execute a new saga (dispatch action)
-  - GET /sagas/{saga_id}/state — retrieve current saga state
-  - POST /sagas/{saga_id}/transition — advance saga (retry)
-  - POST /sagas/{saga_id}/compensate — manually trigger compensation
+  - POST /sagas                          - create and execute a new saga (dispatch action)
+  - GET  /sagas/{saga_id}/state          - retrieve current saga state
+  - POST /sagas/{saga_id}/transition     - advance saga (Operator only, 501 today)
+  - POST /sagas/{saga_id}/compensate     - manually trigger compensation (Operator only, 501 today)
 """
 
 from __future__ import annotations
@@ -12,11 +12,16 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel, Field
 
+from office_hero.api.deps import require_role
+from office_hero.core.roles import Role
 from office_hero.sagas.core import SagaDefinition, SagaStep, StepStatus
 from office_hero.services.saga_service import SagaService
+
+# Module-level dependency so tests can swap via ``app.dependency_overrides``.
+require_operator = require_role([Role.Operator])
 
 
 class CreateSagaRequest(BaseModel):
@@ -113,29 +118,55 @@ def create_saga_router(*, saga_service: SagaService) -> APIRouter:
         response_model=SagaStateResponse,
         summary="Advance saga",
         description="Resume or advance saga execution (Operator only)",
+        dependencies=[Depends(require_operator)],
     )
     async def transition_saga(
         saga_id: Annotated[UUID, Path(description="Saga ID")],
     ) -> SagaStateResponse:
-        """Transition saga to next state. Requires Operator RBAC."""
+        """Transition saga to next state.
+
+        Operator-only per ADR 056. Saga existence is verified first so a
+        non-existent saga still returns 404, otherwise 501 — the saga
+        engine does not yet support out-of-band transitions (resumption
+        is driven by the outbox relay, not a direct HTTP call).
+        """
         saga_ctx = await saga_service.get_saga_status(saga_id)
         if saga_ctx is None:
             raise HTTPException(status_code=404, detail=f"Saga {saga_id} not found")
-        return _saga_ctx_to_response(saga_ctx)
+        raise HTTPException(
+            status_code=501,
+            detail=(
+                "Manual saga transition is not implemented. "
+                "Sagas advance via the outbox relay after a failed step is retried."
+            ),
+        )
 
     @router.post(
         "/{saga_id}/compensate",
         response_model=SagaStateResponse,
         summary="Manually compensate saga",
         description="Trigger manual compensation rollback (Operator only)",
+        dependencies=[Depends(require_operator)],
     )
     async def compensate_saga(
         saga_id: Annotated[UUID, Path(description="Saga ID")],
     ) -> SagaStateResponse:
-        """Manually trigger saga compensation. Requires Operator RBAC."""
+        """Manually trigger saga compensation.
+
+        Operator-only per ADR 056. We don't have the in-memory ``SagaDefinition``
+        available outside of an active dispatch, so manual compensation is
+        currently 501 — compensation is driven by the saga engine itself when
+        a step fails. Saga existence is verified first so unknown IDs return 404.
+        """
         saga_ctx = await saga_service.get_saga_status(saga_id)
         if saga_ctx is None:
             raise HTTPException(status_code=404, detail=f"Saga {saga_id} not found")
-        return _saga_ctx_to_response(saga_ctx)
+        raise HTTPException(
+            status_code=501,
+            detail=(
+                "Manual saga compensation is not implemented. "
+                "Compensation runs automatically when a saga step fails."
+            ),
+        )
 
     return router

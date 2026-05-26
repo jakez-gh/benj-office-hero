@@ -110,3 +110,20 @@ class OutboxRepository(Protocol):
     async def retry_dead_letter(self, event_id: UUID) -> None:
         """Move a dead-lettered event back to 'pending' for retry."""
         ...
+
+    async def list_events(
+        self,
+        *,
+        status: str | None = None,
+        tenant_id: UUID | str | None = None,
+        limit: int = 1000,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        """List outbox events with optional status and tenant filtering.
+
+        This is the recommended way for admin/operator views to enumerate
+        outbox state (instead of reaching into a private ``.events`` dict).
+        Concrete Postgres-backed implementations should push the filters
+        down to SQL.
+        """
+        ...
