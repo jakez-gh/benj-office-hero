@@ -538,7 +538,7 @@ all-stops-terminal is a subtle invariant; centralised in `dispatch_service` and 
 
 ---
 
-Once approved, implementation proceeds: model + migration first, then `route_status.py` matrix
-+ tests, then `DispatchService.commit_dispatch` under TDD (with the routing service stubbed),
-then the route-lifecycle methods, then routers. The concurrency integration test is gated on
-a Neon branch; reviewers should run it manually before merge.
+Once approved, implementation proceeds: model + migration first, then the `route_status.py`
+matrix and its tests, then `DispatchService.commit_dispatch` under TDD (with the routing
+service stubbed), then the route-lifecycle methods, then routers. The concurrency
+integration test is gated on a Neon branch; reviewers should run it manually before merge.
