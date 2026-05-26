@@ -53,7 +53,7 @@ clean:
 # (the URL must point to the desired database or branch). This target is a no-op
 # when the schema is already up-to-date.
 db-migrate:
-	alembic upgrade head
+	poetry run alembic upgrade head
 
 # Open a psql shell connected to DATABASE_URL.  Requires the `psql` client to
 # be installed and on PATH.  Use ``make db-shell`` after exporting

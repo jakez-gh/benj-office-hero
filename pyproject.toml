@@ -57,8 +57,6 @@ addopts = [
     "--cov-report=html",
     "--cov-report=xml",
     "--cov-fail-under=0",
-    # Raise to 50+ as the project grows:
-    # "--cov-fail-under=50",
     "--timeout=30",
 ]
 markers = [

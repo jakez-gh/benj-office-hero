@@ -1,74 +1,160 @@
-import React, { useEffect, useState } from 'react';
-import { listRoutes } from '@office-hero/api-client';
-import type { AdminRoute } from '@office-hero/api-client';
+/**
+ * DispatchPage — dispatch a job via the backoffice saga API.
+ *
+ * Posts to POST /sagas with saga_type="dispatch_job" and the form payload,
+ * then polls GET /sagas/{id}/state via useSagaStatus and renders the live
+ * saga state with SagaStatusBadge.
+ */
+
+import React, { useState } from 'react';
+import { type ApiError, type SagaState, createSaga } from '../api';
+import { SagaStatusBadge } from '../components/SagaStatusBadge';
+import { useSagaStatus } from '../hooks/useSagaStatus';
 
 export const DispatchPage: React.FC = () => {
-  const [routes, setRoutes] = useState<AdminRoute[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [tenantId, setTenantId] = useState('');
+  const [jobId, setJobId] = useState('');
+  const [technicianId, setTechnicianId] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submittedSaga, setSubmittedSaga] = useState<SagaState | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const {
+    saga: liveSaga,
+    error: pollError,
+    refresh,
+  } = useSagaStatus(submittedSaga?.saga_id ?? null);
 
-    const load = async (): Promise<void> => {
-      setLoading(true);
-      setError(null);
+  // Prefer the polled state once it arrives so the badge reflects later steps.
+  const displaySaga: SagaState | null = liveSaga ?? submittedSaga;
 
-      try {
-        const data = await listRoutes();
-        if (!cancelled) setRoutes(data);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
+  const handleSubmit = async (event: React.FormEvent): Promise<void> => {
+    event.preventDefault();
+    setSubmitting(true);
+    setSubmitError(null);
+    setSubmittedSaga(null);
 
-    void load();
-    return () => { cancelled = true; };
-  }, []);
+    try {
+      const saga = await createSaga({
+        saga_type: 'dispatch_job',
+        context: {
+          tenant_id: tenantId,
+          job_id: jobId,
+          technician_id: technicianId,
+        },
+      });
+      setSubmittedSaga(saga);
+    } catch (err) {
+      const apiErr = err as ApiError;
+      const detail = apiErr?.detail || (err instanceof Error ? err.message : String(err));
+      setSubmitError(detail);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-  if (loading) return <div><h1>Dispatch</h1><p>Loading routes…</p></div>;
-
-  if (error) {
-    return (
-      <div>
-        <h1>Dispatch</h1>
-        <p role="alert" style={{ color: '#b00020' }}>{error}</p>
-      </div>
-    );
-  }
+  const inputStyle: React.CSSProperties = {
+    display: 'block',
+    width: '100%',
+    padding: '0.5rem',
+    marginTop: '0.25rem',
+    marginBottom: '0.75rem',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+  };
 
   return (
     <div>
       <h1>Dispatch</h1>
-      <p style={{ marginBottom: '0.75rem' }}>Live routes: {routes.length}</p>
+      <p style={{ color: '#666', marginBottom: '1rem' }}>
+        Dispatch a job through the backoffice saga orchestrator.
+      </p>
 
-      {routes.length === 0 ? (
-        <p style={{ color: '#666' }}>No dispatch routes found.</p>
-      ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: '0.5rem' }}>Route ID</th>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: '0.5rem' }}>Vehicle</th>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: '0.5rem' }}>Technician</th>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: '0.5rem' }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {routes.map((route, index) => (
-              <tr key={route.id ?? `route-${String(index)}`}>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: '0.5rem' }}>{route.id}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: '0.5rem' }}>{route.vehicle_id ?? '—'}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: '0.5rem' }}>{route.technician_id ?? '—'}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: '0.5rem' }}>{route.status ?? '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <form onSubmit={(e) => void handleSubmit(e)} style={{ maxWidth: '32rem' }}>
+        <label htmlFor="dispatch-tenant">
+          Tenant ID
+          <input
+            id="dispatch-tenant"
+            type="text"
+            value={tenantId}
+            onChange={(e) => setTenantId(e.target.value)}
+            required
+            style={inputStyle}
+          />
+        </label>
+
+        <label htmlFor="dispatch-job">
+          Job ID
+          <input
+            id="dispatch-job"
+            type="text"
+            value={jobId}
+            onChange={(e) => setJobId(e.target.value)}
+            required
+            style={inputStyle}
+          />
+        </label>
+
+        <label htmlFor="dispatch-technician">
+          Technician ID
+          <input
+            id="dispatch-technician"
+            type="text"
+            value={technicianId}
+            onChange={(e) => setTechnicianId(e.target.value)}
+            required
+            style={inputStyle}
+          />
+        </label>
+
+        <button
+          type="submit"
+          disabled={submitting}
+          style={{
+            padding: '0.5rem 1rem',
+            background: submitting ? '#94a3b8' : '#3b82f6',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: submitting ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {submitting ? 'Dispatching…' : 'Dispatch Job'}
+        </button>
+      </form>
+
+      {submitError && (
+        <p role="alert" style={{ color: '#b00020', marginTop: '1rem' }}>
+          {submitError}
+        </p>
+      )}
+
+      {displaySaga && (
+        <section style={{ marginTop: '2rem', padding: '1rem', background: '#f8fafc', borderRadius: '6px' }}>
+          <h2 style={{ marginTop: 0 }}>Saga state</h2>
+          <p>
+            <strong>ID:</strong> <code>{displaySaga.saga_id}</code>
+          </p>
+          <p>
+            <strong>Status:</strong> <SagaStatusBadge status={displaySaga.status} />
+          </p>
+          <p>
+            <strong>Current step:</strong> {displaySaga.current_step}
+          </p>
+          {displaySaga.last_error && (
+            <p style={{ color: '#b00020' }}>
+              <strong>Last error:</strong> {displaySaga.last_error}
+            </p>
+          )}
+          {pollError && (
+            <p role="alert" style={{ color: '#b00020' }}>
+              Polling error: {pollError}
+            </p>
+          )}
+          <button onClick={refresh} style={{ marginTop: '0.5rem' }}>
+            Refresh
+          </button>
+        </section>
       )}
     </div>
   );
