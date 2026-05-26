@@ -51,16 +51,11 @@ jobs:
         working-directory: apps/admin-web
         run: npx playwright install --with-deps chromium
 
-      - name: Start admin-web dev server
-        working-directory: apps/admin-web
-        run: |
-          nohup pnpm dev > /tmp/admin-web.log 2>&1 &
-          for i in {1..60}; do
-            curl -fsS http://localhost:3000 >/dev/null && break
-            sleep 1
-          done
-          curl -fsS http://localhost:3000 >/dev/null || { echo "::error::admin-web did not start"; cat /tmp/admin-web.log; exit 1; }
-
+      # Playwright's webServer config (apps/admin-web/playwright.config.ts) starts
+      # `pnpm run dev` and waits for http://localhost:3000 before tests execute, so
+      # this job does not need to launch the dev server separately. Two owners
+      # would collide on port 3000 (especially under CI=true where
+      # reuseExistingServer is false).
       - name: Capture screenshots
         working-directory: apps/admin-web
         env:
