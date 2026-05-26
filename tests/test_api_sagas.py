@@ -23,18 +23,32 @@ client = TestClient(app)
 
 
 def test_health_check():
-    """Test health check endpoint returns structured response.
+    """``GET /health`` is a lightweight liveness probe (no DB/ORS I/O).
 
-    In test env without DB/ORS the probes fail, so status is 'unhealthy' (503).
-    We verify the response shape rather than the status code, since the real
-    health route performs live probes.
+    ADR 050 splits the legacy ``/health`` endpoint into liveness vs readiness;
+    this test pins the liveness contract used by Fly.io and the server-manager
+    hook.
     """
     response = client.get("/health")
+    body = response.json()
+    assert response.status_code == 200
+    assert body == {"status": "ok"}
+
+
+def test_health_ready_returns_structured_response():
+    """``GET /health/ready`` probes DB + ORS and returns the full shape.
+
+    In the test environment neither a DB nor an ORS instance is running, so
+    the probes fail and the endpoint should report ``unhealthy`` with a 503
+    status. We assert response shape and that the status code is one of the
+    two expected values so this test does not break in environments where the
+    real backing services happen to be up.
+    """
+    response = client.get("/health/ready")
     body = response.json()
     assert "status" in body
     assert "db" in body
     assert "ors" in body
-    # Without a running DB the expected result is 503 unhealthy
     assert response.status_code in (200, 503)
 
 

@@ -9,6 +9,7 @@ Quick reference for understanding and troubleshooting git hooks in Office Hero d
 | Hook | Trigger | Action | Fail Behavior |
 |------|---------|--------|---------------|
 | **pre-commit** | `git commit` | Lint, format, security | ❌ Blocks commit |
+| **pre-push** | `git push` | Starts managed test servers (random ports), runs tests/scans, then cleanup | ❌ Blocks push |
 | **post-merge** | `git pull`, `git merge` | Check backend health | ⚠️ Warns, continues |
 | **post-checkout** | `git checkout` | Verify env state | ℹ️ Informs, continues |
 
@@ -74,6 +75,23 @@ git commit -m "..."
 ### What it does (post-merge)
 
 Ensures the backend API server is running after pulling changes. Runs automatically after `git pull`, `git merge`, or `git rebase`.
+
+---
+
+## 🚀 pre-push Hook (Managed Test Servers)
+
+Before pre-push automated checks run, the hook now:
+
+1. Starts backend + admin-web dev servers on **random high ports**
+2. If an older managed deployment exists, gracefully terminates it first
+3. Force-kills old processes if they ignore shutdown
+4. Runs pre-push checks (`pytest`, `bandit`, `pip-audit`)
+5. Cleans up managed server processes on exit
+
+Runtime artifacts are written under `.runtime/`:
+
+- `test-servers.json` (managed PIDs/ports)
+- `test-ports.env` (exportable env values for e2e scripts)
 
 ### How it works
 
