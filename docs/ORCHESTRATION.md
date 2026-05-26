@@ -25,19 +25,27 @@ The orchestrator (you, or the human) babysits — dispatches the agents, watches
 
 **CI:** ✅ Working on `main` (poetry-based, PR #47 merged 2026-05-24). pip-audit is non-blocking; CVEs tracked in issue #48.
 
-**Open PRs in active worker loop:**
+**Open PRs in active worker loop** (snapshot at 2026-05-25; refresh with `gh pr list --state open`):
 
-| PR  | Branch              | What it does                              | Status                          |
-|-----|---------------------|-------------------------------------------|---------------------------------|
-| #8  | stream/ai           | MCP server wrapping REST API              | Worker C addressing review      |
-| #37 | stream/backoffice   | Dispatch + Dead-Letter UI to Saga API     | Worker B addressing review      |
-| #39 | stream/frontend     | server_manager + health endpoint + hooks  | Worker A addressing review      |
-| #55 | ci/ui-screenshots   | UI screenshot CI pipeline                 | Awaiting CI verification        |
+| PR  | Branch                                | What it does                              | Status                          |
+|-----|---------------------------------------|-------------------------------------------|---------------------------------|
+| #8  | stream/ai                             | MCP server wrapping REST API              | Worker C addressing review      |
+| #37 | stream/backoffice                     | Dispatch + Dead-Letter UI to Saga API     | Worker B addressing review      |
+| #55 | ci/ui-screenshots                     | UI screenshot CI pipeline                 | Awaiting CI verification        |
+| #56 | docs/orchestration-playbook           | This playbook                             | In worker loop                  |
+| #57 | phase-4/slices-9-10-12-13-14-design   | Phase-4 design docs for slices 9–14       | Reviewer turn (Wave 2 kick-off) |
+
+**Recently merged** (kept here briefly for traceability):
+
+- #39 (stream/frontend, merged 2026-05-26) — admin shell hardening + hook-driven random-port test orchestration
+- #47 (chore/poetry-ci, merged 2026-05-24) — Poetry CI migration
 
 **Open issues:**
+
 - #48 — 17 dependency CVEs (table of fix versions; suggested `poetry update` cascade)
 
 **Backup tags** (created before destructive merges on 2026-05-24):
+
 - `backup/stream-frontend-pre-merge-20260524`
 - `backup/stream-backoffice-pre-merge-20260524`
 - `backup/stream-ai-pre-merge-20260524`
@@ -52,7 +60,7 @@ Sequence is approximate. Don't start a wave until the previous one has stabilize
 
 - [ ] PR #8 — workers + reviewers iterating
 - [ ] PR #37 — workers + reviewers iterating
-- [ ] PR #39 — workers + reviewers iterating
+- [x] PR #39 — merged 2026-05-26
 - [ ] PR #55 — UI screenshot pipeline merge
 
 **Exit criteria:** all four PRs merged to main; CI green; stale CI-failure issues closed.
@@ -172,24 +180,25 @@ The admin-web ships with one CSS rule today (see `UI_UX_REPORT_2026-05-24.md` in
 #### Worker template
 
 > You are a worker agent on the Office Hero project (jakez-gh/benj-office-hero).
-> 
+>
 > **Working directory:** `<path to worktree for the branch>`
-> 
+>
 > **Project context tools:** `cf status`, `cf next`, `cf build` (Office Hero is Phase 6, registered with CF). `gh` is authenticated. Backup tag at `backup/<branch>-pre-<date>`.
-> 
+>
 > **Findings to address:** [paste relevant section of PR review comment]
-> 
+>
 > **Quality bar before pushing:**
+>
 > - `poetry install --with dev --no-interaction` succeeds
 > - `poetry run pytest -q` passes
 > - `poetry run pre-commit run --all-files` passes
 > - `pnpm -r --filter !tech-mobile run test` passes
-> - `gh pr checks `{N}`` is all green
-> 
+> - `gh pr checks {N}` is all green (substitute the PR number)
+>
 > **Workflow:** read PR review → read affected files → fix in priority order → run quality checks → commit semantically → push to existing branch → comment on PR addressing each finding.
-> 
+>
 > **DO NOT merge the PR.** A reviewer agent will check first.
-> 
+>
 > Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 >
 > Report back with: commits pushed, CI status, per-finding resolution.
@@ -197,41 +206,42 @@ The admin-web ships with one CSS rule today (see `UI_UX_REPORT_2026-05-24.md` in
 #### Reviewer template
 
 > You are a code reviewer with no prior context on this conversation.
-> 
+>
 > Review PR #`{N}` on jakez-gh/benj-office-hero. The repo is at `/home/jake/Documents/src/office-hero/benj-office-hero/main/`.
-> 
-> Read the actual code changes: `gh pr view `{N}` --json files` and `git diff origin/main..origin/<branch>` (from the main worktree).
-> 
+>
+> Read the actual code changes: `gh pr view {N} --json files` and `git diff origin/main..origin/<branch>` (from the main worktree, substituting the PR number and branch).
+>
 > Assess: code quality, security, completeness, test coverage, ADR compliance (ADRs in `project-documents/user/architecture/`), separation of concerns, error handling.
-> 
+>
 > Output a PR-comment-ready review (under 800 words):
+>
 > - **Verdict:** APPROVE / APPROVE WITH NITS / REQUEST CHANGES / BLOCK
 > - **Top issues** (numbered, severity 🔴 / 🟡 / 🟢)
 > - **What's done well** (1–3 bullets)
 > - **Specific files to look at** (with line numbers)
 > - **Recommended next steps**
-> 
-> Save the review to `/tmp/pr`{N}`-review-<timestamp>.md` and post it as a PR comment with `gh pr comment `{N}` --body-file <path>`.
+>
+> Save the review to `/tmp/pr{N}-review-<timestamp>.md` and post it as a PR comment with `gh pr comment {N} --body-file <path>`.
 
 ### Slice design template (Phase 4 work in Wave 2)
 
 > You are writing a slice design document for Slice `{N}` of the Office Hero project.
-> 
+>
 > Read the slice description in `project-documents/user/project-guides/003-slices.office-hero.md` for Slice `{N}`.
-> 
+>
 > Read the existing design doc pattern in `project-documents/user/slices/006-slice.auth-rbac.md` and match its structure.
-> 
+>
 > Write a new slice design doc at `project-documents/user/slices/{NNN}-slice.{name}.md`. Include: goals, structure (files to create), failing tests (TDD list), dependencies, effort estimate.
-> 
+>
 > Reference relevant ADRs in `project-documents/user/architecture/`.
-> 
-> Commit on a `phase-4/slice-`{N}`-design` branch and open a PR.
+>
+> Commit on a `phase-4/slice-{N}-design` branch and open a PR.
 
 ---
 
 ## Scheduled remote orchestrator
 
-A claude.ai routine runs this orchestration loop once per hour. Independent of any local session.
+A claude.ai routine is configured to run this orchestration loop once per hour, independent of any local session.
 
 - **Routine ID:** `trig_016kxXhmZQhycdUDtFXdnzLS`
 - **Dashboard:** <https://claude.ai/code/routines/trig_016kxXhmZQhycdUDtFXdnzLS>
@@ -240,6 +250,14 @@ A claude.ai routine runs this orchestration loop once per hour. Independent of a
 - **Source:** `jakez-gh/benj-office-hero` (clean clone each tick)
 - **Per-tick budget:** at most ONE worker dispatch + ONE reviewer dispatch + ONE merge
 - **Tick log:** `orchestration-tick-log.md` at the repo root, committed periodically on `chore/tick-log`
+
+> **Current status (2026-05-25): DISABLED.** The routine was auto-disabled by claude.ai with
+> `ended_reason: auto_disabled_repo_access` — the cloud agent could not authenticate against
+> this private repo. Until the Claude Code GitHub App is installed for `jakez-gh/benj-office-hero`
+> and the routine is re-enabled via the dashboard above, **the worker → reviewer → merge loop
+> only runs from local sessions** (humans dispatching workers/reviewers by hand or via local
+> Squadron). Treat any reference to "hourly automation" in this file as aspirational until the
+> dashboard shows the routine as Active again.
 
 If the routine is making bad decisions, update or pause it via the dashboard. If the orchestration logic in this file changes meaningfully, also update the routine's embedded prompt — the routine carries a fallback copy of the priority order in case this file isn't on `main` yet at tick time.
 
@@ -254,7 +272,7 @@ Any future agent or human picks up like this:
 3. **Run `gh pr list --state open --json number,title,headRefName`** to see active PRs.
 4. **Read the "Current state" section above.** If the snapshot is stale (PRs merged, new wave started), update it.
 5. **Identify the active wave** from the work queue. Pick up wherever the previous session stopped.
-6. **For active PRs in the worker loop:** check `gh pr view `{N}` --comments` to see whether a worker or reviewer ran last. If worker last, dispatch reviewer. If reviewer last (with findings), dispatch worker.
+6. **For active PRs in the worker loop:** check `gh pr view {N} --comments` (substituting the PR number) to see whether a worker or reviewer ran last. If worker last, dispatch reviewer. If reviewer last (with findings), dispatch worker.
 7. **For waves not started yet:** read the wave's exit criteria, decompose into discrete tasks, dispatch workers.
 
 ---
