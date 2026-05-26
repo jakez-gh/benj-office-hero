@@ -35,6 +35,12 @@ hypothesis = ">=6.88"
 pytest-xdist = ">=3.5"
 pytest-timeout = ">=2.2"
 pip-audit = ">=2.7"
+# MCP server SDK — needed so that the tests under tests/test_mcp_*.py and
+# tests/test_service_startup.py can exercise the mcp-server package without
+# being skipped via importorskip. ADR 061 lists `mcp` as the runtime dep of
+# the mcp-server package itself; the dev install is so the workspace test job
+# can import it.
+mcp = ">=1.26"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
