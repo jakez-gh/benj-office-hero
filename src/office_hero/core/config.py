@@ -28,6 +28,19 @@ class Settings(BaseSettings):
     access_token_ttl_minutes: int = 15
     refresh_token_ttl_days: int = 7
 
+    # --- Slice 9: Geocoding (Customer & Location) ---
+    # The geocoder is pluggable; default to Nominatim (OSM free tier) per the
+    # slice design doc. Switch to ORS in a future slice when an API key is
+    # provisioned. Use ``"stub"`` in tests to keep CI off the live network.
+    nominatim_base_url: str = "https://nominatim.openstreetmap.org"
+    nominatim_user_agent: str = "office-hero/0.1 (contact@office-hero.example)"
+    geocoding_adapter: str = "nominatim"
+    geocoding_timeout_s: float = 5.0
+    geocoding_allowlist: list[str] = [
+        "nominatim.openstreetmap.org",
+        "api.openrouteservice.org",
+    ]
+
 
 def get_settings() -> Settings:
     """Lazily load settings once."""

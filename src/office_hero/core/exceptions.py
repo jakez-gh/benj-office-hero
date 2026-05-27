@@ -28,3 +28,43 @@ class TenantError(Exception):
         self.message = message
         self.request_id = request_id
         super().__init__(message)
+
+
+class GeocodingError(Exception):
+    """Raised when a geocoding adapter fails (network, timeout, parse, allowlist)."""
+
+    def __init__(self, message: str = "Geocoding failed", request_id: str | None = None):
+        self.message = message
+        self.request_id = request_id
+        super().__init__(message)
+
+
+class CustomerNotFoundError(Exception):
+    """Raised when a customer cannot be located in the caller's tenant scope."""
+
+    def __init__(self, message: str = "Customer not found", request_id: str | None = None):
+        self.message = message
+        self.request_id = request_id
+        super().__init__(message)
+
+
+class LocationNotFoundError(Exception):
+    """Raised when a location cannot be located in the caller's tenant scope."""
+
+    def __init__(self, message: str = "Location not found", request_id: str | None = None):
+        self.message = message
+        self.request_id = request_id
+        super().__init__(message)
+
+
+class DuplicateEmailError(Exception):
+    """Raised when a customer email already exists in the same tenant (active)."""
+
+    def __init__(
+        self,
+        message: str = "A customer with this email already exists in this tenant",
+        request_id: str | None = None,
+    ):
+        self.message = message
+        self.request_id = request_id
+        super().__init__(message)

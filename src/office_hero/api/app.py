@@ -14,17 +14,38 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from office_hero.adapters.geocoding.stub import StubGeocodingAdapter
 from office_hero.api.exception_handlers import register_exception_handlers
 from office_hero.api.limiter import limiter
 from office_hero.api.middleware.logging import LoggingMiddleware
 from office_hero.api.middleware.security_headers import SecurityHeadersMiddleware
 from office_hero.api.routes import health
 from office_hero.api.routes.admin import audit_router, create_admin_router
+from office_hero.api.routes.customers import create_customer_router
+from office_hero.api.routes.locations import create_location_router
 from office_hero.api.routes.sagas import create_saga_router
-from office_hero.api.state import set_auth_service, set_engine
+from office_hero.api.state import (
+    set_auth_service,
+    set_customer_service,
+    set_engine,
+    set_geocoding_adapter,
+    set_location_service,
+)
 from office_hero.core.logging import get_logger
-from office_hero.repositories.mocks import MockOutboxRepository, MockSagaRepository
+from office_hero.repositories.customer_repository import (
+    InMemoryCustomerRepository,
+)
+from office_hero.repositories.location_repository import (
+    InMemoryLocationRepository,
+)
+from office_hero.repositories.mocks import (
+    InMemoryAuditService,
+    MockOutboxRepository,
+    MockSagaRepository,
+)
 from office_hero.repositories.protocols import OutboxRepository
+from office_hero.services.customer_service import CustomerService
+from office_hero.services.location_service import LocationService
 from office_hero.services.saga_service import SagaService
 
 log = get_logger(__name__)
@@ -79,6 +100,8 @@ def create_app(
     *,
     saga_service: SagaService | None = None,
     outbox_repo: OutboxRepository | None = None,
+    customer_service: CustomerService | None = None,
+    location_service: LocationService | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application.
 
@@ -90,14 +113,39 @@ def create_app(
             instance so the module-level ``app`` boots without a database.
         outbox_repo: Outbox repository for dead-letter routes. Defaults to an
             in-memory mock.
+        customer_service: Slice-9 CustomerService. Defaults to an in-memory
+            implementation so tests can construct ``create_app()`` without
+            wiring a DB session.
+        location_service: Slice-9 LocationService (same defaulting behaviour).
 
-    The factory invokes ``create_saga_router`` / ``create_admin_router`` once
-    at startup, not per-request.
+    The factory invokes router factories once at startup, not per-request.
     """
     if saga_service is None:
         saga_service = SagaService(saga_repo=MockSagaRepository())
     if outbox_repo is None:
         outbox_repo = MockOutboxRepository()
+
+    # Slice-9 defaults: in-memory repositories + the stub geocoder. These let
+    # the module-level ``app`` boot without a database and keep API tests off
+    # the live Nominatim service.
+    if customer_service is None or location_service is None:
+        audit = InMemoryAuditService()
+        cust_repo = InMemoryCustomerRepository()
+        loc_repo = InMemoryLocationRepository()
+        geocoder = StubGeocodingAdapter()
+        if customer_service is None:
+            customer_service = CustomerService(repo=cust_repo, audit=audit)
+        if location_service is None:
+            location_service = LocationService(
+                repo=loc_repo,
+                customer_repo=cust_repo,
+                audit=audit,
+                geocoder=geocoder,
+            )
+        set_geocoding_adapter(geocoder)
+
+    set_customer_service(customer_service)
+    set_location_service(location_service)
 
     application = FastAPI(
         title="Office Hero",
@@ -130,6 +178,17 @@ def create_app(
     )
     application.include_router(admin_router, prefix="/admin", tags=["admin"])
     application.include_router(audit_router, prefix="/admin", tags=["admin"])
+
+    customer_router = create_customer_router(
+        service_provider=lambda: customer_service,
+        location_service_provider=lambda: location_service,
+    )
+    application.include_router(customer_router, prefix="/customers", tags=["customers"])
+
+    # The location router carries its own ``/customers/{cid}/locations`` and
+    # ``/locations/{lid}`` paths inline so it mounts at the root.
+    location_router = create_location_router(service_provider=lambda: location_service)
+    application.include_router(location_router, tags=["locations"])
 
     return application
 
