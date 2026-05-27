@@ -88,9 +88,7 @@ class CustomerRepository:
 
     async def get_by_id(self, customer_id: UUID, tenant_id: UUID) -> Customer | None:
         """Fetch a customer if it exists in ``tenant_id`` (defence-in-depth)."""
-        stmt = select(Customer).where(
-            Customer.id == customer_id, Customer.tenant_id == tenant_id
-        )
+        stmt = select(Customer).where(Customer.id == customer_id, Customer.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
@@ -227,8 +225,7 @@ class InMemoryCustomerRepository:
             rows = [
                 r
                 for r in rows
-                if needle in (r["name"] or "").lower()
-                or needle in ((r.get("email") or "").lower())
+                if needle in (r["name"] or "").lower() or needle in ((r.get("email") or "").lower())
             ]
         rows.sort(key=lambda r: r["created_at"], reverse=True)
         total = len(rows)

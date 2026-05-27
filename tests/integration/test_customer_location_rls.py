@@ -121,9 +121,7 @@ async def test_cascade_delete_locations_when_customer_hard_deleted(engine):
         )
         await session.commit()
 
-        await session.execute(
-            text("DELETE FROM customers WHERE id = :cid"), {"cid": str(cust)}
-        )
+        await session.execute(text("DELETE FROM customers WHERE id = :cid"), {"cid": str(cust)})
         await session.commit()
 
         remaining = (

@@ -64,9 +64,7 @@ class LocationService:
         """Raise :class:`CustomerNotFoundError` if customer is missing or cross-tenant."""
         cust = await self.customer_repo.get_by_id(customer_id, tenant_id)
         if cust is None:
-            raise CustomerNotFoundError(
-                f"Customer {customer_id} not found in tenant scope"
-            )
+            raise CustomerNotFoundError(f"Customer {customer_id} not found in tenant scope")
 
     async def create(
         self,
@@ -104,9 +102,7 @@ class LocationService:
         )
         return loc
 
-    async def _geocode_and_persist(
-        self, tenant_id: UUID, loc: Location
-    ) -> Location:
+    async def _geocode_and_persist(self, tenant_id: UUID, loc: Location) -> Location:
         """Try geocoding ``loc``; persist coords on success, mark failed otherwise."""
         address = AddressInput(
             street=loc.street,
@@ -127,9 +123,7 @@ class LocationService:
 
         if coords is None:
             log.info("location.geocode.miss", location_id=str(loc.id))
-            return await self.repo.mark_geocode_failed(
-                loc.id, tenant_id, "no result"
-            )
+            return await self.repo.mark_geocode_failed(loc.id, tenant_id, "no result")
 
         return await self.repo.set_coordinates(
             loc.id, tenant_id, coords.lat, coords.lng, coords.source
@@ -151,9 +145,7 @@ class LocationService:
     ) -> list[Location]:
         """List a customer's locations."""
         await self._verify_customer(tenant_id, customer_id)
-        return await self.repo.list_for_customer(
-            customer_id, tenant_id, archived=archived
-        )
+        return await self.repo.list_for_customer(customer_id, tenant_id, archived=archived)
 
     async def update(
         self,
@@ -167,9 +159,7 @@ class LocationService:
         """Apply a partial update; optionally re-geocode and emit ``location.updated``."""
         existing = await self.get(tenant_id, location_id)
 
-        changed_fields = {
-            k for k, v in patch.items() if getattr(existing, k, None) != v
-        }
+        changed_fields = {k for k, v in patch.items() if getattr(existing, k, None) != v}
 
         before: dict[str, Any] = {k: getattr(existing, k, None) for k in changed_fields}
         after: dict[str, Any] = {k: patch[k] for k in changed_fields}
@@ -233,9 +223,7 @@ class LocationService:
         )
         return updated
 
-    async def regeocode(
-        self, tenant_id: UUID, user_id: UUID, location_id: UUID
-    ) -> Location:
+    async def regeocode(self, tenant_id: UUID, user_id: UUID, location_id: UUID) -> Location:
         """Force a re-geocode of an existing location."""
         existing = await self.get(tenant_id, location_id)
         updated = await self._geocode_and_persist(tenant_id, existing)
@@ -247,9 +235,7 @@ class LocationService:
         )
         return updated
 
-    async def archive(
-        self, tenant_id: UUID, user_id: UUID, location_id: UUID
-    ) -> Location:
+    async def archive(self, tenant_id: UUID, user_id: UUID, location_id: UUID) -> Location:
         """Soft-delete a location; emit ``location.archived``."""
         await self.get(tenant_id, location_id)
         archived = await self.repo.archive(location_id, tenant_id)

@@ -35,9 +35,7 @@ class StubGeocodingAdapter(GeocodingAdapter):
         lat = 40.0 + (seed % 1000) / 1000.0  # 40.000 .. 40.999
         lng = -75.0 - ((seed // 1000) % 1000) / 1000.0  # -75.999 .. -75.000
 
-        formatted = (
-            f"{address.street}, {address.city}, {address.state} {address.postal_code}"
-        )
+        formatted = f"{address.street}, {address.city}, {address.state} {address.postal_code}"
         return Coordinates(
             lat=lat,
             lng=lng,

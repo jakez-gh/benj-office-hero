@@ -15,7 +15,6 @@ from tests.api.conftest import (
     technician_headers,
 )
 
-
 _VALID_ADDR = {
     "street": "123 Main St",
     "city": "Philadelphia",
@@ -64,9 +63,7 @@ def test_post_location_geocode_failure_still_returns_201(client, tenant_a, user_
     assert resp.json()["geocode_status"] == "failed"
 
 
-def test_get_locations_for_customer_other_tenant_returns_404(
-    client, tenant_a, tenant_b, user_a
-):
+def test_get_locations_for_customer_other_tenant_returns_404(client, tenant_a, tenant_b, user_a):
     """Cross-tenant list returns 404 (silent RLS-style isolation)."""
     cid = _create_customer(client, tenant_a, user_a)
     resp = client.get(
@@ -139,9 +136,7 @@ def test_patch_location_address_triggers_regeocode(client, tenant_a, user_a):
     assert body1["lat"] != lat0
 
 
-def test_regeocode_endpoint_returns_200(
-    client, tenant_a, user_a, disabled_limiter
-):
+def test_regeocode_endpoint_returns_200(client, tenant_a, user_a, disabled_limiter):
     """Force-regeocode is exposed at POST /locations/{id}/regeocode.
 
     The endpoint carries a 5/minute rate limit (see slice design); the
@@ -204,9 +199,7 @@ def test_post_location_unknown_customer_returns_404(client, tenant_a, user_a):
     assert resp.status_code == 404
 
 
-def test_get_location_cross_tenant_returns_404(
-    client, tenant_a, tenant_b, user_a
-):
+def test_get_location_cross_tenant_returns_404(client, tenant_a, tenant_b, user_a):
     """Reading a location from another tenant must return 404."""
     cid = _create_customer(client, tenant_a, user_a)
     create = client.post(

@@ -54,12 +54,8 @@ class Location(Base):
     lat: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
     lng: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
     geocode_source: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    geocode_status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="pending"
-    )
-    geocoded_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    geocode_status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    geocoded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

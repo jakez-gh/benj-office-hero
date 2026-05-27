@@ -172,9 +172,7 @@ class CustomerService:
         )
         return updated
 
-    async def archive(
-        self, tenant_id: UUID, user_id: UUID, customer_id: UUID
-    ) -> Customer:
+    async def archive(self, tenant_id: UUID, user_id: UUID, customer_id: UUID) -> Customer:
         """Soft-delete; emit ``customer.archived``."""
         # Make sure it exists in this tenant first so we surface a clean
         # CustomerNotFoundError rather than a generic repo error.
@@ -188,9 +186,7 @@ class CustomerService:
         )
         return archived
 
-    async def restore(
-        self, tenant_id: UUID, user_id: UUID, customer_id: UUID
-    ) -> Customer:
+    async def restore(self, tenant_id: UUID, user_id: UUID, customer_id: UUID) -> Customer:
         """Clear archived; emit ``customer.restored``."""
         await self.get(tenant_id, customer_id)
         restored = await self.repo.restore(customer_id, tenant_id)

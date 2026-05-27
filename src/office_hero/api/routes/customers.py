@@ -26,7 +26,6 @@ from office_hero.api.schemas.location import LocationRead
 from office_hero.core.exceptions import CustomerNotFoundError
 from office_hero.core.logging import get_logger
 from office_hero.core.roles import Role
-from office_hero.services.customer_service import CustomerService
 
 log = get_logger(__name__)
 
@@ -34,9 +33,7 @@ log = get_logger(__name__)
 # them via ``app.dependency_overrides``.
 require_customers_read = require_permission("customers:read")
 require_customers_write = require_permission("customers:write")
-require_customer_admin = require_role(
-    [Role.TenantAdmin, Role.Operator, Role.OperatorStaff]
-)
+require_customer_admin = require_role([Role.TenantAdmin, Role.Operator, Role.OperatorStaff])
 
 
 def _tenant_id(request: Request) -> UUID:
@@ -144,9 +141,7 @@ def create_customer_router(
         try:
             cust = await service.get(tenant_id, customer_id)
         except CustomerNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
         locations: list[LocationRead] = []
         if location_service_provider is not None:
@@ -177,9 +172,7 @@ def create_customer_router(
         try:
             cust = await service.update(tenant_id, user_id, customer_id, patch)
         except CustomerNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
         return CustomerRead.model_validate(cust)
 
     @router.post(
@@ -198,9 +191,7 @@ def create_customer_router(
         try:
             cust = await service.archive(tenant_id, user_id, customer_id)
         except CustomerNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
         return CustomerRead.model_validate(cust)
 
     @router.post(
@@ -219,9 +210,7 @@ def create_customer_router(
         try:
             cust = await service.restore(tenant_id, user_id, customer_id)
         except CustomerNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
         return CustomerRead.model_validate(cust)
 
     return router

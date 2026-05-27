@@ -16,7 +16,6 @@ from office_hero.adapters.geocoding.nominatim import NominatimGeocodingAdapter
 from office_hero.adapters.geocoding.protocol import AddressInput
 from office_hero.core.exceptions import GeocodingError
 
-
 _ALLOWLIST = ["nominatim.openstreetmap.org"]
 _BASE_URL = "https://nominatim.openstreetmap.org"
 _USER_AGENT = "office-hero/test (contact@example.com)"
@@ -112,9 +111,7 @@ async def test_nominatim_timeout_raises_geocoding_error():
     adapter = _make_adapter(handler)
     with pytest.raises(GeocodingError):
         await adapter.geocode(
-            AddressInput(
-                street="a", city="b", state="c", postal_code="d", country="US"
-            )
+            AddressInput(street="a", city="b", state="c", postal_code="d", country="US")
         )
 
 

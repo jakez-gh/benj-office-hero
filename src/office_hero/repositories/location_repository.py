@@ -43,9 +43,7 @@ class LocationRepositoryProtocol(Protocol):
         archived: bool = False,
     ) -> list[Location]: ...
 
-    async def list_pending_geocode(
-        self, tenant_id: UUID, limit: int = 50
-    ) -> list[Location]: ...
+    async def list_pending_geocode(self, tenant_id: UUID, limit: int = 50) -> list[Location]: ...
 
     async def update(self, location_id: UUID, tenant_id: UUID, **patch: Any) -> Location: ...
 
@@ -105,9 +103,7 @@ class LocationRepository:
 
     async def get_by_id(self, location_id: UUID, tenant_id: UUID) -> Location | None:
         """Tenant-scoped read."""
-        stmt = select(Location).where(
-            Location.id == location_id, Location.tenant_id == tenant_id
-        )
+        stmt = select(Location).where(Location.id == location_id, Location.tenant_id == tenant_id)
         return (await self.session.execute(stmt)).scalars().first()
 
     async def list_for_customer(
@@ -129,9 +125,7 @@ class LocationRepository:
         )
         return list((await self.session.execute(stmt)).scalars().all())
 
-    async def list_pending_geocode(
-        self, tenant_id: UUID, limit: int = 50
-    ) -> list[Location]:
+    async def list_pending_geocode(self, tenant_id: UUID, limit: int = 50) -> list[Location]:
         """Worker hook — fetch rows the geocoder still needs to resolve."""
         stmt = (
             select(Location)
@@ -173,9 +167,7 @@ class LocationRepository:
             geocoded_at=datetime.now(UTC),
         )
 
-    async def mark_geocode_failed(
-        self, location_id: UUID, tenant_id: UUID, error: str
-    ) -> Location:
+    async def mark_geocode_failed(self, location_id: UUID, tenant_id: UUID, error: str) -> Location:
         """Mark this location as having failed geocoding."""
         # ``error`` is logged at the service layer; we just store the status
         # transition here.
@@ -284,9 +276,7 @@ class InMemoryLocationRepository:
         rows.sort(key=lambda r: r["created_at"])
         return [self._row_to_location(r) for r in rows]
 
-    async def list_pending_geocode(
-        self, tenant_id: UUID, limit: int = 50
-    ) -> list[Location]:
+    async def list_pending_geocode(self, tenant_id: UUID, limit: int = 50) -> list[Location]:
         """Return up to ``limit`` rows still pending geocode."""
         rows = [
             r
@@ -325,9 +315,7 @@ class InMemoryLocationRepository:
             geocoded_at=datetime.now(UTC),
         )
 
-    async def mark_geocode_failed(
-        self, location_id: UUID, tenant_id: UUID, error: str
-    ) -> Location:
+    async def mark_geocode_failed(self, location_id: UUID, tenant_id: UUID, error: str) -> Location:
         """Flip status to ``failed``; ``error`` is logged at the service layer."""
         del error
         return await self.update(

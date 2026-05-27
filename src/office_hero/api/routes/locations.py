@@ -28,12 +28,8 @@ log = get_logger(__name__)
 
 require_customers_read = require_permission("customers:read")
 require_customers_write = require_permission("customers:write")
-require_dispatch_or_admin = require_role(
-    [Role.Dispatcher, Role.TenantAdmin, Role.Operator]
-)
-require_archive_role = require_role(
-    [Role.TenantAdmin, Role.Operator, Role.OperatorStaff]
-)
+require_dispatch_or_admin = require_role([Role.Dispatcher, Role.TenantAdmin, Role.Operator])
+require_archive_role = require_role([Role.TenantAdmin, Role.Operator, Role.OperatorStaff])
 
 
 def _tenant_id(request: Request) -> UUID:
@@ -93,9 +89,7 @@ def create_location_router(*, service_provider) -> APIRouter:
         except CustomerNotFoundError as exc:
             # Surface as 404 so cross-tenant attempts get the standard
             # silent-isolation behaviour.
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
         return LocationRead.model_validate(loc)
 
@@ -114,9 +108,7 @@ def create_location_router(*, service_provider) -> APIRouter:
         try:
             locs = await service.list_for_customer(tenant_id, customer_id)
         except CustomerNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
         return [LocationRead.model_validate(loc) for loc in locs]
 
     @router.get(
@@ -134,9 +126,7 @@ def create_location_router(*, service_provider) -> APIRouter:
         try:
             loc = await service.get(tenant_id, location_id)
         except LocationNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
         return LocationRead.model_validate(loc)
 
     @router.patch(
@@ -157,13 +147,9 @@ def create_location_router(*, service_provider) -> APIRouter:
         data: dict[str, Any] = body.model_dump(exclude_unset=True)
         regeocode = data.pop("regeocode", "auto")
         try:
-            loc = await service.update(
-                tenant_id, user_id, location_id, data, regeocode=regeocode
-            )
+            loc = await service.update(tenant_id, user_id, location_id, data, regeocode=regeocode)
         except LocationNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
         return LocationRead.model_validate(loc)
 
     @router.post(
@@ -185,9 +171,7 @@ def create_location_router(*, service_provider) -> APIRouter:
                 tenant_id, user_id, location_id, body.lat, body.lng
             )
         except LocationNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
         return LocationRead.model_validate(loc)
 
     @router.post(
@@ -207,9 +191,7 @@ def create_location_router(*, service_provider) -> APIRouter:
         try:
             loc = await service.regeocode(tenant_id, user_id, location_id)
         except LocationNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
         return LocationRead.model_validate(loc)
 
     @router.post(
@@ -228,9 +210,7 @@ def create_location_router(*, service_provider) -> APIRouter:
         try:
             loc = await service.archive(tenant_id, user_id, location_id)
         except LocationNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
         return LocationRead.model_validate(loc)
 
     return router

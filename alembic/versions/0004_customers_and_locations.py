@@ -50,9 +50,7 @@ def upgrade() -> None:
         sa.Column("email", sa.String(length=255), nullable=True),
         sa.Column("phone", sa.String(length=50), nullable=True),
         sa.Column("notes", sa.Text(), nullable=True),
-        sa.Column(
-            "archived", sa.Boolean(), nullable=False, server_default=sa.false()
-        ),
+        sa.Column("archived", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("external_id", sa.String(length=255), nullable=True),
         sa.Column(
             "created_at",
@@ -123,9 +121,7 @@ def upgrade() -> None:
             server_default="pending",
         ),
         sa.Column("geocoded_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column(
-            "archived", sa.Boolean(), nullable=False, server_default=sa.false()
-        ),
+        sa.Column("archived", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),

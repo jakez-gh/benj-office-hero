@@ -61,9 +61,7 @@ def stub_geocoder() -> StubGeocodingAdapter:
 
 
 @pytest.fixture()
-def service(
-    loc_repo, cust_repo, audit, stub_geocoder
-) -> LocationService:
+def service(loc_repo, cust_repo, audit, stub_geocoder) -> LocationService:
     return LocationService(
         repo=loc_repo,
         customer_repo=cust_repo,
@@ -161,9 +159,7 @@ async def test_create_location_geocoder_miss_marks_failed(
     assert loc.geocode_status == "failed"
 
 
-async def test_create_location_geocode_false_skips_geocoder(
-    service, cust_repo, tenant_a, user_a
-):
+async def test_create_location_geocode_false_skips_geocoder(service, cust_repo, tenant_a, user_a):
     """``geocode=False`` leaves the location in ``pending``."""
     cust = await cust_repo.create(tenant_a, name="Acme")
     loc = await service.create(
@@ -178,9 +174,7 @@ async def test_create_location_geocode_false_skips_geocoder(
     assert loc.lat is None
 
 
-async def test_update_location_address_auto_regeocodes(
-    service, cust_repo, tenant_a, user_a
-):
+async def test_update_location_address_auto_regeocodes(service, cust_repo, tenant_a, user_a):
     """Changing an address field re-geocodes by default (``auto``)."""
     cust = await cust_repo.create(tenant_a, name="Acme")
     loc = await service.create(
@@ -249,9 +243,7 @@ async def test_manual_set_coordinates_overrides_geocoder_status(
     )
     assert updated.geocode_status == "manual"
     assert updated.geocode_source == "manual"
-    assert any(
-        e.event_type == "location.coordinates_set_manual" for e in audit.events
-    )
+    assert any(e.event_type == "location.coordinates_set_manual" for e in audit.events)
 
 
 async def test_create_location_other_tenant_customer_raises_not_found(

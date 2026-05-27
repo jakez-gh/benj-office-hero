@@ -72,9 +72,7 @@ class NominatimGeocodingAdapter(GeocodingAdapter):
         if allowlist is not None:
             host = urlparse(base_url).hostname or ""
             if host not in set(allowlist):
-                raise GeocodingError(
-                    f"Refusing to geocode against host '{host}': not in allowlist"
-                )
+                raise GeocodingError(f"Refusing to geocode against host '{host}': not in allowlist")
 
         self._base_url = base_url.rstrip("/")
         self._user_agent = user_agent

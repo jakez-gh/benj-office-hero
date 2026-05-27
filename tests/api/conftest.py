@@ -8,6 +8,7 @@ permission/role dependencies.
 
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Iterator
 from typing import Any
 from uuid import UUID, uuid4
@@ -59,19 +60,15 @@ def _hard_reset_limiter() -> None:
     if storage is None:
         return
     if hasattr(storage, "reset"):
-        try:
+        with contextlib.suppress(Exception):
             storage.reset()
-        except Exception:  # noqa: BLE001 - best-effort reset
-            pass
     # Belt-and-braces — clear the in-memory Counter/dicts the FixedWindow
     # ratelimiter actually queries.
     for attr in ("storage", "events", "locks", "expirations"):
         bucket = getattr(storage, attr, None)
         if hasattr(bucket, "clear"):
-            try:
+            with contextlib.suppress(Exception):
                 bucket.clear()
-            except Exception:  # noqa: BLE001
-                pass
 
 
 @pytest.fixture(autouse=True)

@@ -76,9 +76,7 @@ async def test_create_customer_emits_audit_event(service, audit, tenant_a, user_
     assert evt.details["customer_id"] == str(cust.id)
 
 
-async def test_update_customer_redacts_long_notes_in_audit(
-    service, audit, tenant_a, user_a
-):
+async def test_update_customer_redacts_long_notes_in_audit(service, audit, tenant_a, user_a):
     """Long ``notes`` fields are truncated in the audit details (ADR 063)."""
     cust = await service.create(tenant_id=tenant_a, user_id=user_a, name="Foo")
     long_notes = "x" * 500
@@ -96,9 +94,7 @@ async def test_update_customer_redacts_long_notes_in_audit(
     assert len(after["notes"]) < len(long_notes)
 
 
-async def test_archive_customer_sets_flag_and_audit(
-    service, audit, tenant_a, user_a
-):
+async def test_archive_customer_sets_flag_and_audit(service, audit, tenant_a, user_a):
     """Archive flips the flag, audit records the event."""
     cust = await service.create(tenant_id=tenant_a, user_id=user_a, name="Bar")
     archived = await service.archive(tenant_a, user_a, cust.id)
@@ -107,9 +103,7 @@ async def test_archive_customer_sets_flag_and_audit(
     assert any(e.event_type == "customer.archived" for e in audit.events)
 
 
-async def test_restore_customer_clears_flag_and_audit(
-    service, audit, tenant_a, user_a
-):
+async def test_restore_customer_clears_flag_and_audit(service, audit, tenant_a, user_a):
     """Restore unarchives and audits ``customer.restored``."""
     cust = await service.create(tenant_id=tenant_a, user_id=user_a, name="Baz")
     await service.archive(tenant_a, user_a, cust.id)
@@ -128,9 +122,7 @@ async def test_get_customer_cross_tenant_returns_not_found(
         await service.get(tenant_b, cust.id)
 
 
-async def test_list_customer_search_matches_name_substring(
-    service, tenant_a, user_a
-):
+async def test_list_customer_search_matches_name_substring(service, tenant_a, user_a):
     """``search`` filter uses substring matching on name (case-insensitive)."""
     await service.create(tenant_id=tenant_a, user_id=user_a, name="Acme Plumbing")
     await service.create(tenant_id=tenant_a, user_id=user_a, name="Beta HVAC")
@@ -142,9 +134,7 @@ async def test_list_customer_search_matches_name_substring(
     assert names == ["Acme Plumbing", "Acme Refrigeration"]
 
 
-async def test_list_customer_tenant_isolation(
-    service, tenant_a, tenant_b, user_a, user_b
-):
+async def test_list_customer_tenant_isolation(service, tenant_a, tenant_b, user_a, user_b):
     """``list`` only returns rows for the caller's tenant."""
     await service.create(tenant_id=tenant_a, user_id=user_a, name="A1")
     await service.create(tenant_id=tenant_a, user_id=user_a, name="A2")
