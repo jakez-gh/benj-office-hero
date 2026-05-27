@@ -128,6 +128,94 @@ export async function listVehicles(): Promise<AdminVehicle[]> {
   return normalizeList<AdminVehicle>(data);
 }
 
+// --- Customer / Location types ---
+
+export interface CustomerSummary {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  location_count: number;
+  primary_city: string | null;
+  archived: boolean;
+  created_at: string;
+}
+
+export interface CustomerCreate {
+  name: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  external_id?: string;
+}
+
+export interface CustomerRead extends CustomerSummary {
+  notes: string | null;
+  external_id: string | null;
+  updated_at: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export type GeoStatus = 'pending' | 'ok' | 'failed' | 'manual';
+export type GeoSource = 'nominatim' | 'ors' | 'manual' | 'stub' | null;
+
+export interface LocationRead {
+  id: string;
+  customer_id: string;
+  label: string | null;
+  street_address: string | null;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
+  country: string;
+  lat: number | null;
+  lng: number | null;
+  geocode_status: GeoStatus;
+  geocode_source: GeoSource;
+  formatted_address: string;
+  archived: boolean;
+  created_at: string;
+}
+
+// --- Customer / Location API functions (use axios `client` — auth header set by AuthProvider) ---
+
+export async function listCustomers(params?: {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  archived?: boolean;
+}): Promise<PaginatedResponse<CustomerSummary>> {
+  const qs = new URLSearchParams();
+  if (params?.page != null) qs.set('page', String(params.page));
+  if (params?.page_size != null) qs.set('page_size', String(params.page_size));
+  if (params?.search) qs.set('search', params.search);
+  if (params?.archived !== undefined) qs.set('archived', String(params.archived));
+  const { data } = await client.get<PaginatedResponse<CustomerSummary>>(
+    `/customers?${qs.toString()}`,
+  );
+  return data;
+}
+
+export async function createCustomer(body: CustomerCreate): Promise<CustomerRead> {
+  const { data } = await client.post<CustomerRead>('/customers', body);
+  return data;
+}
+
+export async function listLocations(
+  customerId: string,
+): Promise<PaginatedResponse<LocationRead>> {
+  const { data } = await client.get<PaginatedResponse<LocationRead>>(
+    `/customers/${customerId}/locations`,
+  );
+  return data;
+}
+
 // --- Mobile SDK (cross-fetch based — username auth, direct URL) ---
 
 // ---------------------------------------------------------------------------
