@@ -11,12 +11,13 @@ from __future__ import annotations
 from typing import Any, Protocol
 from uuid import UUID
 
-from office_hero.core.exceptions import CustomerNotFoundError, DuplicateEmailError
+from office_hero.core.exceptions import CustomerNotFoundError
 from office_hero.core.logging import get_logger
 from office_hero.models.customer import Customer
 from office_hero.repositories.customer_repository import (
     CustomerRepositoryProtocol,
 )
+
 # Type alias for the richer list-with-location-stats return
 CustomerSummaryRow = tuple[Customer, int, str | None]
 

@@ -169,7 +169,11 @@ class CustomerRepository:
         total = int((await self.session.execute(count_stmt)).scalar_one())
 
         rows_stmt = (
-            select(Customer, location_count_subq.label("location_count"), primary_city_subq.label("primary_city"))
+            select(
+                Customer,
+                location_count_subq.label("location_count"),
+                primary_city_subq.label("primary_city"),
+            )
             .where(*where_clauses)
             .order_by(Customer.created_at.desc())
             .limit(limit)
