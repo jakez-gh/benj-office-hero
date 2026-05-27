@@ -117,13 +117,13 @@ def auth() -> InMemoryAuditService:
 
 
 @pytest.fixture()
-def cust_repo() -> InMemoryCustomerRepository:
-    return InMemoryCustomerRepository()
+def loc_repo() -> InMemoryLocationRepository:
+    return InMemoryLocationRepository()
 
 
 @pytest.fixture()
-def loc_repo() -> InMemoryLocationRepository:
-    return InMemoryLocationRepository()
+def cust_repo(loc_repo) -> InMemoryCustomerRepository:
+    return InMemoryCustomerRepository(loc_repo=loc_repo)
 
 
 @pytest.fixture()
