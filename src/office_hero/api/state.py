@@ -1,4 +1,4 @@
-"""Global app state for engine, auth service, and slice 9 services/adapters."""
+"""Global app state for engine, auth service, and slice 9/10 services/adapters."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from office_hero.services.auth_service import AuthService
 if TYPE_CHECKING:
     from office_hero.adapters.geocoding.protocol import GeocodingAdapter
     from office_hero.services.customer_service import CustomerService
+    from office_hero.services.job_service import JobService
     from office_hero.services.location_service import LocationService
 
 # Global variables for app lifecycle
@@ -18,6 +19,7 @@ _engine: AsyncEngine | None = None
 _auth_service: AuthService | None = None
 _customer_service: CustomerService | None = None
 _location_service: LocationService | None = None
+_job_service: JobService | None = None
 _geocoding_adapter: GeocodingAdapter | None = None
 
 
@@ -82,6 +84,21 @@ def get_location_service() -> LocationService:
             "LocationService not initialized. " "Ensure app has been created with create_app()."
         )
     return _location_service
+
+
+def set_job_service(service: JobService) -> None:
+    """Register the job service used by the route factory."""
+    global _job_service
+    _job_service = service
+
+
+def get_job_service() -> JobService:
+    """Retrieve the registered job service."""
+    if _job_service is None:
+        raise RuntimeError(
+            "JobService not initialized. " "Ensure app has been created with create_app()."
+        )
+    return _job_service
 
 
 def set_geocoding_adapter(adapter: GeocodingAdapter) -> None:

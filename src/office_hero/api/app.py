@@ -22,6 +22,7 @@ from office_hero.api.middleware.security_headers import SecurityHeadersMiddlewar
 from office_hero.api.routes import health
 from office_hero.api.routes.admin import audit_router, create_admin_router
 from office_hero.api.routes.customers import create_customer_router
+from office_hero.api.routes.jobs import create_job_router
 from office_hero.api.routes.locations import create_location_router
 from office_hero.api.routes.sagas import create_saga_router
 from office_hero.api.state import (
@@ -29,12 +30,14 @@ from office_hero.api.state import (
     set_customer_service,
     set_engine,
     set_geocoding_adapter,
+    set_job_service,
     set_location_service,
 )
 from office_hero.core.logging import get_logger
 from office_hero.repositories.customer_repository import (
     InMemoryCustomerRepository,
 )
+from office_hero.repositories.job_repository import InMemoryJobRepository
 from office_hero.repositories.location_repository import (
     InMemoryLocationRepository,
 )
@@ -44,7 +47,11 @@ from office_hero.repositories.mocks import (
     MockSagaRepository,
 )
 from office_hero.repositories.protocols import OutboxRepository
+from office_hero.services.custom_field_templates import (
+    registry as _template_registry_module,
+)  # noqa: F401
 from office_hero.services.customer_service import CustomerService
+from office_hero.services.job_service import JobService
 from office_hero.services.location_service import LocationService
 from office_hero.services.saga_service import SagaService
 
@@ -102,6 +109,7 @@ def create_app(
     outbox_repo: OutboxRepository | None = None,
     customer_service: CustomerService | None = None,
     location_service: LocationService | None = None,
+    job_service: JobService | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application.
 
@@ -117,6 +125,8 @@ def create_app(
             implementation so tests can construct ``create_app()`` without
             wiring a DB session.
         location_service: Slice-9 LocationService (same defaulting behaviour).
+        job_service: Slice-10 JobService. Defaults to an in-memory
+            implementation so tests boot without a database.
 
     The factory invokes router factories once at startup, not per-request.
     """
@@ -125,27 +135,36 @@ def create_app(
     if outbox_repo is None:
         outbox_repo = MockOutboxRepository()
 
-    # Slice-9 defaults: in-memory repositories + the stub geocoder. These let
+    # Slice-9/10 defaults: in-memory repositories + the stub geocoder. These let
     # the module-level ``app`` boot without a database and keep API tests off
     # the live Nominatim service.
-    if customer_service is None or location_service is None:
-        audit = InMemoryAuditService()
-        cust_repo = InMemoryCustomerRepository()
-        loc_repo = InMemoryLocationRepository()
-        geocoder = StubGeocodingAdapter()
-        if customer_service is None:
-            customer_service = CustomerService(repo=cust_repo, audit=audit)
-        if location_service is None:
-            location_service = LocationService(
-                repo=loc_repo,
-                customer_repo=cust_repo,
-                audit=audit,
-                geocoder=geocoder,
-            )
-        set_geocoding_adapter(geocoder)
+    audit = InMemoryAuditService()
+    cust_repo = InMemoryCustomerRepository()
+    loc_repo = InMemoryLocationRepository()
+    geocoder = StubGeocodingAdapter()
 
+    if customer_service is None:
+        customer_service = CustomerService(repo=cust_repo, audit=audit)
+    if location_service is None:
+        location_service = LocationService(
+            repo=loc_repo,
+            customer_repo=cust_repo,
+            audit=audit,
+            geocoder=geocoder,
+        )
+    if job_service is None:
+        job_repo = InMemoryJobRepository()
+        job_service = JobService(
+            repo=job_repo,
+            customer_repo=cust_repo,
+            location_repo=loc_repo,
+            audit=audit,
+            template_registry=_template_registry_module,
+        )
+    set_geocoding_adapter(geocoder)
     set_customer_service(customer_service)
     set_location_service(location_service)
+    set_job_service(job_service)
 
     application = FastAPI(
         title="Office Hero",
@@ -189,6 +208,9 @@ def create_app(
     # ``/locations/{lid}`` paths inline so it mounts at the root.
     location_router = create_location_router(service_provider=lambda: location_service)
     application.include_router(location_router, tags=["locations"])
+
+    job_router = create_job_router(service_provider=lambda: job_service)
+    application.include_router(job_router, prefix="/jobs", tags=["jobs"])
 
     return application
 
