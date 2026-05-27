@@ -6,9 +6,16 @@ from datetime import datetime
 from typing import Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from office_hero.api.schemas.location import LocationRead
+
+# Light email validation regex applied as a Pydantic ``pattern`` on the
+# ``email`` field. We avoid Pydantic's ``EmailStr`` (which requires the
+# optional ``email-validator`` extra) to keep dependency surface small —
+# strict RFC validation lives on the back-end normalisation path when one
+# is wired in a follow-up slice.
+_EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 
 
 class CustomerCreate(BaseModel):
@@ -17,7 +24,7 @@ class CustomerCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(min_length=1, max_length=255)
-    email: EmailStr | None = None
+    email: str | None = Field(default=None, max_length=255, pattern=_EMAIL_PATTERN)
     phone: str | None = Field(default=None, max_length=50)
     notes: str | None = None
 
@@ -28,7 +35,7 @@ class CustomerUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str | None = Field(default=None, min_length=1, max_length=255)
-    email: EmailStr | None = None
+    email: str | None = Field(default=None, max_length=255, pattern=_EMAIL_PATTERN)
     phone: str | None = Field(default=None, max_length=50)
     notes: str | None = None
 
