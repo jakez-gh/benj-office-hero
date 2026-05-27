@@ -36,11 +36,11 @@ describe('Admin web authentication and navigation', () => {
     render(<App />);
 
     // login form should appear
-    expect(screen.getByRole('heading', { name: /login/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'me@example.com' } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'secret' } });
-    fireEvent.click(screen.getByRole('button', { name: /login/i }));
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => expect(mockLogin).toHaveBeenCalled());
 
@@ -62,7 +62,7 @@ describe('Admin web authentication and navigation', () => {
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'bad@example.com' } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'bad' } });
-    fireEvent.click(screen.getByRole('button', { name: /login/i }));
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     // wait for login API to be called (async handler)
     await waitFor(() => expect(mockLogin).toHaveBeenCalled());
@@ -85,12 +85,12 @@ describe('Admin web authentication and navigation', () => {
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'me@example.com' } });
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'secret' } });
-    fireEvent.click(screen.getByRole('button', { name: /login/i }));
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => screen.getByRole('heading', { name: /jobs/i }));
 
-    fireEvent.click(screen.getByRole('button', { name: /logout/i }));
+    fireEvent.click(screen.getByRole('button', { name: /sign out/i }));
 
-    expect(await screen.findByRole('heading', { name: /login/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /sign in/i })).toBeInTheDocument();
   });
 });
