@@ -1,14 +1,24 @@
-"""Global app state for engine and auth service."""
+"""Global app state for engine, auth service, and slice 9 services/adapters."""
 
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from office_hero.services.auth_service import AuthService
 
+if TYPE_CHECKING:
+    from office_hero.adapters.geocoding.protocol import GeocodingAdapter
+    from office_hero.services.customer_service import CustomerService
+    from office_hero.services.location_service import LocationService
+
 # Global variables for app lifecycle
 _engine: AsyncEngine | None = None
 _auth_service: AuthService | None = None
+_customer_service: CustomerService | None = None
+_location_service: LocationService | None = None
+_geocoding_adapter: GeocodingAdapter | None = None
 
 
 def get_engine() -> AsyncEngine:
@@ -39,3 +49,51 @@ def set_auth_service(auth_service: AuthService) -> None:
     """Set the global auth service instance."""
     global _auth_service
     _auth_service = auth_service
+
+
+# --- Slice 9: Customer / Location services and the geocoding adapter ---
+
+
+def set_customer_service(service: CustomerService) -> None:
+    """Register the customer service used by the route factory."""
+    global _customer_service
+    _customer_service = service
+
+
+def get_customer_service() -> CustomerService:
+    """Retrieve the registered customer service."""
+    if _customer_service is None:
+        raise RuntimeError(
+            "CustomerService not initialized. " "Ensure app has been created with create_app()."
+        )
+    return _customer_service
+
+
+def set_location_service(service: LocationService) -> None:
+    """Register the location service used by the route factory."""
+    global _location_service
+    _location_service = service
+
+
+def get_location_service() -> LocationService:
+    """Retrieve the registered location service."""
+    if _location_service is None:
+        raise RuntimeError(
+            "LocationService not initialized. " "Ensure app has been created with create_app()."
+        )
+    return _location_service
+
+
+def set_geocoding_adapter(adapter: GeocodingAdapter) -> None:
+    """Register the active geocoding adapter."""
+    global _geocoding_adapter
+    _geocoding_adapter = adapter
+
+
+def get_geocoding_adapter() -> GeocodingAdapter:
+    """Retrieve the active geocoding adapter."""
+    if _geocoding_adapter is None:
+        raise RuntimeError(
+            "GeocodingAdapter not initialized. " "Ensure app has been created with create_app()."
+        )
+    return _geocoding_adapter
