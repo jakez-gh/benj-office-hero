@@ -7,6 +7,7 @@ import { JobsPage } from './pages/JobsPage';
 import { DispatchPage } from './pages/DispatchPage';
 import { VehiclesPage } from './pages/VehiclesPage';
 import { UsersPage } from './pages/UsersPage';
+import { CustomersPage } from './pages/CustomersPage';
 import { ShowcasePage } from './pages/_design/ShowcasePage';
 
 // __IS_DEV__ is replaced at Vite build time and set in setupTests for jest.
@@ -34,6 +35,7 @@ const AppContent: React.FC = () => {
           <Route path="/dispatch" element={<DispatchPage />} />
           <Route path="/vehicles" element={<VehiclesPage />} />
           <Route path="/users" element={<UsersPage />} />
+          <Route path="/customers" element={<CustomersPage />} />
           {IS_DEV && <Route path="/_design" element={<ShowcasePage />} />}
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/*" element={<Navigate to="/" replace />} />
