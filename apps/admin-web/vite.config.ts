@@ -8,10 +8,11 @@ const packageJson = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf-8')
 );
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   define: {
-    __APP_VERSION__: JSON.stringify(packageJson.version || '0.0.0')
+    __APP_VERSION__: JSON.stringify(packageJson.version || '0.0.0'),
+    __IS_DEV__: JSON.stringify(mode !== 'production')
   },
   server: {
     port: 3000,
@@ -24,4 +25,4 @@ export default defineConfig({
       }
     }
   }
-});
+}));
