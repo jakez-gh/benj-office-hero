@@ -2,11 +2,56 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
 from office_hero.sagas.core import SagaContext, SagaStatus
+
+
+@dataclass
+class AuditEvent:
+    """Captured audit event for use in unit tests."""
+
+    event_type: str
+    details: dict
+    tenant_id: UUID
+    user_id: UUID | None = None
+    request_id: UUID | None = None
+
+
+class InMemoryAuditService:
+    """In-memory audit publisher that just captures events for unit tests.
+
+    Implements the ``log_event`` contract used by the customer / location
+    services. Production code wires the real :class:`AuditService` from
+    ``services.audit_service`` which persists rows to the ``audit_events``
+    table.
+    """
+
+    def __init__(self) -> None:
+        """Initialise an empty event log."""
+        self.events: list[AuditEvent] = []
+
+    async def log_event(
+        self,
+        event_type: str,
+        details: dict,
+        tenant_id: UUID,
+        user_id: UUID | None = None,
+        request_id: UUID | None = None,
+    ) -> None:
+        """Capture an audit event in the in-memory log."""
+        self.events.append(
+            AuditEvent(
+                event_type=event_type,
+                details=details,
+                tenant_id=tenant_id,
+                user_id=user_id,
+                request_id=request_id,
+            )
+        )
 
 
 class MockSagaRepository:
