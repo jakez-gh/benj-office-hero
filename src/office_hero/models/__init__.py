@@ -12,6 +12,8 @@ class Base(DeclarativeBase):
 
 
 # Import all models so they register with Base.metadata
+from office_hero.models.customer import Customer  # noqa: F401, E402
+from office_hero.models.location import Location  # noqa: F401, E402
 from office_hero.models.tenant import Tenant  # noqa: F401, E402
 from office_hero.models.token import RefreshToken  # noqa: F401, E402
 from office_hero.models.user import User  # noqa: F401, E402
