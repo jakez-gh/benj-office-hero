@@ -21,17 +21,36 @@ export function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
+  // Debounce: propagate search to debouncedSearch after 300ms of quiet
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    listCustomers({ search: search || undefined })
-      .then(r => setCustomers(r.items))
-      .catch((e: unknown) =>
-        setError(e instanceof Error ? e.message : String(e)),
-      )
-      .finally(() => setLoading(false));
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
   }, [search]);
+
+  // Fetch customers when debouncedSearch changes; loading starts true so no
+  // setState is called synchronously at effect top (satisfies react-hooks/set-state-in-effect)
+  useEffect(() => {
+    let cancelled = false;
+    listCustomers({ search: debouncedSearch || undefined })
+      .then(r => {
+        if (!cancelled) {
+          setCustomers(r.items);
+          setError(null);
+        }
+      })
+      .catch((e: unknown) => {
+        if (!cancelled)
+          setError(e instanceof Error ? e.message : String(e));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearch]);
 
   return (
     <div className="p-6 space-y-4">
