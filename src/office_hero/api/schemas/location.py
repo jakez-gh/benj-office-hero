@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
 
 class LocationCreate(BaseModel):
@@ -74,9 +74,15 @@ class LocationRead(BaseModel):
     country: str
     lat: float | None = None
     lng: float | None = None
-    geocode_source: str | None = None
-    geocode_status: str
+    geocode_source: Literal["nominatim", "ors", "manual", "stub"] | None = None
+    geocode_status: Literal["pending", "ok", "failed", "manual"]
     geocoded_at: datetime | None = None
     archived: bool
     created_at: datetime
     updated_at: datetime
+
+    @computed_field
+    @property
+    def formatted_address(self) -> str:
+        parts = [self.street, self.city, self.state, self.postal_code]
+        return ", ".join(p for p in parts if p)
