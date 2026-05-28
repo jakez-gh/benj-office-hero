@@ -14,6 +14,7 @@ from office_hero.core.exceptions import (
     InvalidJobTransitionError,
     JobNotFoundError,
     PermissionError,
+    RoutingError,
     TenantError,
     VehicleCrewNotFoundError,
     VehicleNotFoundError,
@@ -191,6 +192,16 @@ async def rate_limit_error_handler(request: Request, exc: RateLimitExceeded) -> 
     )
 
 
+async def routing_error_handler(request: Request, exc: RoutingError) -> JSONResponse:
+    """Convert RoutingError to 503 Service Unavailable."""
+    request_id = getattr(request.state, "request_id", None)
+    log.warning("routing.error", message=exc.message, request_id=request_id)
+    return JSONResponse(
+        status_code=503,
+        content={"detail": exc.message, "request_id": request_id},
+    )
+
+
 def register_exception_handlers(app) -> None:
     """Register all global exception handlers on the FastAPI app."""
     app.add_exception_handler(AuthError, auth_error_handler)
@@ -203,5 +214,6 @@ def register_exception_handlers(app) -> None:
     app.add_exception_handler(VehicleCrewNotFoundError, vehicle_crew_not_found_handler)
     app.add_exception_handler(CrewAssignmentConflictError, crew_assignment_conflict_handler)
     app.add_exception_handler(InvalidCrewMemberError, invalid_crew_member_handler)
+    app.add_exception_handler(RoutingError, routing_error_handler)
     app.add_exception_handler(RateLimitExceeded, rate_limit_error_handler)
     app.add_exception_handler(Exception, unhandled_exception_handler)
