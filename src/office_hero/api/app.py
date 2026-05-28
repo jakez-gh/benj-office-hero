@@ -22,6 +22,7 @@ from office_hero.api.middleware.security_headers import SecurityHeadersMiddlewar
 from office_hero.api.routes import health
 from office_hero.api.routes.admin import audit_router, create_admin_router
 from office_hero.api.routes.customers import create_customer_router
+from office_hero.api.routes.jobs import create_job_router
 from office_hero.api.routes.locations import create_location_router
 from office_hero.api.routes.sagas import create_saga_router
 from office_hero.api.routes.vehicle_crews import create_vehicle_crew_router
@@ -31,6 +32,7 @@ from office_hero.api.state import (
     set_customer_service,
     set_engine,
     set_geocoding_adapter,
+    set_job_service,
     set_location_service,
     set_vehicle_crew_service,
     set_vehicle_service,
@@ -39,6 +41,7 @@ from office_hero.core.logging import get_logger
 from office_hero.repositories.customer_repository import (
     InMemoryCustomerRepository,
 )
+from office_hero.repositories.job_repository import InMemoryJobRepository
 from office_hero.repositories.location_repository import (
     InMemoryLocationRepository,
 )
@@ -50,7 +53,11 @@ from office_hero.repositories.mocks import (
 from office_hero.repositories.protocols import OutboxRepository
 from office_hero.repositories.vehicle_crew_repository import InMemoryVehicleCrewRepository
 from office_hero.repositories.vehicle_repository import InMemoryVehicleRepository
+from office_hero.services.custom_field_templates import (
+    registry as _template_registry_module,
+)  # noqa: F401
 from office_hero.services.customer_service import CustomerService
+from office_hero.services.job_service import JobService
 from office_hero.services.location_service import LocationService
 from office_hero.services.saga_service import SagaService
 from office_hero.services.vehicle_crew_service import VehicleCrewService
@@ -110,6 +117,7 @@ def create_app(
     outbox_repo: OutboxRepository | None = None,
     customer_service: CustomerService | None = None,
     location_service: LocationService | None = None,
+    job_service: JobService | None = None,
     vehicle_service: VehicleService | None = None,
     vehicle_crew_service: VehicleCrewService | None = None,
 ) -> FastAPI:
@@ -127,6 +135,8 @@ def create_app(
             implementation so tests can construct ``create_app()`` without
             wiring a DB session.
         location_service: Slice-9 LocationService (same defaulting behaviour).
+        job_service: Slice-10 JobService. Defaults to an in-memory
+            implementation so tests boot without a database.
         vehicle_service: Slice-12 VehicleService. Defaults to in-memory.
         vehicle_crew_service: Slice-12 VehicleCrewService. Defaults to in-memory.
 
@@ -137,36 +147,43 @@ def create_app(
     if outbox_repo is None:
         outbox_repo = MockOutboxRepository()
 
-    # Slice-9 defaults: in-memory repositories + the stub geocoder. These let
+    # Slice-9/10 defaults: in-memory repositories + the stub geocoder. These let
     # the module-level ``app`` boot without a database and keep API tests off
     # the live Nominatim service.
-    if customer_service is None or location_service is None:
-        audit = InMemoryAuditService()
-        cust_repo = InMemoryCustomerRepository()
-        loc_repo = InMemoryLocationRepository()
-        geocoder = StubGeocodingAdapter()
-        if customer_service is None:
-            customer_service = CustomerService(repo=cust_repo, audit=audit)
-        if location_service is None:
-            location_service = LocationService(
-                repo=loc_repo,
-                customer_repo=cust_repo,
-                audit=audit,
-                geocoder=geocoder,
-            )
-        set_geocoding_adapter(geocoder)
+    audit = InMemoryAuditService()
+    cust_repo = InMemoryCustomerRepository()
+    loc_repo = InMemoryLocationRepository()
+    geocoder = StubGeocodingAdapter()
 
+    if customer_service is None:
+        customer_service = CustomerService(repo=cust_repo, audit=audit)
+    if location_service is None:
+        location_service = LocationService(
+            repo=loc_repo,
+            customer_repo=cust_repo,
+            audit=audit,
+            geocoder=geocoder,
+        )
+    if job_service is None:
+        job_repo = InMemoryJobRepository()
+        job_service = JobService(
+            repo=job_repo,
+            customer_repo=cust_repo,
+            location_repo=loc_repo,
+            audit=audit,
+            template_registry=_template_registry_module,
+        )
+    set_geocoding_adapter(geocoder)
     set_customer_service(customer_service)
     set_location_service(location_service)
+    set_job_service(job_service)
 
     # Slice-12 defaults: in-memory vehicle repos
     if vehicle_service is None or vehicle_crew_service is None:
         v_audit = InMemoryAuditService()
         v_repo = InMemoryVehicleRepository()
         vc_repo = InMemoryVehicleCrewRepository()
-        v_repo._crew_repo = vc_repo  # cross-reference for list_active_for_date
 
-        # Minimal no-op user repo for testing (eligibility check won't fire)
         class _NoopUserRepo:
             async def get_by_id(self, user_id, tenant_id):
                 return None
@@ -192,9 +209,7 @@ def create_app(
     )
 
     # --- Middleware (outermost -> innermost) ---
-    # Security headers must wrap everything so every response gets them.
     application.add_middleware(SecurityHeadersMiddleware)
-    # Logging after security so request_id is available for error responses.
     application.add_middleware(LoggingMiddleware)
 
     # --- Exception handlers ---
@@ -222,10 +237,11 @@ def create_app(
     )
     application.include_router(customer_router, prefix="/customers", tags=["customers"])
 
-    # The location router carries its own ``/customers/{cid}/locations`` and
-    # ``/locations/{lid}`` paths inline so it mounts at the root.
     location_router = create_location_router(service_provider=lambda: location_service)
     application.include_router(location_router, tags=["locations"])
+
+    job_router = create_job_router(service_provider=lambda: job_service)
+    application.include_router(job_router, prefix="/jobs", tags=["jobs"])
 
     vehicle_router = create_vehicle_router(service_provider=lambda: vehicle_service)
     application.include_router(vehicle_router, prefix="/vehicles", tags=["vehicles"])

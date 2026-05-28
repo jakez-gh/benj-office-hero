@@ -9,7 +9,10 @@ from slowapi.errors import RateLimitExceeded
 from office_hero.core.exceptions import (
     AuthError,
     CrewAssignmentConflictError,
+    CustomFieldValidationError,
     InvalidCrewMemberError,
+    InvalidJobTransitionError,
+    JobNotFoundError,
     PermissionError,
     TenantError,
     VehicleCrewNotFoundError,
@@ -63,31 +66,50 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
-async def rate_limit_error_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
-    """Convert slowapi RateLimitExceeded to 429 with Retry-After header.
-
-    Returns a human-friendly message and the standard Retry-After header so
-    clients (admin-web, tech-mobile) can display a meaningful toast.
-    """
+async def job_not_found_handler(request: Request, exc: JobNotFoundError) -> JSONResponse:
+    """Convert JobNotFoundError to 404 Not Found."""
     request_id = getattr(request.state, "request_id", None)
-    # Parse retry window from the exception detail (e.g. "Rate limit exceeded: 10 per 1 minute")
-    retry_after_seconds = 60  # sensible default
-    detail_str = str(exc.detail) if hasattr(exc, "detail") else str(exc)
+    return JSONResponse(
+        status_code=404,
+        content={"detail": exc.message, "request_id": request_id},
+    )
 
+
+async def invalid_job_transition_handler(
+    request: Request, exc: InvalidJobTransitionError
+) -> JSONResponse:
+    """Convert InvalidJobTransitionError to 422 Unprocessable Entity."""
+    request_id = getattr(request.state, "request_id", None)
     log.warning(
-        "rate_limit.exceeded",
+        "job.invalid_transition",
+        from_status=str(exc.from_status),
+        to_status=str(exc.to_status),
         request_id=request_id,
-        detail=detail_str,
-        path=request.url.path,
     )
     return JSONResponse(
-        status_code=429,
+        status_code=422,
         content={
-            "detail": "Too many requests. Please wait before trying again.",
-            "retry_after": retry_after_seconds,
+            "detail": "Invalid job status transition",
+            "from": str(exc.from_status),
+            "to": str(exc.to_status),
             "request_id": request_id,
         },
-        headers={"Retry-After": str(retry_after_seconds)},
+    )
+
+
+async def custom_field_validation_handler(
+    request: Request, exc: CustomFieldValidationError
+) -> JSONResponse:
+    """Convert CustomFieldValidationError to 422 Unprocessable Entity."""
+    request_id = getattr(request.state, "request_id", None)
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": exc.message,
+            "field": exc.field_name,
+            "errors": exc.errors,
+            "request_id": request_id,
+        },
     )
 
 
@@ -142,11 +164,41 @@ async def invalid_crew_member_handler(
     )
 
 
+async def rate_limit_error_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    """Convert slowapi RateLimitExceeded to 429 with Retry-After header.
+
+    Returns a human-friendly message and the standard Retry-After header so
+    clients (admin-web, tech-mobile) can display a meaningful toast.
+    """
+    request_id = getattr(request.state, "request_id", None)
+    retry_after_seconds = 60
+    detail_str = str(exc.detail) if hasattr(exc, "detail") else str(exc)
+
+    log.warning(
+        "rate_limit.exceeded",
+        request_id=request_id,
+        detail=detail_str,
+        path=request.url.path,
+    )
+    return JSONResponse(
+        status_code=429,
+        content={
+            "detail": "Too many requests. Please wait before trying again.",
+            "retry_after": retry_after_seconds,
+            "request_id": request_id,
+        },
+        headers={"Retry-After": str(retry_after_seconds)},
+    )
+
+
 def register_exception_handlers(app) -> None:
     """Register all global exception handlers on the FastAPI app."""
     app.add_exception_handler(AuthError, auth_error_handler)
     app.add_exception_handler(PermissionError, permission_error_handler)
     app.add_exception_handler(TenantError, tenant_error_handler)
+    app.add_exception_handler(JobNotFoundError, job_not_found_handler)
+    app.add_exception_handler(InvalidJobTransitionError, invalid_job_transition_handler)
+    app.add_exception_handler(CustomFieldValidationError, custom_field_validation_handler)
     app.add_exception_handler(VehicleNotFoundError, vehicle_not_found_handler)
     app.add_exception_handler(VehicleCrewNotFoundError, vehicle_crew_not_found_handler)
     app.add_exception_handler(CrewAssignmentConflictError, crew_assignment_conflict_handler)
