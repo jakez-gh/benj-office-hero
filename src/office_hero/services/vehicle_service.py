@@ -7,7 +7,7 @@ blocking crew IDs so the caller can surface them in a 409 response.
 
 from __future__ import annotations
 
-from datetime import date, timezone
+from datetime import date
 from typing import Any, Protocol
 from uuid import UUID
 
@@ -179,7 +179,7 @@ class VehicleService:
                         and cr["work_date"] >= today
                     ]
                 if future_crews:
-                    from uuid import UUID as _UUID
+
                     blocking_id = future_crews[0]["id"]
                     raise CrewAssignmentConflictError(
                         message="Vehicle has active or future crew assignments; delete them first",

@@ -24,12 +24,16 @@ from office_hero.api.routes.admin import audit_router, create_admin_router
 from office_hero.api.routes.customers import create_customer_router
 from office_hero.api.routes.locations import create_location_router
 from office_hero.api.routes.sagas import create_saga_router
+from office_hero.api.routes.vehicle_crews import create_vehicle_crew_router
+from office_hero.api.routes.vehicles import create_vehicle_router
 from office_hero.api.state import (
     set_auth_service,
     set_customer_service,
     set_engine,
     set_geocoding_adapter,
     set_location_service,
+    set_vehicle_crew_service,
+    set_vehicle_service,
 )
 from office_hero.core.logging import get_logger
 from office_hero.repositories.customer_repository import (
@@ -44,9 +48,13 @@ from office_hero.repositories.mocks import (
     MockSagaRepository,
 )
 from office_hero.repositories.protocols import OutboxRepository
+from office_hero.repositories.vehicle_crew_repository import InMemoryVehicleCrewRepository
+from office_hero.repositories.vehicle_repository import InMemoryVehicleRepository
 from office_hero.services.customer_service import CustomerService
 from office_hero.services.location_service import LocationService
 from office_hero.services.saga_service import SagaService
+from office_hero.services.vehicle_crew_service import VehicleCrewService
+from office_hero.services.vehicle_service import VehicleService
 
 log = get_logger(__name__)
 
@@ -102,6 +110,8 @@ def create_app(
     outbox_repo: OutboxRepository | None = None,
     customer_service: CustomerService | None = None,
     location_service: LocationService | None = None,
+    vehicle_service: VehicleService | None = None,
+    vehicle_crew_service: VehicleCrewService | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application.
 
@@ -117,6 +127,8 @@ def create_app(
             implementation so tests can construct ``create_app()`` without
             wiring a DB session.
         location_service: Slice-9 LocationService (same defaulting behaviour).
+        vehicle_service: Slice-12 VehicleService. Defaults to in-memory.
+        vehicle_crew_service: Slice-12 VehicleCrewService. Defaults to in-memory.
 
     The factory invokes router factories once at startup, not per-request.
     """
@@ -146,6 +158,31 @@ def create_app(
 
     set_customer_service(customer_service)
     set_location_service(location_service)
+
+    # Slice-12 defaults: in-memory vehicle repos
+    if vehicle_service is None or vehicle_crew_service is None:
+        v_audit = InMemoryAuditService()
+        v_repo = InMemoryVehicleRepository()
+        vc_repo = InMemoryVehicleCrewRepository()
+        v_repo._crew_repo = vc_repo  # cross-reference for list_active_for_date
+
+        # Minimal no-op user repo for testing (eligibility check won't fire)
+        class _NoopUserRepo:
+            async def get_by_id(self, user_id, tenant_id):
+                return None
+
+        if vehicle_service is None:
+            vehicle_service = VehicleService(repo=v_repo, audit=v_audit, crew_repo=vc_repo)
+        if vehicle_crew_service is None:
+            vehicle_crew_service = VehicleCrewService(
+                crew_repo=vc_repo,
+                vehicle_repo=v_repo,
+                user_repo=_NoopUserRepo(),
+                audit=v_audit,
+            )
+
+    set_vehicle_service(vehicle_service)
+    set_vehicle_crew_service(vehicle_crew_service)
 
     application = FastAPI(
         title="Office Hero",
@@ -189,6 +226,15 @@ def create_app(
     # ``/locations/{lid}`` paths inline so it mounts at the root.
     location_router = create_location_router(service_provider=lambda: location_service)
     application.include_router(location_router, tags=["locations"])
+
+    vehicle_router = create_vehicle_router(service_provider=lambda: vehicle_service)
+    application.include_router(vehicle_router, prefix="/vehicles", tags=["vehicles"])
+
+    crew_router = create_vehicle_crew_router(
+        service_provider=lambda: vehicle_crew_service,
+        vehicle_service_provider=lambda: vehicle_service,
+    )
+    application.include_router(crew_router, tags=["crews"])
 
     return application
 

@@ -30,9 +30,7 @@ class Vehicle(Base):
     __tablename__ = "vehicles"
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=False
-    )
+    tenant_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
     license_plate: Mapped[str] = mapped_column(String(20), nullable=False)
     nickname: Mapped[str | None] = mapped_column(String(120), nullable=True)
     make: Mapped[str | None] = mapped_column(String(60), nullable=True)

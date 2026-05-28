@@ -14,13 +14,12 @@ The unique (vehicle, date) invariant is enforced by the repository layer
 
 from __future__ import annotations
 
-from datetime import date, datetime, time, timezone
+from datetime import date, time
 from typing import Any, Protocol
 from uuid import UUID
 
 from office_hero.core.crew_role import CrewRole
 from office_hero.core.exceptions import (
-    CrewAssignmentConflictError,
     InvalidCrewMemberError,
     VehicleCrewNotFoundError,
     VehicleNotFoundError,
@@ -160,9 +159,7 @@ class VehicleCrewService:
         today = date.today()
         delta = (today - work_date).days
         if delta > _MAX_BACKDATED_DAYS:
-            raise ValueError(
-                f"work_date is {delta} days in the past (max {_MAX_BACKDATED_DAYS})"
-            )
+            raise ValueError(f"work_date is {delta} days in the past (max {_MAX_BACKDATED_DAYS})")
 
         # shift ordering
         if shift_end <= shift_start:
@@ -199,9 +196,7 @@ class VehicleCrewService:
             raise VehicleCrewNotFoundError(f"VehicleCrew {crew_id} not found")
         return crew
 
-    async def list_for_date(
-        self, tenant_id: UUID, work_date: date
-    ) -> list[VehicleCrew]:
+    async def list_for_date(self, tenant_id: UUID, work_date: date) -> list[VehicleCrew]:
         """Return all crews for the date."""
         return await self.crew_repo.list_for_date(tenant_id, work_date)
 
@@ -288,15 +283,11 @@ class VehicleCrewService:
         """Remove a member; refuses to remove the LEAD without a replacement."""
         crew = await self.get(tenant_id, crew_id)
         # Find the member's role
-        member_row = next(
-            (m for m in (crew.members or []) if m.user_id == user_id_to_remove), None
-        )
+        member_row = next((m for m in (crew.members or []) if m.user_id == user_id_to_remove), None)
         if member_row is not None and member_row.role_on_crew == str(CrewRole.LEAD):
             # Count remaining members after this removal
             remaining = [m for m in (crew.members or []) if m.user_id != user_id_to_remove]
-            remaining_leads = sum(
-                1 for m in remaining if m.role_on_crew == str(CrewRole.LEAD)
-            )
+            remaining_leads = sum(1 for m in remaining if m.role_on_crew == str(CrewRole.LEAD))
             if remaining_leads == 0:
                 raise ValueError("Cannot remove the LEAD without assigning a replacement first")
 
@@ -308,9 +299,7 @@ class VehicleCrewService:
             user_id=user_id,
         )
 
-    async def delete(
-        self, tenant_id: UUID, user_id: UUID, crew_id: UUID
-    ) -> None:
+    async def delete(self, tenant_id: UUID, user_id: UUID, crew_id: UUID) -> None:
         """Delete the crew (cascade deletes members).
 
         Once Slice 14 (routing) lands, this will also check for Route references.

@@ -1,4 +1,4 @@
-"""Global app state for engine, auth service, and slice 9 services/adapters."""
+"""Global app state for engine, auth service, and slice 9/12 services/adapters."""
 
 from __future__ import annotations
 
@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from office_hero.adapters.geocoding.protocol import GeocodingAdapter
     from office_hero.services.customer_service import CustomerService
     from office_hero.services.location_service import LocationService
+    from office_hero.services.vehicle_crew_service import VehicleCrewService
+    from office_hero.services.vehicle_service import VehicleService
 
 # Global variables for app lifecycle
 _engine: AsyncEngine | None = None
@@ -19,6 +21,8 @@ _auth_service: AuthService | None = None
 _customer_service: CustomerService | None = None
 _location_service: LocationService | None = None
 _geocoding_adapter: GeocodingAdapter | None = None
+_vehicle_service: VehicleService | None = None
+_vehicle_crew_service: VehicleCrewService | None = None
 
 
 def get_engine() -> AsyncEngine:
@@ -97,3 +101,36 @@ def get_geocoding_adapter() -> GeocodingAdapter:
             "GeocodingAdapter not initialized. " "Ensure app has been created with create_app()."
         )
     return _geocoding_adapter
+
+
+# --- Slice 12: Vehicle / VehicleCrew services ---
+
+
+def set_vehicle_service(service: VehicleService) -> None:
+    """Register the vehicle service used by the route factory."""
+    global _vehicle_service
+    _vehicle_service = service
+
+
+def get_vehicle_service() -> VehicleService:
+    """Retrieve the registered vehicle service."""
+    if _vehicle_service is None:
+        raise RuntimeError(
+            "VehicleService not initialized. Ensure app has been created with create_app()."
+        )
+    return _vehicle_service
+
+
+def set_vehicle_crew_service(service: VehicleCrewService) -> None:
+    """Register the vehicle crew service used by the route factory."""
+    global _vehicle_crew_service
+    _vehicle_crew_service = service
+
+
+def get_vehicle_crew_service() -> VehicleCrewService:
+    """Retrieve the registered vehicle crew service."""
+    if _vehicle_crew_service is None:
+        raise RuntimeError(
+            "VehicleCrewService not initialized. Ensure app has been created with create_app()."
+        )
+    return _vehicle_crew_service

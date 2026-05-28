@@ -7,8 +7,7 @@ tests exercise the same conflict-detection path as production.
 
 from __future__ import annotations
 
-from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
 from typing import Any, Protocol, runtime_checkable
 from uuid import UUID, uuid4
@@ -55,9 +54,7 @@ class VehicleCrewRepositoryProtocol(Protocol):
         self, tenant_id: UUID, vehicle_id: UUID, work_date: date
     ) -> VehicleCrew | None: ...
 
-    async def list_for_date(
-        self, tenant_id: UUID, work_date: date
-    ) -> list[VehicleCrew]: ...
+    async def list_for_date(self, tenant_id: UUID, work_date: date) -> list[VehicleCrew]: ...
 
     async def list_for_user_date(
         self, tenant_id: UUID, user_id: UUID, work_date: date
@@ -88,9 +85,7 @@ class VehicleCrewRepositoryProtocol(Protocol):
         role_on_crew: CrewRole,
     ) -> VehicleCrewMember: ...
 
-    async def remove_member(
-        self, crew_id: UUID, tenant_id: UUID, user_id: UUID
-    ) -> None: ...
+    async def remove_member(self, crew_id: UUID, tenant_id: UUID, user_id: UUID) -> None: ...
 
     async def delete(self, crew_id: UUID, tenant_id: UUID) -> None: ...
 
@@ -141,9 +136,7 @@ class VehicleCrewRepository:
             await self.session.rollback()
             # Look up the conflicting crew to surface its ID.
             existing = await self.get_for_vehicle_date(tenant_id, vehicle_id, work_date)
-            raise CrewAssignmentConflictError(
-                existing_crew_id=existing.id if existing else None
-            )
+            raise CrewAssignmentConflictError(existing_crew_id=existing.id if existing else None)
 
         for m in members:
             member = VehicleCrewMember(
@@ -176,9 +169,7 @@ class VehicleCrewRepository:
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
-    async def list_for_date(
-        self, tenant_id: UUID, work_date: date
-    ) -> list[VehicleCrew]:
+    async def list_for_date(self, tenant_id: UUID, work_date: date) -> list[VehicleCrew]:
         """Return all crews for a tenant on ``work_date`` (daily dispatch view)."""
         stmt = (
             select(VehicleCrew)
@@ -278,9 +269,7 @@ class VehicleCrewRepository:
         await self.session.flush()
         return m
 
-    async def remove_member(
-        self, crew_id: UUID, tenant_id: UUID, user_id: UUID
-    ) -> None:
+    async def remove_member(self, crew_id: UUID, tenant_id: UUID, user_id: UUID) -> None:
         """Remove a member from the crew; raises if crew not found."""
         from sqlalchemy import delete
 
@@ -302,9 +291,7 @@ class VehicleCrewRepository:
         crew = await self.get_by_id(crew_id, tenant_id)
         if crew is None:
             raise VehicleCrewNotFoundError(f"VehicleCrew {crew_id} not found")
-        await self.session.execute(
-            delete(VehicleCrew).where(VehicleCrew.id == crew_id)
-        )
+        await self.session.execute(delete(VehicleCrew).where(VehicleCrew.id == crew_id))
         await self.session.flush()
 
     async def find_user_crew_conflicts(
@@ -439,9 +426,7 @@ class InMemoryVehicleCrewRepository:
                 return self._row_to_crew(row)
         return None
 
-    async def list_for_date(
-        self, tenant_id: UUID, work_date: date
-    ) -> list[VehicleCrew]:
+    async def list_for_date(self, tenant_id: UUID, work_date: date) -> list[VehicleCrew]:
         """Return all crews for the date."""
         rows = [
             r
@@ -455,17 +440,11 @@ class InMemoryVehicleCrewRepository:
         self, tenant_id: UUID, user_id: UUID, work_date: date
     ) -> list[VehicleCrew]:
         """Return crews where user is a member on the date."""
-        crew_ids = {
-            mr["crew_id"]
-            for mr in self._member_rows.values()
-            if mr["user_id"] == user_id
-        }
+        crew_ids = {mr["crew_id"] for mr in self._member_rows.values() if mr["user_id"] == user_id}
         return [
             self._row_to_crew(r)
             for r in self._rows.values()
-            if r["tenant_id"] == tenant_id
-            and r["work_date"] == work_date
-            and r["id"] in crew_ids
+            if r["tenant_id"] == tenant_id and r["work_date"] == work_date and r["id"] in crew_ids
         ]
 
     async def update(
@@ -541,9 +520,7 @@ class InMemoryVehicleCrewRepository:
         }
         return self._row_to_member(self._member_rows[mid])
 
-    async def remove_member(
-        self, crew_id: UUID, tenant_id: UUID, user_id: UUID
-    ) -> None:
+    async def remove_member(self, crew_id: UUID, tenant_id: UUID, user_id: UUID) -> None:
         """Remove a member."""
         row = self._rows.get(crew_id)
         if row is None or row["tenant_id"] != tenant_id:
@@ -581,8 +558,4 @@ class InMemoryVehicleCrewRepository:
         for mr in self._member_rows.values():
             if mr["crew_id"] in crew_ids_on_date:
                 user_to_crews[mr["user_id"]].append(mr["crew_id"])
-        return [
-            (uid, crew_ids)
-            for uid, crew_ids in user_to_crews.items()
-            if len(crew_ids) > 1
-        ]
+        return [(uid, crew_ids) for uid, crew_ids in user_to_crews.items() if len(crew_ids) > 1]

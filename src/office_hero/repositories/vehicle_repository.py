@@ -10,7 +10,7 @@ defence-in-depth on top of RLS).
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import UTC, datetime, date
+from datetime import UTC, date, datetime
 from typing import Any, Protocol, runtime_checkable
 from uuid import UUID, uuid4
 
@@ -61,9 +61,7 @@ class VehicleRepositoryProtocol(Protocol):
 
     async def restore(self, vehicle_id: UUID, tenant_id: UUID) -> Vehicle: ...
 
-    async def list_active_for_date(
-        self, tenant_id: UUID, work_date: date
-    ) -> list[Vehicle]: ...
+    async def list_active_for_date(self, tenant_id: UUID, work_date: date) -> list[Vehicle]: ...
 
 
 class VehicleRepository:
@@ -111,9 +109,7 @@ class VehicleRepository:
 
     async def get_by_id(self, vehicle_id: UUID, tenant_id: UUID) -> Vehicle | None:
         """Fetch a vehicle if it exists in ``tenant_id`` (defence-in-depth)."""
-        stmt = select(Vehicle).where(
-            Vehicle.id == vehicle_id, Vehicle.tenant_id == tenant_id
-        )
+        stmt = select(Vehicle).where(Vehicle.id == vehicle_id, Vehicle.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
@@ -169,9 +165,7 @@ class VehicleRepository:
         """Clear the archived flag."""
         return await self.update(vehicle_id, tenant_id, archived=False)
 
-    async def list_active_for_date(
-        self, tenant_id: UUID, work_date: date
-    ) -> list[Vehicle]:
+    async def list_active_for_date(self, tenant_id: UUID, work_date: date) -> list[Vehicle]:
         """Return non-archived vehicles that have a crew for ``work_date``.
 
         Used by the routing engine (Slice 14) to enumerate dispatch candidates.
@@ -251,7 +245,6 @@ class InMemoryVehicleRepository:
                 and row["license_plate"] == license_plate
                 and not row.get("archived", False)
             ):
-                from office_hero.core.exceptions import CrewAssignmentConflictError
 
                 raise ValueError(
                     f"Vehicle with license plate {license_plate!r} already exists in tenant"
@@ -334,9 +327,7 @@ class InMemoryVehicleRepository:
         """Clear the archived flag."""
         return await self.update(vehicle_id, tenant_id, archived=False)
 
-    async def list_active_for_date(
-        self, tenant_id: UUID, work_date: date
-    ) -> list[Vehicle]:
+    async def list_active_for_date(self, tenant_id: UUID, work_date: date) -> list[Vehicle]:
         """Return non-archived vehicles that have a crew for ``work_date``."""
         if self._crew_repo is None:
             return []

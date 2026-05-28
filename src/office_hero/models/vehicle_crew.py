@@ -11,7 +11,6 @@ user_id)`` constraint prevents the same user appearing twice on the same crew.
 
 from __future__ import annotations
 
-import time as _time
 from datetime import date, datetime, time
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
@@ -21,9 +20,9 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     String,
+    Text,
     Time,
     UniqueConstraint,
-    Text,
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -33,7 +32,6 @@ from office_hero.models import Base
 
 if TYPE_CHECKING:
     from office_hero.models.vehicle import Vehicle
-    from office_hero.models.user import User
 
 
 class VehicleCrew(Base):
@@ -54,12 +52,8 @@ class VehicleCrew(Base):
         PG_UUID(as_uuid=True), ForeignKey("vehicles.id"), nullable=False
     )
     work_date: Mapped[date] = mapped_column(Date, nullable=False)
-    shift_start: Mapped[time] = mapped_column(
-        Time, nullable=False, default=lambda: time(8, 0)
-    )
-    shift_end: Mapped[time] = mapped_column(
-        Time, nullable=False, default=lambda: time(17, 0)
-    )
+    shift_start: Mapped[time] = mapped_column(Time, nullable=False, default=lambda: time(8, 0))
+    shift_end: Mapped[time] = mapped_column(Time, nullable=False, default=lambda: time(17, 0))
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by_user_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
@@ -124,9 +118,7 @@ class VehicleCrewMember(Base):
 
     crew: Mapped[VehicleCrew] = relationship("VehicleCrew", back_populates="members")
 
-    __table_args__ = (
-        UniqueConstraint("crew_id", "user_id", name="uq_crew_member_user"),
-    )
+    __table_args__ = (UniqueConstraint("crew_id", "user_id", name="uq_crew_member_user"),)
 
     def __repr__(self) -> str:
         return (

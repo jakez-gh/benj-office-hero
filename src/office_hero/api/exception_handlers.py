@@ -6,7 +6,15 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 
-from office_hero.core.exceptions import AuthError, PermissionError, TenantError
+from office_hero.core.exceptions import (
+    AuthError,
+    CrewAssignmentConflictError,
+    InvalidCrewMemberError,
+    PermissionError,
+    TenantError,
+    VehicleCrewNotFoundError,
+    VehicleNotFoundError,
+)
 from office_hero.core.logging import get_logger
 
 log = get_logger(__name__)
@@ -83,10 +91,65 @@ async def rate_limit_error_handler(request: Request, exc: RateLimitExceeded) -> 
     )
 
 
+async def vehicle_not_found_handler(request: Request, exc: VehicleNotFoundError) -> JSONResponse:
+    """Convert VehicleNotFoundError to 404."""
+    request_id = getattr(request.state, "request_id", None)
+    return JSONResponse(
+        status_code=404,
+        content={"detail": exc.message, "request_id": request_id},
+    )
+
+
+async def vehicle_crew_not_found_handler(
+    request: Request, exc: VehicleCrewNotFoundError
+) -> JSONResponse:
+    """Convert VehicleCrewNotFoundError to 404."""
+    request_id = getattr(request.state, "request_id", None)
+    return JSONResponse(
+        status_code=404,
+        content={"detail": exc.message, "request_id": request_id},
+    )
+
+
+async def crew_assignment_conflict_handler(
+    request: Request, exc: CrewAssignmentConflictError
+) -> JSONResponse:
+    """Convert CrewAssignmentConflictError to 409 with existing_crew_id."""
+    request_id = getattr(request.state, "request_id", None)
+    return JSONResponse(
+        status_code=409,
+        content={
+            "detail": exc.message,
+            "existing_crew_id": str(exc.existing_crew_id) if exc.existing_crew_id else None,
+            "request_id": request_id,
+        },
+    )
+
+
+async def invalid_crew_member_handler(
+    request: Request, exc: InvalidCrewMemberError
+) -> JSONResponse:
+    """Convert InvalidCrewMemberError to 422 with user_id and reason."""
+    request_id = getattr(request.state, "request_id", None)
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": exc.message,
+            "user_id": str(exc.user_id) if exc.user_id else None,
+            "reason": exc.reason,
+            "request_id": request_id,
+        },
+    )
+
+
 def register_exception_handlers(app) -> None:
     """Register all global exception handlers on the FastAPI app."""
     app.add_exception_handler(AuthError, auth_error_handler)
     app.add_exception_handler(PermissionError, permission_error_handler)
     app.add_exception_handler(TenantError, tenant_error_handler)
+    app.add_exception_handler(VehicleNotFoundError, vehicle_not_found_handler)
+    app.add_exception_handler(VehicleCrewNotFoundError, vehicle_crew_not_found_handler)
+    app.add_exception_handler(CrewAssignmentConflictError, crew_assignment_conflict_handler)
+    app.add_exception_handler(InvalidCrewMemberError, invalid_crew_member_handler)
     app.add_exception_handler(RateLimitExceeded, rate_limit_error_handler)
     app.add_exception_handler(Exception, unhandled_exception_handler)
