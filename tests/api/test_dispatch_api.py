@@ -122,6 +122,7 @@ def client(app) -> Iterator[TestClient]:
 @pytest.fixture()
 def pending_job(job_repo, tenant_id, user_id):
     """A pending job seeded into the in-memory job repository."""
+
     async def _create():
         return await job_repo.create(
             tenant_id,
@@ -144,6 +145,7 @@ def pending_job(job_repo, tenant_id, user_id):
 @pytest.fixture()
 def active_vehicle(v_repo, tenant_id):
     """An active vehicle seeded into the in-memory vehicle repository."""
+
     async def _create():
         return await v_repo.create(
             tenant_id,
@@ -212,6 +214,7 @@ def test_dispatch_invalid_transition_409(
     client, tenant_id, user_id, active_vehicle, job_repo
 ):
     """Dispatching an already-scheduled job returns 409."""
+
     async def _create_scheduled():
         job = await job_repo.create(
             tenant_id,
@@ -247,6 +250,7 @@ def test_dispatch_vehicle_already_booked_409(
     client, tenant_id, user_id, job_repo, v_repo, active_vehicle
 ):
     """Second dispatch for the same vehicle/time-window returns 409."""
+
     async def _create_and_assign():
         job1 = await job_repo.create(
             tenant_id,

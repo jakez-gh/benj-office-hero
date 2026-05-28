@@ -74,7 +74,7 @@ def get_customer_service() -> CustomerService:
     """Retrieve the registered customer service."""
     if _customer_service is None:
         raise RuntimeError(
-            "CustomerService not initialized. " "Ensure app has been created with create_app()."
+            "CustomerService not initialized. Ensure app has been created with create_app()."
         )
     return _customer_service
 
@@ -89,7 +89,7 @@ def get_location_service() -> LocationService:
     """Retrieve the registered location service."""
     if _location_service is None:
         raise RuntimeError(
-            "LocationService not initialized. " "Ensure app has been created with create_app()."
+            "LocationService not initialized. Ensure app has been created with create_app()."
         )
     return _location_service
 
@@ -107,7 +107,7 @@ def get_job_service() -> JobService:
     """Retrieve the registered job service."""
     if _job_service is None:
         raise RuntimeError(
-            "JobService not initialized. " "Ensure app has been created with create_app()."
+            "JobService not initialized. Ensure app has been created with create_app()."
         )
     return _job_service
 
@@ -122,7 +122,7 @@ def get_geocoding_adapter() -> GeocodingAdapter:
     """Retrieve the active geocoding adapter."""
     if _geocoding_adapter is None:
         raise RuntimeError(
-            "GeocodingAdapter not initialized. " "Ensure app has been created with create_app()."
+            "GeocodingAdapter not initialized. Ensure app has been created with create_app()."
         )
     return _geocoding_adapter
 
