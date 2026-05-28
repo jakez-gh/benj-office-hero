@@ -63,6 +63,8 @@ class VehicleRepositoryProtocol(Protocol):
 
     async def list_active_for_date(self, tenant_id: UUID, work_date: date) -> list[Vehicle]: ...
 
+    async def list_active(self, tenant_id: UUID) -> list[Vehicle]: ...
+
 
 class VehicleRepository:
     """SQLAlchemy-backed concrete :class:`Vehicle` repository (ADR 058)."""
@@ -180,6 +182,15 @@ class VehicleRepository:
                 VehicleCrew.work_date == work_date,
             )
             .distinct()
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_active(self, tenant_id: UUID) -> list[Vehicle]:
+        """Return all non-archived vehicles for a tenant."""
+        stmt = select(Vehicle).where(
+            Vehicle.tenant_id == tenant_id,
+            Vehicle.archived.is_(False),
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
@@ -342,4 +353,12 @@ class InMemoryVehicleRepository:
             if r["tenant_id"] == tenant_id
             and not r.get("archived", False)
             and r["id"] in crew_vehicle_ids
+        ]
+
+    async def list_active(self, tenant_id: UUID) -> list[Vehicle]:
+        """Return all non-archived vehicles for a tenant."""
+        return [
+            self._row_to_vehicle(r)
+            for r in self._rows.values()
+            if r["tenant_id"] == tenant_id and not r.get("archived", False)
         ]

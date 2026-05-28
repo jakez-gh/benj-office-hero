@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from office_hero.adapters.geocoding.protocol import GeocodingAdapter
     from office_hero.services.customer_service import CustomerService
     from office_hero.services.location_service import LocationService
+    from office_hero.services.schedule_suggestion_service import ScheduleSuggestionService
     from office_hero.services.vehicle_crew_service import VehicleCrewService
     from office_hero.services.vehicle_service import VehicleService
 
@@ -23,6 +24,7 @@ _location_service: LocationService | None = None
 _geocoding_adapter: GeocodingAdapter | None = None
 _vehicle_service: VehicleService | None = None
 _vehicle_crew_service: VehicleCrewService | None = None
+_schedule_suggestion_service: ScheduleSuggestionService | None = None
 
 
 def get_engine() -> AsyncEngine:
@@ -134,3 +136,22 @@ def get_vehicle_crew_service() -> VehicleCrewService:
             "VehicleCrewService not initialized. Ensure app has been created with create_app()."
         )
     return _vehicle_crew_service
+
+
+# --- Slice 13: Schedule suggestion service ---
+
+
+def set_schedule_suggestion_service(service: ScheduleSuggestionService) -> None:
+    """Register the schedule suggestion service."""
+    global _schedule_suggestion_service
+    _schedule_suggestion_service = service
+
+
+def get_schedule_suggestion_service() -> ScheduleSuggestionService:
+    """Retrieve the registered schedule suggestion service."""
+    if _schedule_suggestion_service is None:
+        raise RuntimeError(
+            "ScheduleSuggestionService not initialized. "
+            "Ensure app has been created with create_app()."
+        )
+    return _schedule_suggestion_service
