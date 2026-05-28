@@ -22,6 +22,7 @@ from office_hero.api.middleware.security_headers import SecurityHeadersMiddlewar
 from office_hero.api.routes import health
 from office_hero.api.routes.admin import audit_router, create_admin_router
 from office_hero.api.routes.customers import create_customer_router
+from office_hero.api.routes.dispatch import create_dispatch_router
 from office_hero.api.routes.jobs import create_job_router
 from office_hero.api.routes.locations import create_location_router
 from office_hero.api.routes.sagas import create_saga_router
@@ -33,6 +34,7 @@ from office_hero.api.state import (
     set_customer_service,
     set_engine,
     set_geocoding_adapter,
+    set_job_dispatch_service,
     set_job_service,
     set_location_service,
     set_schedule_suggestion_service,
@@ -59,6 +61,7 @@ from office_hero.services.custom_field_templates import (
     registry as _template_registry_module,
 )  # noqa: F401
 from office_hero.services.customer_service import CustomerService
+from office_hero.services.job_dispatch_service import JobDispatchService
 from office_hero.services.job_service import JobService
 from office_hero.services.location_service import LocationService
 from office_hero.services.saga_service import SagaService
@@ -124,6 +127,7 @@ def create_app(
     vehicle_service: VehicleService | None = None,
     vehicle_crew_service: VehicleCrewService | None = None,
     schedule_suggestion_service: ScheduleSuggestionService | None = None,
+    job_dispatch_service: JobDispatchService | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application.
 
@@ -219,6 +223,14 @@ def create_app(
         )
     set_schedule_suggestion_service(schedule_suggestion_service)
 
+    # Slice-14: job dispatch service
+    if job_dispatch_service is None:
+        job_dispatch_service = JobDispatchService(
+            job_repo=InMemoryJobRepository(),
+            vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
+        )
+    set_job_dispatch_service(job_dispatch_service)
+
     application = FastAPI(
         title="Office Hero",
         description="Back-office management API for office services",
@@ -274,6 +286,11 @@ def create_app(
         service_provider=lambda: schedule_suggestion_service,
     )
     application.include_router(schedule_options_router, tags=["schedule-options"])
+
+    dispatch_router = create_dispatch_router(
+        service_provider=lambda: job_dispatch_service,
+    )
+    application.include_router(dispatch_router, tags=["dispatch"])
 
     return application
 

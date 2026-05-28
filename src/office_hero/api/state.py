@@ -11,6 +11,7 @@ from office_hero.services.auth_service import AuthService
 if TYPE_CHECKING:
     from office_hero.adapters.geocoding.protocol import GeocodingAdapter
     from office_hero.services.customer_service import CustomerService
+    from office_hero.services.job_dispatch_service import JobDispatchService
     from office_hero.services.job_service import JobService
     from office_hero.services.location_service import LocationService
     from office_hero.services.schedule_suggestion_service import ScheduleSuggestionService
@@ -27,6 +28,7 @@ _geocoding_adapter: GeocodingAdapter | None = None
 _vehicle_service: VehicleService | None = None
 _vehicle_crew_service: VehicleCrewService | None = None
 _schedule_suggestion_service: ScheduleSuggestionService | None = None
+_job_dispatch_service: JobDispatchService | None = None
 
 
 def get_engine() -> AsyncEngine:
@@ -175,3 +177,22 @@ def get_schedule_suggestion_service() -> ScheduleSuggestionService:
             "Ensure app has been created with create_app()."
         )
     return _schedule_suggestion_service
+
+
+# --- Slice 14: Job dispatch service ---
+
+
+def set_job_dispatch_service(service: JobDispatchService) -> None:
+    """Register the job dispatch service."""
+    global _job_dispatch_service
+    _job_dispatch_service = service
+
+
+def get_job_dispatch_service() -> JobDispatchService:
+    """Retrieve the registered job dispatch service."""
+    if _job_dispatch_service is None:
+        raise RuntimeError(
+            "JobDispatchService not initialized. "
+            "Ensure app has been created with create_app()."
+        )
+    return _job_dispatch_service
