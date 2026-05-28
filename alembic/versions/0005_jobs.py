@@ -129,18 +129,22 @@ def upgrade() -> None:
     # GIN index for JSONB containment queries (@>).
     # jsonb_path_ops is chosen for smaller index size; note it only supports
     # @> — a ? key-existence index is a future addition if needed.
-    op.execute("""
+    op.execute(
+        """
         CREATE INDEX idx_jobs_custom_fields_gin
             ON jobs USING gin (custom_fields jsonb_path_ops);
-        """)
+        """
+    )
 
     # Row-level security — only rows whose tenant_id matches the session setting
     # are visible (ADR 053).
-    op.execute("""
+    op.execute(
+        """
         ALTER TABLE jobs ENABLE ROW LEVEL SECURITY;
         CREATE POLICY job_tenant_isolation ON jobs
             USING (tenant_id = current_setting('app.tenant_id')::uuid);
-        """)
+        """
+    )
 
 
 def downgrade() -> None:
