@@ -114,24 +114,10 @@ WORK_DATE_ISO = WORK_DATE.isoformat()
 
 @pytest.fixture(autouse=True)
 def _reset_rate_limiter():
-    """Give each test its own rate-limit bucket.
-
-    All test requests share IP 127.0.0.1; without isolation, 60+ POSTs
-    across the full suite exhaust the in-memory bucket and turn the
-    duplicate-assignment test's expected 409 into a 429.
-
-    We patch key_func on each registered Limit object so the bucket key
-    is a fresh UUID per test, then restore it afterwards.
-    """
-    test_key = str(uuid4())
-    saved: list[tuple] = []
-    for limits in limiter._route_limits.values():
-        for lim in limits:
-            saved.append((lim, lim.key_func))
-            lim.key_func = lambda *_a, **_k: test_key
+    """Reset in-memory rate-limit storage between tests."""
+    _reset_limiter()
     yield
-    for lim, orig in saved:
-        lim.key_func = orig
+    _reset_limiter()
 
 
 @pytest.fixture()
@@ -182,9 +168,17 @@ def crew_service(vc_repo, v_repo, user_repo, audit):
 
 @pytest.fixture()
 def app(vehicle_service, crew_service) -> FastAPI:
+    # Each create_app() call appends Limit objects to limiter._route_limits under
+    # the same endpoint name. After N tests, 1 request calls hit() N times,
+    # exhausting the 60/min bucket. Save/clear/restore so each test has exactly
+    # 1 Limit per endpoint.
+    saved = dict(limiter._route_limits)
+    limiter._route_limits.clear()
     a = create_app(vehicle_service=vehicle_service, vehicle_crew_service=crew_service)
     a.add_middleware(_VehicleCrewTestAuthMiddleware)
-    return a
+    yield a
+    limiter._route_limits.clear()
+    limiter._route_limits.update(saved)
 
 
 @pytest.fixture()
