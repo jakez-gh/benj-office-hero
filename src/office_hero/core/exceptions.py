@@ -179,3 +179,21 @@ class InvalidCrewMemberError(Exception):
         self.reason = reason
         self.request_id = request_id
         super().__init__(message)
+
+
+class SchedulingNotAvailableError(Exception):
+    """Raised when schedule suggestions cannot be generated for a job."""
+
+    def __init__(self, message: str = "Scheduling not available", request_id: str | None = None):
+        self.message = message
+        self.request_id = request_id
+        super().__init__(message)
+
+
+class RoutingError(Exception):
+    """Raised when a routing adapter fails (network, timeout, parse)."""
+
+    def __init__(self, message: str = "Routing failed", request_id: str | None = None):
+        self.message = message
+        self.request_id = request_id
+        super().__init__(message)

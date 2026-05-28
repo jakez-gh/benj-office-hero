@@ -25,6 +25,7 @@ from office_hero.api.routes.customers import create_customer_router
 from office_hero.api.routes.jobs import create_job_router
 from office_hero.api.routes.locations import create_location_router
 from office_hero.api.routes.sagas import create_saga_router
+from office_hero.api.routes.schedule_options import create_schedule_options_router
 from office_hero.api.routes.vehicle_crews import create_vehicle_crew_router
 from office_hero.api.routes.vehicles import create_vehicle_router
 from office_hero.api.state import (
@@ -34,6 +35,7 @@ from office_hero.api.state import (
     set_geocoding_adapter,
     set_job_service,
     set_location_service,
+    set_schedule_suggestion_service,
     set_vehicle_crew_service,
     set_vehicle_service,
 )
@@ -60,6 +62,7 @@ from office_hero.services.customer_service import CustomerService
 from office_hero.services.job_service import JobService
 from office_hero.services.location_service import LocationService
 from office_hero.services.saga_service import SagaService
+from office_hero.services.schedule_suggestion_service import ScheduleSuggestionService
 from office_hero.services.vehicle_crew_service import VehicleCrewService
 from office_hero.services.vehicle_service import VehicleService
 
@@ -120,6 +123,7 @@ def create_app(
     job_service: JobService | None = None,
     vehicle_service: VehicleService | None = None,
     vehicle_crew_service: VehicleCrewService | None = None,
+    schedule_suggestion_service: ScheduleSuggestionService | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application.
 
@@ -179,27 +183,41 @@ def create_app(
     set_job_service(job_service)
 
     # Slice-12 defaults: in-memory vehicle repos
+    _default_v_repo: InMemoryVehicleRepository | None = None
     if vehicle_service is None or vehicle_crew_service is None:
         v_audit = InMemoryAuditService()
-        v_repo = InMemoryVehicleRepository()
+        _default_v_repo = InMemoryVehicleRepository()
         vc_repo = InMemoryVehicleCrewRepository()
+        _default_v_repo._crew_repo = vc_repo  # cross-reference for list_active_for_date
 
         class _NoopUserRepo:
             async def get_by_id(self, user_id, tenant_id):
                 return None
 
         if vehicle_service is None:
-            vehicle_service = VehicleService(repo=v_repo, audit=v_audit, crew_repo=vc_repo)
+            vehicle_service = VehicleService(repo=_default_v_repo, audit=v_audit, crew_repo=vc_repo)
         if vehicle_crew_service is None:
             vehicle_crew_service = VehicleCrewService(
                 crew_repo=vc_repo,
-                vehicle_repo=v_repo,
+                vehicle_repo=_default_v_repo,
                 user_repo=_NoopUserRepo(),
                 audit=v_audit,
             )
 
     set_vehicle_service(vehicle_service)
     set_vehicle_crew_service(vehicle_crew_service)
+
+    # Slice-13: schedule suggestion service
+    if schedule_suggestion_service is None:
+        from office_hero.adapters.routing.stub import StubRoutingAdapter
+
+        job_repo_13 = InMemoryJobRepository()
+        schedule_suggestion_service = ScheduleSuggestionService(
+            job_repo=job_repo_13,
+            vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
+            routing_adapter=StubRoutingAdapter(),
+        )
+    set_schedule_suggestion_service(schedule_suggestion_service)
 
     application = FastAPI(
         title="Office Hero",
@@ -251,6 +269,11 @@ def create_app(
         vehicle_service_provider=lambda: vehicle_service,
     )
     application.include_router(crew_router, tags=["crews"])
+
+    schedule_options_router = create_schedule_options_router(
+        service_provider=lambda: schedule_suggestion_service,
+    )
+    application.include_router(schedule_options_router, tags=["schedule-options"])
 
     return application
 

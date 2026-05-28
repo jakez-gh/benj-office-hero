@@ -24,6 +24,7 @@ from office_hero.models import Base
 if TYPE_CHECKING:
     from office_hero.models.customer import Customer
     from office_hero.models.location import Location
+    from office_hero.models.vehicle import Vehicle
 
 
 class Job(Base):
@@ -79,6 +80,11 @@ class Job(Base):
     # Back-office integration identifier (ADR 056).
     external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
+    # Slice 13: vehicle assigned by the routing / scheduling engine.
+    assigned_vehicle_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("vehicles.id"), nullable=True
+    )
+
     created_by_user_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
@@ -94,6 +100,7 @@ class Job(Base):
 
     customer: Mapped[Customer] = relationship("Customer")
     location: Mapped[Location] = relationship("Location")
+    vehicle: Mapped[Vehicle | None] = relationship("Vehicle")
 
     __table_args__ = (
         # Dispatch dashboard: filter by status within a tenant.
@@ -102,6 +109,8 @@ class Job(Base):
         Index("idx_jobs_tenant_scheduled_for", "tenant_id", "scheduled_for"),
         # Customer detail view: all jobs for a customer.
         Index("idx_jobs_tenant_customer", "tenant_id", "customer_id"),
+        # Routing engine: jobs assigned to a specific vehicle within a tenant.
+        Index("idx_jobs_tenant_vehicle", "tenant_id", "assigned_vehicle_id"),
         # GIN index for JSONB containment queries on custom_fields.
         # jsonb_path_ops is chosen for smallest index size; note it only
         # supports @> (containment) — a ? key-existence index is future work.
