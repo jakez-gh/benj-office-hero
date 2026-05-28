@@ -181,51 +181,6 @@ class InvalidCrewMemberError(Exception):
         super().__init__(message)
 
 
-class JobNotFoundError(Exception):
-    """Raised when a job cannot be located in the caller's tenant scope."""
-
-    def __init__(self, message: str = "Job not found", request_id: str | None = None):
-        self.message = message
-        self.request_id = request_id
-        super().__init__(message)
-
-
-class InvalidJobTransitionError(Exception):
-    """Raised when an illegal job status transition is attempted."""
-
-    def __init__(
-        self,
-        from_status,
-        to_status,
-        message: str | None = None,
-        request_id: str | None = None,
-    ):
-        from office_hero.core.job_status import JobStatus
-
-        self.from_status: JobStatus = from_status
-        self.to_status: JobStatus = to_status
-        self.message = message or (f"Invalid job status transition: {from_status} -> {to_status}")
-        self.request_id = request_id
-        super().__init__(self.message)
-
-
-class CustomFieldValidationError(Exception):
-    """Raised when custom_fields fail industry-template validation."""
-
-    def __init__(
-        self,
-        field_name: str,
-        errors: list[str],
-        message: str | None = None,
-        request_id: str | None = None,
-    ):
-        self.field_name = field_name
-        self.errors = errors
-        self.message = message or f"Custom field validation failed for '{field_name}'"
-        self.request_id = request_id
-        super().__init__(self.message)
-
-
 class SchedulingNotAvailableError(Exception):
     """Raised when schedule suggestions cannot be generated for a job."""
 
