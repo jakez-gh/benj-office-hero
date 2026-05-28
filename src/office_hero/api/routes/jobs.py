@@ -35,7 +35,6 @@ from office_hero.api.schemas.job import (
 )
 from office_hero.core.exceptions import (
     CustomerNotFoundError,
-    InvalidJobTransitionError,
     JobNotFoundError,
     LocationNotFoundError,
 )
@@ -123,6 +122,7 @@ def create_job_router(*, service_provider) -> APIRouter:
         response_model=JobList,
         dependencies=[Depends(require_jobs_read)],
     )
+    @limiter.limit("120/minute")
     async def list_jobs(
         request: Request,
         status_filter: Annotated[list[str] | None, Query(alias="status")] = None,
@@ -170,6 +170,7 @@ def create_job_router(*, service_provider) -> APIRouter:
         response_model=JobRead,
         dependencies=[Depends(require_jobs_write)],
     )
+    @limiter.limit("60/minute")
     async def update_job(
         request: Request,
         job_id: Annotated[UUID, Path()],
@@ -211,15 +212,6 @@ def create_job_router(*, service_provider) -> APIRouter:
             job = await svc.schedule(tenant_id, user_id, job_id, body.scheduled_for)
         except JobNotFoundError as exc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.message) from exc
-        except InvalidJobTransitionError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail={
-                    "detail": "Invalid job status transition",
-                    "from": str(exc.from_status),
-                    "to": str(exc.to_status),
-                },
-            ) from exc
         return JobRead.model_validate(job)
 
     @router.post(
@@ -239,15 +231,6 @@ def create_job_router(*, service_provider) -> APIRouter:
             job = await svc.start(tenant_id, user_id, job_id)
         except JobNotFoundError as exc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.message) from exc
-        except InvalidJobTransitionError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail={
-                    "detail": "Invalid job status transition",
-                    "from": str(exc.from_status),
-                    "to": str(exc.to_status),
-                },
-            ) from exc
         return JobRead.model_validate(job)
 
     @router.post(
@@ -270,15 +253,6 @@ def create_job_router(*, service_provider) -> APIRouter:
             )
         except JobNotFoundError as exc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.message) from exc
-        except InvalidJobTransitionError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail={
-                    "detail": "Invalid job status transition",
-                    "from": str(exc.from_status),
-                    "to": str(exc.to_status),
-                },
-            ) from exc
         return JobRead.model_validate(job)
 
     @router.post(
@@ -299,15 +273,6 @@ def create_job_router(*, service_provider) -> APIRouter:
             job = await svc.cancel(tenant_id, user_id, job_id, reason=body.reason)
         except JobNotFoundError as exc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.message) from exc
-        except InvalidJobTransitionError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail={
-                    "detail": "Invalid job status transition",
-                    "from": str(exc.from_status),
-                    "to": str(exc.to_status),
-                },
-            ) from exc
         return JobRead.model_validate(job)
 
     return router

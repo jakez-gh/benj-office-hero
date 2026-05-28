@@ -33,16 +33,15 @@ async def test_tenant_isolation_jobs_hidden_by_rls(async_db_session_factory):
     The test verifies this by creating a job under tenant A's session and
     then querying under tenant B's context — the result set must be empty.
     """
-    pytest.skip(
-        "Requires a live DB with tenants, customers, locations, and users pre-seeded. "
-        "Implement when the integration test harness is wired in a future slice."
-    )
+    # TODO: implement when integration test harness is wired in a future slice.
+    pytest.xfail("Integration harness not yet wired — implement in a future slice.")
 
 
 @pytest.mark.asyncio
 async def test_custom_fields_jsonb_roundtrip(async_db_session_factory):
     """Write nested JSON to custom_fields; read back and verify shape preserved."""
-    pytest.skip("Requires live DB. Implement in integration harness slice.")
+    # TODO: implement when integration test harness is wired in a future slice.
+    pytest.xfail("Integration harness not yet wired — implement in a future slice.")
 
 
 @pytest.mark.asyncio
@@ -51,6 +50,5 @@ async def test_jobs_gin_index_used_for_jsonb_contains_query(async_db_session_fac
 
     This is a smoke / debug aid, not a hard assertion in CI.
     """
-    pytest.skip(
-        "Requires live DB with EXPLAIN ANALYZE support. Implement in integration harness slice."
-    )
+    # TODO: implement when integration test harness is wired in a future slice.
+    pytest.xfail("Integration harness not yet wired — implement in a future slice.")

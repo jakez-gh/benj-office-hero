@@ -514,16 +514,8 @@ async def test_illegal_status_transition_returns_422(
     )
     assert resp.status_code == 422
     body = resp.json()
-    # The detail may be nested (from HTTPException with dict detail)
-    # or from the global exception handler
-    detail = body.get("detail") or body
-    if isinstance(detail, dict):
-        assert detail.get("from") == "complete"
-        assert detail.get("to") == "cancelled"
-    else:
-        # structured error from global handler
-        assert body.get("from") == "complete"
-        assert body.get("to") == "cancelled"
+    assert body["from"] == "complete"
+    assert body["to"] == "cancelled"
 
 
 @pytest.mark.asyncio
