@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import AwareDatetime, BaseModel, ConfigDict
 
 
 class JobDispatchRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     vehicle_id: UUID
-    scheduled_for: datetime
+    scheduled_for: AwareDatetime
 
 
 class JobDispatchResponse(BaseModel):
@@ -21,7 +20,7 @@ class JobDispatchResponse(BaseModel):
     id: UUID
     status: str
     assigned_vehicle_id: UUID
-    scheduled_for: datetime
+    scheduled_for: AwareDatetime
     title: str
     customer_id: UUID
     location_id: UUID

@@ -74,7 +74,7 @@ def _auth_headers(tenant_id, user_id, *, perms: str = "job:write,vehicle:read") 
 
 
 def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
+    return asyncio.run(coro)
 
 
 @pytest.fixture()
@@ -139,6 +139,7 @@ def pending_job(job_repo, tenant_id, user_id):
             custom_fields={},
             created_by_user_id=user_id,
         )
+
     return _run(_create())
 
 
@@ -155,6 +156,7 @@ def active_vehicle(v_repo, tenant_id):
             model="Transit",
             year=2022,
         )
+
     return _run(_create())
 
 
@@ -210,9 +212,7 @@ def test_dispatch_vehicle_not_found_404(client, tenant_id, user_id, pending_job)
     assert resp.status_code == 404
 
 
-def test_dispatch_invalid_transition_409(
-    client, tenant_id, user_id, active_vehicle, job_repo
-):
+def test_dispatch_invalid_transition_409(client, tenant_id, user_id, active_vehicle, job_repo):
     """Dispatching an already-scheduled job returns 409."""
 
     async def _create_scheduled():
@@ -317,3 +317,57 @@ def test_dispatch_missing_job_write_permission_403(
         headers=_auth_headers(tenant_id, user_id, perms="vehicle:read"),
     )
     assert resp.status_code == 403
+
+
+def test_dispatch_missing_vehicle_read_permission_403(
+    client, tenant_id, user_id, pending_job, active_vehicle
+):
+    """Missing vehicle:read permission returns 403."""
+    resp = client.post(
+        f"/jobs/{pending_job.id}/dispatch",
+        json={
+            "vehicle_id": str(active_vehicle.id),
+            "scheduled_for": WINDOW_START.isoformat(),
+        },
+        headers=_auth_headers(tenant_id, user_id, perms="job:write"),
+    )
+    assert resp.status_code == 403
+
+
+def test_dispatch_cross_tenant_vehicle_404(client, tenant_id, user_id, pending_job, v_repo):
+    """Vehicle belonging to a different tenant is not found — returns 404."""
+
+    async def _create_other_tenant_vehicle():
+        other_tenant = uuid4()
+        return await v_repo.create(
+            other_tenant,
+            license_plate="XYZ-999",
+            nickname="Other Tenant Van",
+            make="Ford",
+            model="Transit",
+            year=2021,
+        )
+
+    other_vehicle = _run(_create_other_tenant_vehicle())
+    resp = client.post(
+        f"/jobs/{pending_job.id}/dispatch",
+        json={
+            "vehicle_id": str(other_vehicle.id),
+            "scheduled_for": WINDOW_START.isoformat(),
+        },
+        headers=_auth_headers(tenant_id, user_id),
+    )
+    assert resp.status_code == 404
+
+
+def test_dispatch_naive_datetime_422(client, tenant_id, user_id, pending_job, active_vehicle):
+    """Naive (timezone-unaware) scheduled_for is rejected with 422."""
+    resp = client.post(
+        f"/jobs/{pending_job.id}/dispatch",
+        json={
+            "vehicle_id": str(active_vehicle.id),
+            "scheduled_for": "2027-06-01T09:00:00",  # no timezone
+        },
+        headers=_auth_headers(tenant_id, user_id),
+    )
+    assert resp.status_code == 422

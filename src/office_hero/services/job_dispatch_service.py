@@ -12,6 +12,7 @@ from uuid import UUID
 from office_hero.core.exceptions import (
     InvalidJobTransitionError,
     JobNotFoundError,
+    VehicleAlreadyBookedError,
     VehicleNotFoundError,
 )
 from office_hero.core.job_status import JobStatus, can_transition
@@ -21,19 +22,6 @@ from office_hero.repositories.job_repository import JobRepositoryProtocol
 from office_hero.repositories.vehicle_repository import VehicleRepositoryProtocol
 
 log = get_logger(__name__)
-
-
-class VehicleAlreadyBookedError(Exception):
-    """Raised when the requested vehicle already has a scheduled job overlapping the window."""
-
-    def __init__(self, vehicle_id: UUID, scheduled_for: datetime):
-        self.vehicle_id = vehicle_id
-        self.scheduled_for = scheduled_for
-        self.message = (
-            f"Vehicle {vehicle_id} is already booked around "
-            f"{scheduled_for.isoformat(timespec='minutes')}"
-        )
-        super().__init__(self.message)
 
 
 class JobDispatchService:
@@ -85,7 +73,14 @@ class JobDispatchService:
         # Exclude the job itself in case it is being re-dispatched to the same slot.
         conflicts = [c for c in conflicts if c.id != job_id]
         if conflicts:
-            raise VehicleAlreadyBookedError(vehicle_id, scheduled_for)
+            raise VehicleAlreadyBookedError(
+                message=(
+                    f"Vehicle {vehicle_id} is already booked around "
+                    f"{scheduled_for.isoformat(timespec='minutes')}"
+                ),
+                vehicle_id=vehicle_id,
+                scheduled_for=scheduled_for,
+            )
 
         updated = await self._job_repo.update_fields(
             job_id,
@@ -94,6 +89,8 @@ class JobDispatchService:
             assigned_vehicle_id=vehicle_id,
             scheduled_for=scheduled_for,
         )
+        if updated is None:
+            raise JobNotFoundError(f"Job {job_id} disappeared during dispatch")
         log.info(
             "job.dispatched",
             job_id=str(job_id),

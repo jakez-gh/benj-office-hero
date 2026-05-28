@@ -13,10 +13,10 @@ from office_hero.api.schemas.dispatch import JobDispatchRequest, JobDispatchResp
 from office_hero.core.exceptions import (
     InvalidJobTransitionError,
     JobNotFoundError,
+    VehicleAlreadyBookedError,
     VehicleNotFoundError,
 )
 from office_hero.core.logging import get_logger
-from office_hero.services.job_dispatch_service import VehicleAlreadyBookedError
 
 log = get_logger(__name__)
 

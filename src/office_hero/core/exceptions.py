@@ -197,3 +197,20 @@ class RoutingError(Exception):
         self.message = message
         self.request_id = request_id
         super().__init__(message)
+
+
+class VehicleAlreadyBookedError(Exception):
+    """Raised when a vehicle already has a scheduled job overlapping the requested window."""
+
+    def __init__(
+        self,
+        message: str = "Vehicle is already booked for this time",
+        vehicle_id=None,
+        scheduled_for=None,
+        request_id: str | None = None,
+    ):
+        self.message = message
+        self.vehicle_id = vehicle_id
+        self.scheduled_for = scheduled_for
+        self.request_id = request_id
+        super().__init__(message)
