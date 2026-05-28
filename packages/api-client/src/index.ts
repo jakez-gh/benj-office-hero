@@ -47,6 +47,67 @@ export type {
 
 // --- Admin entity types ---
 
+// Slice 10: Job management
+export type JobStatus = 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface JobSummary {
+  id: string;
+  title: string;
+  status: JobStatus;
+  priority: number;
+  scheduled_for: string | null;
+  customer_id: string;
+  location_id: string;
+  industry: string;
+  service_type: string | null;
+}
+
+export interface JobRead extends JobSummary {
+  tenant_id: string;
+  description: string | null;
+  requested_at: string | null;
+  requested_until: string | null;
+  estimated_duration_min: number;
+  started_at: string | null;
+  completed_at: string | null;
+  cancelled_at: string | null;
+  cancel_reason: string | null;
+  custom_fields: Record<string, unknown>;
+  external_id: string | null;
+  created_by_user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface JobCreate {
+  customer_id: string;
+  location_id: string;
+  title: string;
+  description?: string | null;
+  priority?: number;
+  service_type?: string | null;
+  requested_at?: string | null;
+  requested_until?: string | null;
+  estimated_duration_min?: number;
+  custom_fields?: Record<string, unknown>;
+}
+
+export interface JobListResponse {
+  items: JobSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface JobListParams {
+  status?: JobStatus[];
+  customer_id?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+// Legacy stub — kept for mobile SDK backward compat
 export interface AdminJob {
   id: string;
   customer_name?: string;
@@ -108,6 +169,23 @@ export function normalizeList<T>(data: unknown): T[] {
 
 // --- Admin list endpoints (use axios `client` — auth header set by AuthProvider) ---
 
+export async function listJobsAdmin(params: JobListParams = {}): Promise<JobListResponse> {
+  const qs: Record<string, string> = {};
+  if (params.status?.length) qs['status'] = params.status.join(',');
+  if (params.customer_id) qs['customer_id'] = params.customer_id;
+  if (params.search) qs['search'] = params.search;
+  if (params.limit != null) qs['limit'] = String(params.limit);
+  if (params.offset != null) qs['offset'] = String(params.offset);
+  const { data } = await client.get<JobListResponse>('/jobs', { params: qs });
+  return data;
+}
+
+export async function createJobAdmin(body: JobCreate): Promise<JobRead> {
+  const { data } = await client.post<JobRead>('/jobs', body);
+  return data;
+}
+
+/** @deprecated Use listJobsAdmin instead */
 export async function listJobs(): Promise<AdminJob[]> {
   const { data } = await client.get<unknown>('/jobs');
   return normalizeList<AdminJob>(data);

@@ -151,3 +151,62 @@ export function getSagaLogs(sagaId: string): Promise<SagaState> {
 export function healthCheck(): Promise<{ status: string }> {
   return request<{ status: string }>('/health');
 }
+
+// --- Job types (Slice 10) ---
+
+export type JobStatus = 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface JobSummary {
+  id: string;
+  title: string;
+  status: JobStatus;
+  priority: number;
+  scheduled_for: string | null;
+  customer_id: string;
+  location_id: string;
+  industry: string;
+  service_type: string | null;
+}
+
+export interface JobListResponse {
+  items: JobSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface JobCreate {
+  customer_id: string;
+  location_id: string;
+  title: string;
+  description?: string | null;
+  priority?: number;
+  service_type?: string | null;
+  estimated_duration_min?: number;
+}
+
+// --- Job API functions ---
+
+export interface JobListParams {
+  status?: JobStatus;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export function listJobsApi(params: JobListParams = {}): Promise<JobListResponse> {
+  const qs = new URLSearchParams();
+  if (params.status) qs.set('status', params.status);
+  if (params.search) qs.set('search', params.search);
+  if (params.limit != null) qs.set('limit', String(params.limit));
+  if (params.offset != null) qs.set('offset', String(params.offset));
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  return request<JobListResponse>(`/jobs${query}`);
+}
+
+export function createJobApi(body: JobCreate): Promise<JobSummary> {
+  return request<JobSummary>('/jobs', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}

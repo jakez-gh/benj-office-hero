@@ -1,45 +1,47 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-const mockListDeadLetters = jest.fn();
-const mockRetryDeadLetter = jest.fn();
+const mockListJobsApi = jest.fn();
+const mockCreateJobApi = jest.fn();
 
 jest.mock('../api', () => ({
-  listDeadLetters: (...args: unknown[]) => mockListDeadLetters(...args),
-  retryDeadLetter: (...args: unknown[]) => mockRetryDeadLetter(...args),
+  listJobsApi: (...args: unknown[]) => mockListJobsApi(...args),
+  createJobApi: (...args: unknown[]) => mockCreateJobApi(...args),
 }));
 
 import { JobsPage } from '../pages/JobsPage';
 
-const buildItem = (overrides: Record<string, unknown> = {}) => ({
-  id: 'evt-1',
-  tenant_id: 'tenant-1',
-  event_type: 'dispatch_job',
-  payload: {},
-  status: 'dead',
-  attempt_count: 3,
-  created_at: null,
-  processed_at: null,
-  dead_letter_reason: 'max retries exceeded',
+const buildJob = (overrides: Record<string, unknown> = {}) => ({
+  id: 'job-1',
+  title: 'Fix leaking pipe',
+  status: 'pending',
+  priority: 50,
+  scheduled_for: null,
+  customer_id: 'cust-1',
+  location_id: 'loc-1',
+  industry: 'plumbing',
+  service_type: 'Drain cleaning',
   ...overrides,
 });
 
-describe('JobsPage (dead-letter)', () => {
+const emptyResponse = { items: [], total: 0, limit: 50, offset: 0 };
+
+describe('JobsPage', () => {
   beforeEach(() => {
     jest.resetAllMocks();
   });
 
-  it('shows loading state initially', () => {
-    mockListDeadLetters.mockReturnValue(new Promise(() => {}));
+  it('shows loading skeletons initially', () => {
+    mockListJobsApi.mockReturnValue(new Promise(() => {}));
     render(<JobsPage />);
-    expect(screen.getByText('Loading dead-letter events…')).toBeInTheDocument();
+    expect(document.querySelectorAll('[class*="animate-pulse"]').length).toBeGreaterThan(0);
   });
 
-  it('renders dead-letter events in a table on success', async () => {
-    mockListDeadLetters.mockResolvedValue({
+  it('renders job rows on success', async () => {
+    mockListJobsApi.mockResolvedValue({
       items: [
-        buildItem({ id: 'evt-1', event_type: 'dispatch_job' }),
-        buildItem({ id: 'evt-2', event_type: 'sync_customer', attempt_count: 5 }),
+        buildJob({ id: 'job-1', title: 'Fix leaking pipe' }),
+        buildJob({ id: 'job-2', title: 'Replace boiler', status: 'scheduled' }),
       ],
       total: 2,
       limit: 50,
@@ -49,70 +51,93 @@ describe('JobsPage (dead-letter)', () => {
     render(<JobsPage />);
 
     await waitFor(() => {
-      const rows = screen.getAllByTestId('dead-letter-row');
-      expect(rows).toHaveLength(2);
+      expect(screen.getAllByTestId('job-row')).toHaveLength(2);
     });
 
-    expect(screen.getByText('evt-1')).toBeInTheDocument();
-    expect(screen.getByText('evt-2')).toBeInTheDocument();
-    expect(screen.getByText('dispatch_job')).toBeInTheDocument();
-    expect(screen.getByText('sync_customer')).toBeInTheDocument();
+    expect(screen.getByText('Fix leaking pipe')).toBeInTheDocument();
+    expect(screen.getByText('Replace boiler')).toBeInTheDocument();
+    expect(screen.getAllByText('Pending').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Scheduled').length).toBeGreaterThan(0);
   });
 
-  it('shows an empty message when no dead-letter events exist', async () => {
-    mockListDeadLetters.mockResolvedValue({ items: [], total: 0, limit: 50, offset: 0 });
+  it('shows empty state when no jobs', async () => {
+    mockListJobsApi.mockResolvedValue(emptyResponse);
 
     render(<JobsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText(/No dead-letter events/i)).toBeInTheDocument();
+      expect(screen.getByText(/No jobs found/i)).toBeInTheDocument();
     });
   });
 
-  it('retries a dead-letter and refreshes the list', async () => {
-    mockListDeadLetters
-      .mockResolvedValueOnce({ items: [buildItem()], total: 1, limit: 50, offset: 0 })
-      .mockResolvedValueOnce({ items: [], total: 0, limit: 50, offset: 0 });
-    mockRetryDeadLetter.mockResolvedValue({ id: 'evt-1', status: 'pending', message: 'ok' });
-
-    render(<JobsPage />);
-
-    const retryBtn = await screen.findByRole('button', { name: /Retry/i });
-    fireEvent.click(retryBtn);
-
-    await waitFor(() => {
-      expect(mockRetryDeadLetter).toHaveBeenCalledWith('evt-1');
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText(/No dead-letter events/i)).toBeInTheDocument();
-    });
-  });
-
-  it('shows an error when listDeadLetters fails', async () => {
-    mockListDeadLetters.mockRejectedValue({ status: 500, detail: 'boom' });
+  it('shows error alert on load failure', async () => {
+    mockListJobsApi.mockRejectedValue({ status: 500, detail: 'server exploded' });
 
     render(<JobsPage />);
 
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('boom');
+    expect(alert).toHaveTextContent('server exploded');
   });
 
-  it('shows an error when retry fails', async () => {
-    mockListDeadLetters.mockResolvedValue({
-      items: [buildItem()],
-      total: 1,
-      limit: 50,
-      offset: 0,
-    });
-    mockRetryDeadLetter.mockRejectedValue({ status: 400, detail: 'cannot retry' });
-
+  it('opens create modal when New job button clicked', async () => {
+    mockListJobsApi.mockResolvedValue(emptyResponse);
     render(<JobsPage />);
 
-    const retryBtn = await screen.findByRole('button', { name: /Retry/i });
-    fireEvent.click(retryBtn);
+    await waitFor(() => screen.getByText(/No jobs found/i));
 
-    const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent('cannot retry');
+    fireEvent.click(screen.getByRole('button', { name: /New job/i }));
+    expect(screen.getByText('New Job')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Title/i)).toBeInTheDocument();
+  });
+
+  it('creates a job and adds it to the list', async () => {
+    mockListJobsApi.mockResolvedValue(emptyResponse);
+    const newJob = buildJob({ id: 'job-new', title: 'Emergency call' });
+    mockCreateJobApi.mockResolvedValue(newJob);
+
+    render(<JobsPage />);
+    await waitFor(() => screen.getByText(/No jobs found/i));
+
+    fireEvent.click(screen.getByRole('button', { name: /New job/i }));
+
+    fireEvent.change(screen.getByLabelText(/Title/i), {
+      target: { value: 'Emergency call' },
+    });
+    fireEvent.change(screen.getAllByPlaceholderText('UUID')[0], {
+      target: { value: 'cust-1' },
+    });
+    fireEvent.change(screen.getAllByPlaceholderText('UUID')[1], {
+      target: { value: 'loc-1' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Create job/i }));
+
+    await waitFor(() => {
+      expect(mockCreateJobApi).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Emergency call', customer_id: 'cust-1' })
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Emergency call')).toBeInTheDocument();
+    });
+  });
+
+  it('shows error in modal on create failure', async () => {
+    mockListJobsApi.mockResolvedValue(emptyResponse);
+    mockCreateJobApi.mockRejectedValue({ status: 422, detail: 'invalid customer' });
+
+    render(<JobsPage />);
+    await waitFor(() => screen.getByText(/No jobs found/i));
+
+    fireEvent.click(screen.getByRole('button', { name: /New job/i }));
+    fireEvent.change(screen.getByLabelText(/Title/i), { target: { value: 'Test' } });
+    fireEvent.change(screen.getAllByPlaceholderText('UUID')[0], { target: { value: 'cust-x' } });
+    fireEvent.change(screen.getAllByPlaceholderText('UUID')[1], { target: { value: 'loc-x' } });
+    fireEvent.click(screen.getByRole('button', { name: /Create job/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('invalid customer')).toBeInTheDocument();
+    });
   });
 });
