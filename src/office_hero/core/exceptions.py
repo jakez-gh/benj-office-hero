@@ -68,3 +68,61 @@ class DuplicateEmailError(Exception):
         self.message = message
         self.request_id = request_id
         super().__init__(message)
+
+
+class VehicleNotFoundError(Exception):
+    """Raised when a vehicle cannot be located in the caller's tenant scope."""
+
+    def __init__(self, message: str = "Vehicle not found", request_id: str | None = None):
+        self.message = message
+        self.request_id = request_id
+        super().__init__(message)
+
+
+class VehicleCrewNotFoundError(Exception):
+    """Raised when a vehicle crew cannot be located in the caller's tenant scope."""
+
+    def __init__(self, message: str = "Vehicle crew not found", request_id: str | None = None):
+        self.message = message
+        self.request_id = request_id
+        super().__init__(message)
+
+
+class CrewAssignmentConflictError(Exception):
+    """Raised when a vehicle already has a crew assigned for the requested work_date.
+
+    Carries ``existing_crew_id`` so the caller (API layer) can surface it in the
+    409 response body and the UI can offer the user a link to the existing crew.
+    """
+
+    def __init__(
+        self,
+        message: str = "Vehicle already has a crew for this date",
+        existing_crew_id=None,
+        request_id: str | None = None,
+    ):
+        self.message = message
+        self.existing_crew_id = existing_crew_id
+        self.request_id = request_id
+        super().__init__(message)
+
+
+class InvalidCrewMemberError(Exception):
+    """Raised when a user cannot be placed on a vehicle crew.
+
+    Carries ``user_id`` and a short ``reason`` string so the API layer can
+    construct a 422 response with actionable context for the caller.
+    """
+
+    def __init__(
+        self,
+        message: str = "Invalid crew member",
+        user_id=None,
+        reason: str | None = None,
+        request_id: str | None = None,
+    ):
+        self.message = message
+        self.user_id = user_id
+        self.reason = reason
+        self.request_id = request_id
+        super().__init__(message)
