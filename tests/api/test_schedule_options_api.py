@@ -108,9 +108,13 @@ def schedule_service(j_repo, v_repo):
 
 @pytest.fixture()
 def app(schedule_service) -> FastAPI:
+    saved = dict(limiter._route_limits)
+    limiter._route_limits.clear()
     a = create_app(schedule_suggestion_service=schedule_service)
     a.add_middleware(_ScheduleTestAuthMiddleware)
-    return a
+    yield a
+    limiter._route_limits.clear()
+    limiter._route_limits.update(saved)
 
 
 @pytest.fixture()

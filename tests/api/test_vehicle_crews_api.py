@@ -167,9 +167,17 @@ def crew_service(vc_repo, v_repo, user_repo, audit):
 
 @pytest.fixture()
 def app(vehicle_service, crew_service) -> FastAPI:
+    # Each create_app() call appends Limit objects to limiter._route_limits under
+    # the same endpoint name. After N tests, 1 request calls hit() N times,
+    # exhausting the 60/min bucket. Save/clear/restore so each test has exactly
+    # 1 Limit per endpoint.
+    saved = dict(limiter._route_limits)
+    limiter._route_limits.clear()
     a = create_app(vehicle_service=vehicle_service, vehicle_crew_service=crew_service)
     a.add_middleware(_VehicleCrewTestAuthMiddleware)
-    return a
+    yield a
+    limiter._route_limits.clear()
+    limiter._route_limits.update(saved)
 
 
 @pytest.fixture()
