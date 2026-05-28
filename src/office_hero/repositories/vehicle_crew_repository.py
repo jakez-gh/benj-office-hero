@@ -132,11 +132,13 @@ class VehicleCrewRepository:
         self.session.add(crew)
         try:
             await self.session.flush()
-        except IntegrityError:
+        except IntegrityError as exc:
             await self.session.rollback()
             # Look up the conflicting crew to surface its ID.
             existing = await self.get_for_vehicle_date(tenant_id, vehicle_id, work_date)
-            raise CrewAssignmentConflictError(existing_crew_id=existing.id if existing else None)
+            raise CrewAssignmentConflictError(
+                existing_crew_id=existing.id if existing else None
+            ) from exc
 
         for m in members:
             member = VehicleCrewMember(

@@ -60,11 +60,13 @@ async def test_tenant_a_cannot_select_tenant_b_customer_via_rls(engine):
     async with sessionmaker() as session:
         await _set_tenant(session, tenant_b)
         result = await session.execute(
-            text("""
+            text(
+                """
                 INSERT INTO customers (id, tenant_id, name, archived)
                 VALUES (gen_random_uuid(), :tenant_id, :name, false)
                 RETURNING id
-                """),
+                """
+            ),
             {"tenant_id": str(tenant_b), "name": "Tenant B Customer"},
         )
         tenant_b_customer_id = result.scalar_one()
@@ -91,16 +93,19 @@ async def test_cascade_delete_locations_when_customer_hard_deleted(engine):
         await _set_tenant(session, tenant_id)
         cust = (
             await session.execute(
-                text("""
+                text(
+                    """
                     INSERT INTO customers (id, tenant_id, name, archived)
                     VALUES (gen_random_uuid(), :tenant_id, :name, false)
                     RETURNING id
-                    """),
+                    """
+                ),
                 {"tenant_id": str(tenant_id), "name": "DeleteMe"},
             )
         ).scalar_one()
         await session.execute(
-            text("""
+            text(
+                """
                 INSERT INTO locations (
                     id, tenant_id, customer_id,
                     street, city, state, postal_code, country,
@@ -110,7 +115,8 @@ async def test_cascade_delete_locations_when_customer_hard_deleted(engine):
                     '123 Main', 'Philadelphia', 'PA', '19103', 'US',
                     'pending', false
                 )
-                """),
+                """
+            ),
             {"tenant_id": str(tenant_id), "customer_id": str(cust)},
         )
         await session.commit()

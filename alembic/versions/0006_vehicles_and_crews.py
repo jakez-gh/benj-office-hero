@@ -1,7 +1,7 @@
 """vehicles and vehicle_crews tables with RLS
 
-Revision ID: 0005_vehicles_and_crews
-Revises: 0004_customers_and_locations
+Revision ID: 0006_vehicles_and_crews
+Revises: 0005_jobs
 Create Date: 2026-05-28 00:00:00.000000
 
 Adds the Vehicle aggregate and date-scoped VehicleCrew / VehicleCrewMember
@@ -29,8 +29,8 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "0005_vehicles_and_crews"
-down_revision = "0004_customers_and_locations"
+revision = "0006_vehicles_and_crews"
+down_revision = "0005_jobs"
 branch_labels = None
 depends_on = None
 
@@ -187,9 +187,7 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"]),
-        sa.ForeignKeyConstraint(
-            ["crew_id"], ["vehicle_crews.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["crew_id"], ["vehicle_crews.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"]),
         sa.UniqueConstraint("crew_id", "user_id", name="uq_crew_member_user"),
     )
@@ -212,9 +210,7 @@ def downgrade() -> None:
     op.drop_table("vehicle_crew_members")
 
     # --- vehicle_crews ---
-    op.execute(
-        "DROP POLICY IF EXISTS vehicle_crew_tenant_isolation ON vehicle_crews;"
-    )
+    op.execute("DROP POLICY IF EXISTS vehicle_crew_tenant_isolation ON vehicle_crews;")
     op.execute("ALTER TABLE vehicle_crews DISABLE ROW LEVEL SECURITY;")
     op.drop_index("idx_vehicle_crew_tenant_date", table_name="vehicle_crews")
     op.drop_table("vehicle_crews")

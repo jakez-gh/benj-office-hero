@@ -59,16 +59,13 @@ async def test_rls_hides_other_tenant_vehicles(engine):
         # Insert tenants
         for tid in (tenant_a, tenant_b):
             await session.execute(
-                text(
-                    "INSERT INTO tenants (id, name) VALUES (:id, :name) ON CONFLICT DO NOTHING"
-                ),
+                text("INSERT INTO tenants (id, name) VALUES (:id, :name) ON CONFLICT DO NOTHING"),
                 {"id": tid, "name": f"tenant-{tid}"},
             )
         vid = uuid4()
         await session.execute(
             text(
-                "INSERT INTO vehicles (id, tenant_id, license_plate)"
-                " VALUES (:id, :tid, :plate)"
+                "INSERT INTO vehicles (id, tenant_id, license_plate)" " VALUES (:id, :tid, :plate)"
             ),
             {"id": vid, "tid": tenant_b, "plate": "RLS-TEST-B"},
         )
