@@ -25,6 +25,8 @@ from office_hero.api.routes.customers import create_customer_router
 from office_hero.api.routes.jobs import create_job_router
 from office_hero.api.routes.locations import create_location_router
 from office_hero.api.routes.sagas import create_saga_router
+from office_hero.api.routes.vehicle_crews import create_vehicle_crew_router
+from office_hero.api.routes.vehicles import create_vehicle_router
 from office_hero.api.state import (
     set_auth_service,
     set_customer_service,
@@ -32,6 +34,8 @@ from office_hero.api.state import (
     set_geocoding_adapter,
     set_job_service,
     set_location_service,
+    set_vehicle_crew_service,
+    set_vehicle_service,
 )
 from office_hero.core.logging import get_logger
 from office_hero.repositories.customer_repository import (
@@ -47,6 +51,8 @@ from office_hero.repositories.mocks import (
     MockSagaRepository,
 )
 from office_hero.repositories.protocols import OutboxRepository
+from office_hero.repositories.vehicle_crew_repository import InMemoryVehicleCrewRepository
+from office_hero.repositories.vehicle_repository import InMemoryVehicleRepository
 from office_hero.services.custom_field_templates import (
     registry as _template_registry_module,
 )  # noqa: F401
@@ -54,6 +60,8 @@ from office_hero.services.customer_service import CustomerService
 from office_hero.services.job_service import JobService
 from office_hero.services.location_service import LocationService
 from office_hero.services.saga_service import SagaService
+from office_hero.services.vehicle_crew_service import VehicleCrewService
+from office_hero.services.vehicle_service import VehicleService
 
 log = get_logger(__name__)
 
@@ -110,6 +118,8 @@ def create_app(
     customer_service: CustomerService | None = None,
     location_service: LocationService | None = None,
     job_service: JobService | None = None,
+    vehicle_service: VehicleService | None = None,
+    vehicle_crew_service: VehicleCrewService | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application.
 
@@ -127,6 +137,8 @@ def create_app(
         location_service: Slice-9 LocationService (same defaulting behaviour).
         job_service: Slice-10 JobService. Defaults to an in-memory
             implementation so tests boot without a database.
+        vehicle_service: Slice-12 VehicleService. Defaults to in-memory.
+        vehicle_crew_service: Slice-12 VehicleCrewService. Defaults to in-memory.
 
     The factory invokes router factories once at startup, not per-request.
     """
@@ -166,6 +178,29 @@ def create_app(
     set_location_service(location_service)
     set_job_service(job_service)
 
+    # Slice-12 defaults: in-memory vehicle repos
+    if vehicle_service is None or vehicle_crew_service is None:
+        v_audit = InMemoryAuditService()
+        v_repo = InMemoryVehicleRepository()
+        vc_repo = InMemoryVehicleCrewRepository()
+
+        class _NoopUserRepo:
+            async def get_by_id(self, user_id, tenant_id):
+                return None
+
+        if vehicle_service is None:
+            vehicle_service = VehicleService(repo=v_repo, audit=v_audit, crew_repo=vc_repo)
+        if vehicle_crew_service is None:
+            vehicle_crew_service = VehicleCrewService(
+                crew_repo=vc_repo,
+                vehicle_repo=v_repo,
+                user_repo=_NoopUserRepo(),
+                audit=v_audit,
+            )
+
+    set_vehicle_service(vehicle_service)
+    set_vehicle_crew_service(vehicle_crew_service)
+
     application = FastAPI(
         title="Office Hero",
         description="Back-office management API for office services",
@@ -174,9 +209,7 @@ def create_app(
     )
 
     # --- Middleware (outermost -> innermost) ---
-    # Security headers must wrap everything so every response gets them.
     application.add_middleware(SecurityHeadersMiddleware)
-    # Logging after security so request_id is available for error responses.
     application.add_middleware(LoggingMiddleware)
 
     # --- Exception handlers ---
@@ -204,13 +237,20 @@ def create_app(
     )
     application.include_router(customer_router, prefix="/customers", tags=["customers"])
 
-    # The location router carries its own ``/customers/{cid}/locations`` and
-    # ``/locations/{lid}`` paths inline so it mounts at the root.
     location_router = create_location_router(service_provider=lambda: location_service)
     application.include_router(location_router, tags=["locations"])
 
     job_router = create_job_router(service_provider=lambda: job_service)
     application.include_router(job_router, prefix="/jobs", tags=["jobs"])
+
+    vehicle_router = create_vehicle_router(service_provider=lambda: vehicle_service)
+    application.include_router(vehicle_router, prefix="/vehicles", tags=["vehicles"])
+
+    crew_router = create_vehicle_crew_router(
+        service_provider=lambda: vehicle_crew_service,
+        vehicle_service_provider=lambda: vehicle_service,
+    )
+    application.include_router(crew_router, tags=["crews"])
 
     return application
 
