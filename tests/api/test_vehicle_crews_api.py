@@ -114,9 +114,24 @@ WORK_DATE_ISO = WORK_DATE.isoformat()
 
 @pytest.fixture(autouse=True)
 def _reset_rate_limiter():
-    _reset_limiter()
+    """Give each test its own rate-limit bucket.
+
+    All test requests share IP 127.0.0.1; without isolation, 60+ POSTs
+    across the full suite exhaust the in-memory bucket and turn the
+    duplicate-assignment test's expected 409 into a 429.
+
+    We patch key_func on each registered Limit object so the bucket key
+    is a fresh UUID per test, then restore it afterwards.
+    """
+    test_key = str(uuid4())
+    saved: list[tuple] = []
+    for limits in limiter._route_limits.values():
+        for lim in limits:
+            saved.append((lim, lim.key_func))
+            lim.key_func = lambda *_a, **_k: test_key
     yield
-    _reset_limiter()
+    for lim, orig in saved:
+        lim.key_func = orig
 
 
 @pytest.fixture()
