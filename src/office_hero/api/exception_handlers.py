@@ -6,7 +6,14 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 
-from office_hero.core.exceptions import AuthError, PermissionError, TenantError
+from office_hero.core.exceptions import (
+    AuthError,
+    CustomFieldValidationError,
+    InvalidJobTransitionError,
+    JobNotFoundError,
+    PermissionError,
+    TenantError,
+)
 from office_hero.core.logging import get_logger
 
 log = get_logger(__name__)
@@ -55,6 +62,53 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
     )
 
 
+async def job_not_found_handler(request: Request, exc: JobNotFoundError) -> JSONResponse:
+    """Convert JobNotFoundError to 404 Not Found."""
+    request_id = getattr(request.state, "request_id", None)
+    return JSONResponse(
+        status_code=404,
+        content={"detail": exc.message, "request_id": request_id},
+    )
+
+
+async def invalid_job_transition_handler(
+    request: Request, exc: InvalidJobTransitionError
+) -> JSONResponse:
+    """Convert InvalidJobTransitionError to 422 Unprocessable Entity."""
+    request_id = getattr(request.state, "request_id", None)
+    log.warning(
+        "job.invalid_transition",
+        from_status=str(exc.from_status),
+        to_status=str(exc.to_status),
+        request_id=request_id,
+    )
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": "Invalid job status transition",
+            "from": str(exc.from_status),
+            "to": str(exc.to_status),
+            "request_id": request_id,
+        },
+    )
+
+
+async def custom_field_validation_handler(
+    request: Request, exc: CustomFieldValidationError
+) -> JSONResponse:
+    """Convert CustomFieldValidationError to 422 Unprocessable Entity."""
+    request_id = getattr(request.state, "request_id", None)
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": exc.message,
+            "field": exc.field_name,
+            "errors": exc.errors,
+            "request_id": request_id,
+        },
+    )
+
+
 async def rate_limit_error_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
     """Convert slowapi RateLimitExceeded to 429 with Retry-After header.
 
@@ -88,5 +142,8 @@ def register_exception_handlers(app) -> None:
     app.add_exception_handler(AuthError, auth_error_handler)
     app.add_exception_handler(PermissionError, permission_error_handler)
     app.add_exception_handler(TenantError, tenant_error_handler)
+    app.add_exception_handler(JobNotFoundError, job_not_found_handler)
+    app.add_exception_handler(InvalidJobTransitionError, invalid_job_transition_handler)
+    app.add_exception_handler(CustomFieldValidationError, custom_field_validation_handler)
     app.add_exception_handler(RateLimitExceeded, rate_limit_error_handler)
     app.add_exception_handler(Exception, unhandled_exception_handler)
