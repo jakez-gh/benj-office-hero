@@ -1,22 +1,57 @@
 import React, { useContext } from 'react';
+import { NavLink } from 'react-router-dom';
 import { AuthContext } from '../auth';
+import { Button } from './ui/Button';
+
+const navItems = [
+  { to: '/jobs',      label: 'Jobs'      },
+  { to: '/dispatch',  label: 'Dispatch'  },
+  { to: '/vehicles',  label: 'Vehicles'  },
+  { to: '/users',     label: 'Users'     },
+  { to: '/customers', label: 'Customers' },
+];
 
 export const NavShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const { logout } = useContext(AuthContext);
 
   return (
-    <div>
-      <nav style={{ padding: '1rem', borderBottom: '1px solid #ccc' }}>
-        <a href="/jobs">Jobs</a> |{' '}
-        <a href="/dispatch">Dispatch</a> |{' '}
-        <a href="/vehicles">Vehicles</a> |{' '}
-        <a href="/users">Users</a> |{' '}
-        <button onClick={logout}>Logout</button>
-        <span style={{ float: 'right', fontSize: '0.8rem', opacity: 0.6 }}>
-          v{__APP_VERSION__}
+    <div className="min-h-screen bg-neutral-50">
+      <header className="sticky top-0 z-30 flex h-14 items-center border-b border-gray-200 bg-white px-4 shadow-sm">
+        {/* Wordmark */}
+        <span className="mr-8 text-lg font-bold tracking-tight text-primary-600">
+          Office Hero
         </span>
-      </nav>
-      <main style={{ padding: '1rem' }}>{children}</main>
+
+        {/* Nav links */}
+        <nav className="flex flex-1 items-center gap-1">
+          {navItems.map(({ to, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                [
+                  'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900',
+                ].join(' ')
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Version + logout */}
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-neutral-400">v{__APP_VERSION__}</span>
+          <Button variant="ghost" size="sm" onClick={logout}>
+            Sign out
+          </Button>
+        </div>
+      </header>
+
+      <main>{children}</main>
     </div>
   );
 };
