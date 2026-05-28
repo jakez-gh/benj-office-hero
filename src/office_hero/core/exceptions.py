@@ -55,3 +55,16 @@ class LocationNotFoundError(Exception):
         self.message = message
         self.request_id = request_id
         super().__init__(message)
+
+
+class DuplicateEmailError(Exception):
+    """Raised when a customer email already exists in the same tenant (active)."""
+
+    def __init__(
+        self,
+        message: str = "A customer with this email already exists in this tenant",
+        request_id: str | None = None,
+    ):
+        self.message = message
+        self.request_id = request_id
+        super().__init__(message)

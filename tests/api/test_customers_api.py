@@ -171,3 +171,21 @@ def test_archive_unknown_customer_returns_404(client, tenant_a, user_a):
         headers=auth_headers(tenant_a, user_a),
     )
     assert resp.status_code == 404
+
+
+def test_create_customer_duplicate_email_rejected(client, tenant_a, user_a):
+    """Creating two active customers with the same email in the same tenant returns 409."""
+    first = client.post(
+        "/customers",
+        json={"name": "Acme Plumbing", "email": "ops@acme.example"},
+        headers=auth_headers(tenant_a, user_a),
+    )
+    assert first.status_code == 201
+
+    second = client.post(
+        "/customers",
+        json={"name": "Acme Refrigeration", "email": "ops@acme.example"},
+        headers=auth_headers(tenant_a, user_a),
+    )
+    assert second.status_code == 409
+    assert "email" in second.json()["detail"].lower()

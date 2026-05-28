@@ -18,6 +18,9 @@ from office_hero.repositories.customer_repository import (
     CustomerRepositoryProtocol,
 )
 
+# Type alias for the richer list-with-location-stats return
+CustomerSummaryRow = tuple[Customer, int, str | None]
+
 log = get_logger(__name__)
 
 
@@ -135,6 +138,20 @@ class CustomerService:
     ) -> tuple[list[Customer], int]:
         """Return ``(rows, total)`` for a tenant, filtered."""
         return await self.repo.list(
+            tenant_id, search=search, archived=archived, limit=limit, offset=offset
+        )
+
+    async def list_summaries(
+        self,
+        tenant_id: UUID,
+        *,
+        search: str | None = None,
+        archived: bool = False,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[CustomerSummaryRow], int]:
+        """Return ``(rows, total)`` where each row includes location_count and primary_city."""
+        return await self.repo.list_summaries(
             tenant_id, search=search, archived=archived, limit=limit, offset=offset
         )
 

@@ -23,7 +23,7 @@ from office_hero.api.schemas.customer import (
     CustomerUpdate,
 )
 from office_hero.api.schemas.location import LocationRead
-from office_hero.core.exceptions import CustomerNotFoundError
+from office_hero.core.exceptions import CustomerNotFoundError, DuplicateEmailError
 from office_hero.core.logging import get_logger
 from office_hero.core.roles import Role
 
@@ -82,14 +82,20 @@ def create_customer_router(
         service = service_provider()
         tenant_id = _tenant_id(request)
         user_id = _user_id(request)
-        cust = await service.create(
-            tenant_id=tenant_id,
-            user_id=user_id,
-            name=body.name,
-            email=body.email,
-            phone=body.phone,
-            notes=body.notes,
-        )
+        try:
+            cust = await service.create(
+                tenant_id=tenant_id,
+                user_id=user_id,
+                name=body.name,
+                email=body.email,
+                phone=body.phone,
+                notes=body.notes,
+            )
+        except DuplicateEmailError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=exc.message,
+            ) from exc
         return CustomerRead.model_validate(cust)
 
     @router.get(
@@ -107,7 +113,7 @@ def create_customer_router(
         """List customers (paginated, optionally substring-filtered)."""
         service = service_provider()
         tenant_id = _tenant_id(request)
-        rows, total = await service.list(
+        rows, total = await service.list_summaries(
             tenant_id,
             search=search,
             archived=archived,
@@ -119,10 +125,10 @@ def create_customer_router(
                 id=r.id,
                 name=r.name,
                 archived=r.archived,
-                location_count=0,
-                primary_city=None,
+                location_count=location_count,
+                primary_city=primary_city,
             )
-            for r in rows
+            for r, location_count, primary_city in rows
         ]
         return CustomerList(items=items, total=total, limit=limit, offset=offset)
 
