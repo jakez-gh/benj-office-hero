@@ -1,11 +1,15 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   type ApiError,
+  type DispatchResponse,
   type JobCreate,
   type JobListParams,
   type JobStatus,
   type JobSummary,
+  type ScheduleOptionItem,
   createJobApi,
+  dispatchJobApi,
+  getScheduleOptionsApi,
   listJobsApi,
 } from '../api';
 import { Alert } from '../components/ui/Alert';
@@ -168,6 +172,209 @@ function CreateJobModal({
   );
 }
 
+function tomorrowWindow(): { start: string; end: string } {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  const dateStr = d.toISOString().slice(0, 10);
+  return {
+    start: `${dateStr}T08:00`,
+    end: `${dateStr}T17:00`,
+  };
+}
+
+function formatTravel(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.round(seconds / 60);
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  return rem > 0 ? `${h}h ${rem}m` : `${h}h`;
+}
+
+function ScheduleModal({
+  job,
+  onClose,
+  onDispatched,
+}: {
+  job: JobSummary;
+  onClose: () => void;
+  onDispatched: (result: DispatchResponse) => void;
+}) {
+  const win = tomorrowWindow();
+  const [windowStart, setWindowStart] = useState(win.start);
+  const [windowEnd, setWindowEnd] = useState(win.end);
+  const [options, setOptions] = useState<ScheduleOptionItem[] | null>(null);
+  const [loadingOptions, setLoadingOptions] = useState(false);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
+  const [selectedOption, setSelectedOption] = useState<ScheduleOptionItem | null>(null);
+  const [dispatching, setDispatching] = useState(false);
+  const [dispatchError, setDispatchError] = useState<string | null>(null);
+
+  const fetchOptions = async () => {
+    setLoadingOptions(true);
+    setOptionsError(null);
+    setOptions(null);
+    setSelectedOption(null);
+    try {
+      const resp = await getScheduleOptionsApi(job.id, {
+        window_start: new Date(windowStart).toISOString(),
+        window_end: new Date(windowEnd).toISOString(),
+        max_results: 5,
+      });
+      setOptions(resp.options);
+    } catch (err) {
+      const apiErr = err as ApiError;
+      setOptionsError(apiErr?.detail ?? (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setLoadingOptions(false);
+    }
+  };
+
+  const handleDispatch = async () => {
+    if (!selectedOption) return;
+    setDispatching(true);
+    setDispatchError(null);
+    try {
+      const result = await dispatchJobApi(job.id, {
+        vehicle_id: selectedOption.vehicle_id,
+        scheduled_for: selectedOption.suggested_start,
+      });
+      onDispatched(result);
+    } catch (err) {
+      const apiErr = err as ApiError;
+      setDispatchError(apiErr?.detail ?? (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setDispatching(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl">
+        <div className="mb-4 flex items-start justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-neutral-900">Schedule job</h2>
+            <p className="mt-0.5 text-sm text-neutral-500">{job.title}</p>
+          </div>
+          <button
+            type="button"
+            className="rounded p-1 text-neutral-400 hover:text-neutral-600"
+            onClick={onClose}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              Window start
+            </label>
+            <Input
+              type="datetime-local"
+              value={windowStart}
+              onChange={(e) => setWindowStart(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">
+              Window end
+            </label>
+            <Input
+              type="datetime-local"
+              value={windowEnd}
+              onChange={(e) => setWindowEnd(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void fetchOptions()}
+          disabled={loadingOptions}
+          className="mb-4 w-full"
+        >
+          {loadingOptions ? 'Finding options…' : 'Find available slots'}
+        </Button>
+
+        {optionsError && (
+          <Alert variant="destructive" className="mb-4">
+            {optionsError}
+          </Alert>
+        )}
+
+        {options !== null && (
+          <>
+            {options.length === 0 ? (
+              <p className="mb-4 text-center text-sm text-neutral-500">
+                No vehicles available in this window.
+              </p>
+            ) : (
+              <div className="mb-4 space-y-2">
+                <p className="text-sm font-medium text-neutral-700">
+                  Available slots — pick one:
+                </p>
+                {options.map((opt) => (
+                  <button
+                    key={opt.vehicle_id}
+                    type="button"
+                    onClick={() => setSelectedOption(opt)}
+                    className={`w-full rounded-lg border p-3 text-left transition-colors ${
+                      selectedOption?.vehicle_id === opt.vehicle_id
+                        ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                        : 'border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                          #{opt.rank}
+                        </span>
+                        <span className="ml-2 font-medium text-neutral-900">
+                          {opt.vehicle_display}
+                        </span>
+                      </div>
+                      <div className="text-right text-sm text-neutral-500">
+                        <span>{formatTravel(opt.travel_seconds)} away</span>
+                        <span className="ml-3">
+                          {new Date(opt.suggested_start).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {dispatchError && (
+          <Alert variant="destructive" className="mb-4">
+            {dispatchError}
+          </Alert>
+        )}
+
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={dispatching}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            disabled={!selectedOption || dispatching}
+            onClick={() => void handleDispatch()}
+          >
+            {dispatching ? 'Booking…' : 'Confirm booking'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export const JobsPage: React.FC = () => {
   const [jobs, setJobs] = useState<JobSummary[]>([]);
   const [total, setTotal] = useState(0);
@@ -177,6 +384,7 @@ export const JobsPage: React.FC = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<JobStatus | ''>('');
   const [showCreate, setShowCreate] = useState(false);
+  const [scheduleJob, setScheduleJob] = useState<JobSummary | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -278,6 +486,7 @@ export const JobsPage: React.FC = () => {
               <TableHead>Service type</TableHead>
               <TableHead>Scheduled</TableHead>
               <TableHead>Priority</TableHead>
+              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -294,6 +503,17 @@ export const JobsPage: React.FC = () => {
                     : '—'}
                 </TableCell>
                 <TableCell className="text-neutral-500">{job.priority}</TableCell>
+                <TableCell className="text-right">
+                  {job.status === 'pending' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setScheduleJob(job)}
+                    >
+                      Schedule
+                    </Button>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -302,6 +522,21 @@ export const JobsPage: React.FC = () => {
 
       {showCreate && (
         <CreateJobModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />
+      )}
+
+      {scheduleJob && (
+        <ScheduleModal
+          job={scheduleJob}
+          onClose={() => setScheduleJob(null)}
+          onDispatched={(result) => {
+            setScheduleJob(null);
+            setJobs((prev) =>
+              prev.map((j) =>
+                j.id === result.id ? { ...j, status: result.status, scheduled_for: result.scheduled_for } : j,
+              ),
+            );
+          }}
+        />
       )}
     </div>
   );

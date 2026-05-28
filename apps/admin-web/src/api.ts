@@ -210,3 +210,62 @@ export function createJobApi(body: JobCreate): Promise<JobSummary> {
     body: JSON.stringify(body),
   });
 }
+
+// --- Schedule options types (Slice 13) ---
+
+export interface ScheduleOptionItem {
+  vehicle_id: string;
+  vehicle_display: string;
+  suggested_start: string;
+  travel_seconds: number;
+  distance_meters: number;
+  rank: number;
+}
+
+export interface ScheduleOptionsResponse {
+  job_id: string;
+  options: ScheduleOptionItem[];
+}
+
+export interface ScheduleOptionsRequest {
+  window_start: string;
+  window_end: string;
+  max_results?: number;
+}
+
+export function getScheduleOptionsApi(
+  jobId: string,
+  body: ScheduleOptionsRequest,
+): Promise<ScheduleOptionsResponse> {
+  return request<ScheduleOptionsResponse>(`/jobs/${jobId}/schedule-options`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+// --- Dispatch types (Slice 14) ---
+
+export interface DispatchRequest {
+  vehicle_id: string;
+  scheduled_for: string;
+}
+
+export interface DispatchResponse {
+  id: string;
+  status: JobStatus;
+  assigned_vehicle_id: string;
+  scheduled_for: string;
+  title: string;
+  customer_id: string;
+  location_id: string;
+}
+
+export function dispatchJobApi(
+  jobId: string,
+  body: DispatchRequest,
+): Promise<DispatchResponse> {
+  return request<DispatchResponse>(`/jobs/${jobId}/dispatch`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
