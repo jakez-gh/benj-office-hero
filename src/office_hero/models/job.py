@@ -14,7 +14,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -72,7 +72,9 @@ class Job(Base):
     cancel_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Industry-specific metadata validated by the CustomFieldTemplate registry.
-    custom_fields: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    custom_fields: Mapped[dict] = mapped_column(
+        JSONB().with_variant(JSON(), "sqlite"), nullable=False, server_default="{}"
+    )
 
     # Back-office integration identifier (ADR 056).
     external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
