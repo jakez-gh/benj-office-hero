@@ -68,7 +68,7 @@ describe('Admin web authentication and navigation', () => {
     await waitFor(() => expect(mockLogin).toHaveBeenCalled());
 
     const alert = await screen.findByRole('alert');
-    expect(alert).toHaveTextContent(/invalid credentials/i);
+    expect(alert).toHaveTextContent(/invalid email or password/i);
 
     // confirm login API was invoked with correct args
     expect(mockLogin).toHaveBeenCalledWith({ email: 'bad@example.com', password: 'bad' });
