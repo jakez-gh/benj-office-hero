@@ -203,9 +203,10 @@ def create_vehicle_crew_router(*, service_provider, vehicle_service_provider=Non
         except VehicleCrewNotFoundError as exc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
-        if role in (Role.Technician.value, Role.TechnicianHelper.value):
-            if not any(m.user_id == user_id_state for m in (crew.members or [])):
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        if role in (Role.Technician.value, Role.TechnicianHelper.value) and not any(
+            m.user_id == user_id_state for m in (crew.members or [])
+        ):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
         return _to_crew_read(crew)
 

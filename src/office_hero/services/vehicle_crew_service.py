@@ -261,7 +261,7 @@ class VehicleCrewService:
         role_on_crew: CrewRole,
     ) -> Any:
         """Add one member after eligibility validation."""
-        crew = await self.get(tenant_id, crew_id)
+        await self.get(tenant_id, crew_id)  # validate existence
         new_input = CrewMemberInput(user_id=user_id_to_add, role_on_crew=role_on_crew)
         await self._validate_members(tenant_id, [new_input])
         member = await self.crew_repo.add_member(crew_id, tenant_id, user_id_to_add, role_on_crew)

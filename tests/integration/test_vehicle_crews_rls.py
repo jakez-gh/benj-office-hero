@@ -50,12 +50,12 @@ async def test_rls_hides_other_tenant_vehicles(engine):
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import async_sessionmaker
 
-    Session = async_sessionmaker(engine, expire_on_commit=False)
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
     tenant_a = uuid4()
     tenant_b = uuid4()
 
     # Insert tenant_b vehicle bypassing RLS (superuser session)
-    async with Session() as session, session.begin():
+    async with session_factory() as session, session.begin():
         # Insert tenants
         for tid in (tenant_a, tenant_b):
             await session.execute(
@@ -71,7 +71,7 @@ async def test_rls_hides_other_tenant_vehicles(engine):
         )
 
     # Tenant A session should not see tenant B's vehicle
-    async with Session() as session, session.begin():
+    async with session_factory() as session, session.begin():
         await _set_tenant(session, tenant_a)
         rows = (
             await session.execute(text("SELECT id FROM vehicles WHERE id = :id"), {"id": vid})
