@@ -79,6 +79,9 @@ def create_dispatch_router(*, service_provider) -> APIRouter:
                 detail=exc.message,
             ) from exc
 
+        # Guaranteed non-None: dispatch service just set both fields
+        assert job.assigned_vehicle_id is not None
+        assert job.scheduled_for is not None
         return JobDispatchResponse(
             id=job.id,
             status=job.status,
