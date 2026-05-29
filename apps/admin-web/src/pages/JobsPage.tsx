@@ -203,9 +203,8 @@ function ScheduleModal({
   onClose: () => void;
   onDispatched: (result: DispatchResponse) => void;
 }) {
-  const win = tomorrowWindow();
-  const [windowStart, setWindowStart] = useState(win.start);
-  const [windowEnd, setWindowEnd] = useState(win.end);
+  const [windowStart, setWindowStart] = useState(() => tomorrowWindow().start);
+  const [windowEnd, setWindowEnd] = useState(() => tomorrowWindow().end);
   const [options, setOptions] = useState<ScheduleOptionItem[] | null>(null);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [optionsError, setOptionsError] = useState<string | null>(null);
@@ -329,7 +328,8 @@ function ScheduleModal({
                     type="button"
                     onClick={() => setSelectedOption(opt)}
                     className={`w-full rounded-lg border p-3 text-left transition-colors ${
-                      selectedOption?.vehicle_id === opt.vehicle_id
+                      selectedOption?.vehicle_id === opt.vehicle_id &&
+                        selectedOption?.suggested_start === opt.suggested_start
                         ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
                         : 'border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50'
                     }`}
