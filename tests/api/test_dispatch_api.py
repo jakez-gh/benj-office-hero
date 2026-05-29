@@ -74,7 +74,7 @@ def _auth_headers(tenant_id, user_id, *, perms: str = "job:write,vehicle:read") 
 
 
 def _run(coro):
-    return asyncio.run(coro)
+    return asyncio.get_event_loop().run_until_complete(coro)
 
 
 @pytest.fixture()

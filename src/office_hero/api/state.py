@@ -192,7 +192,6 @@ def get_job_dispatch_service() -> JobDispatchService:
     """Retrieve the registered job dispatch service."""
     if _job_dispatch_service is None:
         raise RuntimeError(
-            "JobDispatchService not initialized. "
-            "Ensure app has been created with create_app()."
+            "JobDispatchService not initialized. " "Ensure app has been created with create_app()."
         )
     return _job_dispatch_service
