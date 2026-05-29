@@ -22,9 +22,11 @@ from office_hero.api.middleware.security_headers import SecurityHeadersMiddlewar
 from office_hero.api.routes import health
 from office_hero.api.routes.admin import audit_router, create_admin_router
 from office_hero.api.routes.customers import create_customer_router
+from office_hero.api.routes.dispatch import create_dispatch_router
 from office_hero.api.routes.jobs import create_job_router
 from office_hero.api.routes.locations import create_location_router
 from office_hero.api.routes.sagas import create_saga_router
+from office_hero.api.routes.schedule_options import create_schedule_options_router
 from office_hero.api.routes.vehicle_crews import create_vehicle_crew_router
 from office_hero.api.routes.vehicles import create_vehicle_router
 from office_hero.api.state import (
@@ -32,8 +34,10 @@ from office_hero.api.state import (
     set_customer_service,
     set_engine,
     set_geocoding_adapter,
+    set_job_dispatch_service,
     set_job_service,
     set_location_service,
+    set_schedule_suggestion_service,
     set_vehicle_crew_service,
     set_vehicle_service,
 )
@@ -57,9 +61,11 @@ from office_hero.services.custom_field_templates import (
     registry as _template_registry_module,
 )  # noqa: F401
 from office_hero.services.customer_service import CustomerService
+from office_hero.services.job_dispatch_service import JobDispatchService
 from office_hero.services.job_service import JobService
 from office_hero.services.location_service import LocationService
 from office_hero.services.saga_service import SagaService
+from office_hero.services.schedule_suggestion_service import ScheduleSuggestionService
 from office_hero.services.vehicle_crew_service import VehicleCrewService
 from office_hero.services.vehicle_service import VehicleService
 
@@ -120,6 +126,8 @@ def create_app(
     job_service: JobService | None = None,
     vehicle_service: VehicleService | None = None,
     vehicle_crew_service: VehicleCrewService | None = None,
+    schedule_suggestion_service: ScheduleSuggestionService | None = None,
+    job_dispatch_service: JobDispatchService | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application.
 
@@ -164,10 +172,11 @@ def create_app(
             audit=audit,
             geocoder=geocoder,
         )
+    _default_job_repo: InMemoryJobRepository | None = None
     if job_service is None:
-        job_repo = InMemoryJobRepository()
+        _default_job_repo = InMemoryJobRepository()
         job_service = JobService(
-            repo=job_repo,
+            repo=_default_job_repo,
             customer_repo=cust_repo,
             location_repo=loc_repo,
             audit=audit,
@@ -179,27 +188,48 @@ def create_app(
     set_job_service(job_service)
 
     # Slice-12 defaults: in-memory vehicle repos
+    _default_v_repo: InMemoryVehicleRepository | None = None
     if vehicle_service is None or vehicle_crew_service is None:
         v_audit = InMemoryAuditService()
-        v_repo = InMemoryVehicleRepository()
+        _default_v_repo = InMemoryVehicleRepository()
         vc_repo = InMemoryVehicleCrewRepository()
+        _default_v_repo._crew_repo = vc_repo  # cross-reference for list_active_for_date
 
         class _NoopUserRepo:
             async def get_by_id(self, user_id, tenant_id):
                 return None
 
         if vehicle_service is None:
-            vehicle_service = VehicleService(repo=v_repo, audit=v_audit, crew_repo=vc_repo)
+            vehicle_service = VehicleService(repo=_default_v_repo, audit=v_audit, crew_repo=vc_repo)
         if vehicle_crew_service is None:
             vehicle_crew_service = VehicleCrewService(
                 crew_repo=vc_repo,
-                vehicle_repo=v_repo,
+                vehicle_repo=_default_v_repo,
                 user_repo=_NoopUserRepo(),
                 audit=v_audit,
             )
 
     set_vehicle_service(vehicle_service)
     set_vehicle_crew_service(vehicle_crew_service)
+
+    # Slice-13: schedule suggestion service
+    if schedule_suggestion_service is None:
+        from office_hero.adapters.routing.stub import StubRoutingAdapter
+
+        schedule_suggestion_service = ScheduleSuggestionService(
+            job_repo=_default_job_repo or InMemoryJobRepository(),
+            vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
+            routing_adapter=StubRoutingAdapter(),
+        )
+    set_schedule_suggestion_service(schedule_suggestion_service)
+
+    # Slice-14: job dispatch service
+    if job_dispatch_service is None:
+        job_dispatch_service = JobDispatchService(
+            job_repo=_default_job_repo or InMemoryJobRepository(),
+            vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
+        )
+    set_job_dispatch_service(job_dispatch_service)
 
     application = FastAPI(
         title="Office Hero",
@@ -251,6 +281,16 @@ def create_app(
         vehicle_service_provider=lambda: vehicle_service,
     )
     application.include_router(crew_router, tags=["crews"])
+
+    schedule_options_router = create_schedule_options_router(
+        service_provider=lambda: schedule_suggestion_service,
+    )
+    application.include_router(schedule_options_router, tags=["schedule-options"])
+
+    dispatch_router = create_dispatch_router(
+        service_provider=lambda: job_dispatch_service,
+    )
+    application.include_router(dispatch_router, tags=["dispatch"])
 
     return application
 

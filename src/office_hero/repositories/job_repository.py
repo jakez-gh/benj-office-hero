@@ -74,6 +74,14 @@ class JobRepositoryProtocol(Protocol):
 
     async def list_due_for_routing(self, tenant_id: UUID, for_date: date) -> list[Job]: ...
 
+    async def list_by_vehicle_in_window(
+        self,
+        tenant_id: UUID,
+        vehicle_id: UUID,
+        window_start: datetime,
+        window_end: datetime,
+    ) -> list[Job]: ...
+
 
 class JobRepository:
     """SQLAlchemy-backed concrete :class:`Job` repository (ADR 058)."""
@@ -221,6 +229,25 @@ class JobRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def list_by_vehicle_in_window(
+        self,
+        tenant_id: UUID,
+        vehicle_id: UUID,
+        window_start: datetime,
+        window_end: datetime,
+    ) -> list[Job]:
+        """Return scheduled/in_progress jobs for a vehicle that overlap the window."""
+        stmt = select(Job).where(
+            Job.tenant_id == tenant_id,
+            Job.assigned_vehicle_id == vehicle_id,
+            Job.status.in_(["scheduled", "in_progress"]),
+            Job.scheduled_for < window_end,
+            Job.scheduled_for + func.make_interval(0, 0, 0, 0, 0, Job.estimated_duration_min)
+            > window_start,
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
 
 class InMemoryJobRepository:
     """In-memory mock implementing :class:`JobRepositoryProtocol`.
@@ -255,6 +282,7 @@ class InMemoryJobRepository:
             cancel_reason=row.get("cancel_reason"),
             custom_fields=deepcopy(row.get("custom_fields", {})),
             external_id=row.get("external_id"),
+            assigned_vehicle_id=row.get("assigned_vehicle_id"),
             created_by_user_id=row["created_by_user_id"],
         )
         job.created_at = row["created_at"]
@@ -302,6 +330,7 @@ class InMemoryJobRepository:
             "cancel_reason": None,
             "custom_fields": deepcopy(custom_fields or {}),
             "external_id": None,
+            "assigned_vehicle_id": None,
             "created_by_user_id": created_by_user_id,
             "created_at": now,
             "updated_at": now,
@@ -408,3 +437,30 @@ class InMemoryJobRepository:
         ]
         rows.sort(key=lambda r: (r["priority"], r.get("scheduled_for") or datetime.max))
         return [self._row_to_job(r) for r in rows]
+
+    async def list_by_vehicle_in_window(
+        self,
+        tenant_id: UUID,
+        vehicle_id: UUID,
+        window_start: datetime,
+        window_end: datetime,
+    ) -> list[Job]:
+        """Return scheduled/in_progress jobs for a vehicle that overlap the window."""
+        from datetime import timedelta
+
+        result = []
+        for r in self._rows.values():
+            if r["tenant_id"] != tenant_id:
+                continue
+            if r.get("assigned_vehicle_id") != vehicle_id:
+                continue
+            if r["status"] not in ("scheduled", "in_progress"):
+                continue
+            sf = r.get("scheduled_for")
+            if sf is None:
+                continue
+            duration = timedelta(minutes=r.get("estimated_duration_min", 60))
+            job_end = sf + duration
+            if sf < window_end and job_end > window_start:
+                result.append(self._row_to_job(r))
+        return result

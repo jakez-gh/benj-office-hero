@@ -11,8 +11,10 @@ from office_hero.services.auth_service import AuthService
 if TYPE_CHECKING:
     from office_hero.adapters.geocoding.protocol import GeocodingAdapter
     from office_hero.services.customer_service import CustomerService
+    from office_hero.services.job_dispatch_service import JobDispatchService
     from office_hero.services.job_service import JobService
     from office_hero.services.location_service import LocationService
+    from office_hero.services.schedule_suggestion_service import ScheduleSuggestionService
     from office_hero.services.vehicle_crew_service import VehicleCrewService
     from office_hero.services.vehicle_service import VehicleService
 
@@ -25,6 +27,8 @@ _job_service: JobService | None = None
 _geocoding_adapter: GeocodingAdapter | None = None
 _vehicle_service: VehicleService | None = None
 _vehicle_crew_service: VehicleCrewService | None = None
+_schedule_suggestion_service: ScheduleSuggestionService | None = None
+_job_dispatch_service: JobDispatchService | None = None
 
 
 def get_engine() -> AsyncEngine:
@@ -70,7 +74,7 @@ def get_customer_service() -> CustomerService:
     """Retrieve the registered customer service."""
     if _customer_service is None:
         raise RuntimeError(
-            "CustomerService not initialized. " "Ensure app has been created with create_app()."
+            "CustomerService not initialized. Ensure app has been created with create_app()."
         )
     return _customer_service
 
@@ -85,7 +89,7 @@ def get_location_service() -> LocationService:
     """Retrieve the registered location service."""
     if _location_service is None:
         raise RuntimeError(
-            "LocationService not initialized. " "Ensure app has been created with create_app()."
+            "LocationService not initialized. Ensure app has been created with create_app()."
         )
     return _location_service
 
@@ -103,7 +107,7 @@ def get_job_service() -> JobService:
     """Retrieve the registered job service."""
     if _job_service is None:
         raise RuntimeError(
-            "JobService not initialized. " "Ensure app has been created with create_app()."
+            "JobService not initialized. Ensure app has been created with create_app()."
         )
     return _job_service
 
@@ -118,7 +122,7 @@ def get_geocoding_adapter() -> GeocodingAdapter:
     """Retrieve the active geocoding adapter."""
     if _geocoding_adapter is None:
         raise RuntimeError(
-            "GeocodingAdapter not initialized. " "Ensure app has been created with create_app()."
+            "GeocodingAdapter not initialized. Ensure app has been created with create_app()."
         )
     return _geocoding_adapter
 
@@ -154,3 +158,40 @@ def get_vehicle_crew_service() -> VehicleCrewService:
             "VehicleCrewService not initialized. Ensure app has been created with create_app()."
         )
     return _vehicle_crew_service
+
+
+# --- Slice 13: Schedule suggestion service ---
+
+
+def set_schedule_suggestion_service(service: ScheduleSuggestionService) -> None:
+    """Register the schedule suggestion service."""
+    global _schedule_suggestion_service
+    _schedule_suggestion_service = service
+
+
+def get_schedule_suggestion_service() -> ScheduleSuggestionService:
+    """Retrieve the registered schedule suggestion service."""
+    if _schedule_suggestion_service is None:
+        raise RuntimeError(
+            "ScheduleSuggestionService not initialized. "
+            "Ensure app has been created with create_app()."
+        )
+    return _schedule_suggestion_service
+
+
+# --- Slice 14: Job dispatch service ---
+
+
+def set_job_dispatch_service(service: JobDispatchService) -> None:
+    """Register the job dispatch service."""
+    global _job_dispatch_service
+    _job_dispatch_service = service
+
+
+def get_job_dispatch_service() -> JobDispatchService:
+    """Retrieve the registered job dispatch service."""
+    if _job_dispatch_service is None:
+        raise RuntimeError(
+            "JobDispatchService not initialized. " "Ensure app has been created with create_app()."
+        )
+    return _job_dispatch_service
