@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Iterator
 from datetime import UTC, datetime
-from decimal import Decimal
 from uuid import UUID, uuid4
 
 import pytest
@@ -18,16 +17,6 @@ from office_hero.api.limiter import limiter
 from office_hero.repositories.job_repository import InMemoryJobRepository
 from office_hero.repositories.vehicle_repository import InMemoryVehicleRepository
 from office_hero.services.job_dispatch_service import JobDispatchService
-
-# ---------------------------------------------------------------------------
-# Helpers / fakes
-# ---------------------------------------------------------------------------
-
-
-class _FakeLocation:
-    lat: Decimal | None = Decimal("37.7749")
-    lng: Decimal | None = Decimal("-122.4194")
-    geocode_status: str = "complete"
 
 
 class _DispatchTestAuthMiddleware(BaseHTTPMiddleware):

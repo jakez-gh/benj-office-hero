@@ -172,10 +172,11 @@ def create_app(
             audit=audit,
             geocoder=geocoder,
         )
+    _default_job_repo: InMemoryJobRepository | None = None
     if job_service is None:
-        job_repo = InMemoryJobRepository()
+        _default_job_repo = InMemoryJobRepository()
         job_service = JobService(
-            repo=job_repo,
+            repo=_default_job_repo,
             customer_repo=cust_repo,
             location_repo=loc_repo,
             audit=audit,
@@ -215,9 +216,8 @@ def create_app(
     if schedule_suggestion_service is None:
         from office_hero.adapters.routing.stub import StubRoutingAdapter
 
-        job_repo_13 = InMemoryJobRepository()
         schedule_suggestion_service = ScheduleSuggestionService(
-            job_repo=job_repo_13,
+            job_repo=_default_job_repo or InMemoryJobRepository(),
             vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
             routing_adapter=StubRoutingAdapter(),
         )
@@ -226,7 +226,7 @@ def create_app(
     # Slice-14: job dispatch service
     if job_dispatch_service is None:
         job_dispatch_service = JobDispatchService(
-            job_repo=InMemoryJobRepository(),
+            job_repo=_default_job_repo or InMemoryJobRepository(),
             vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
         )
     set_job_dispatch_service(job_dispatch_service)

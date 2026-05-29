@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from uuid import UUID
+
 
 class AuthError(Exception):
     """Raised when authentication or token validation fails."""
@@ -205,8 +208,8 @@ class VehicleAlreadyBookedError(Exception):
     def __init__(
         self,
         message: str = "Vehicle is already booked for this time",
-        vehicle_id=None,
-        scheduled_for=None,
+        vehicle_id: UUID | None = None,
+        scheduled_for: datetime | None = None,
         request_id: str | None = None,
     ):
         self.message = message
