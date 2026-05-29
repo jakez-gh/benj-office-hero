@@ -5,7 +5,7 @@ hld: ../architecture/050-arch.hld-office-hero.md
 project: office-hero
 dateCreated: 20260308
 dateUpdated: 20260308
-status: approved
+status: in_progress
 ---
 
 # Slice Plan: Office Hero
@@ -32,7 +32,7 @@ HLD: [050-arch.hld-office-hero.md](../architecture/050-arch.hld-office-hero.md)
 Must be complete before any feature slices begin.
 Each foundation slice leaves the system in a runnable, tested state.
 
-1. [ ] **Python project scaffold** — Package structure (`src/office_hero/`), pyproject.toml,
+1. [x] **Python project scaffold** — Package structure (`src/office_hero/`), pyproject.toml,
    Dockerfile, Fly.io config, environment config via pydantic-settings, Makefile targets.
    `outbox_events` and `saga_log` tables included in initial migration (required by back-office
    slices). Dependencies: none. Effort: 1/5
@@ -42,19 +42,19 @@ Each foundation slice leaves the system in a runnable, tested state.
    generating JWTs and invoking the REST API. Establishes the presentation-tier CLI
    mentioned in the concept. Dependencies: Slice 1. Effort: 1/5
 
-2. [ ] **Database foundation** — Neon connection, SQLAlchemy async session factory,
+2. [x] **Database foundation** — Neon connection, SQLAlchemy async session factory,
    Alembic migration workflow, base `tenant_id` column pattern, RLS policy helpers,
    per-request session context. `outbox_events` + `saga_log` migrations (see ADR 056).
    Integration test infrastructure (Neon branch per CI run).
    Dependencies: Slice 1. Effort: 2/5
 
-3. [ ] **Auth & RBAC** — JWT RS256 issue/validate, bcrypt password hashing,
+3. [x] **Auth & RBAC** — JWT RS256 issue/validate, bcrypt password hashing,
    `@require_role` / `@require_permission` decorators, Tenant context middleware
    (sets `app.tenant_id` from JWT), all six roles defined, rate limiting on auth
    endpoints (`slowapi`), refresh token support (15 min access / 7 day refresh).
    Dependencies: Slices 1–2. Effort: 2/5
 
-4. [ ] **Observability & security middleware foundation** — structlog structured logging
+4. [x] **Observability & security middleware foundation** — structlog structured logging
    (JSON, request-id), `GET /health` endpoint (DB + ORS reachability), global FastAPI
    exception handler (no stack traces to client), request-id middleware, CSP/security
    headers middleware (`X-Frame-Options`, `X-Content-Type-Options`, `Content-Security-Policy`),
@@ -62,11 +62,11 @@ Each foundation slice leaves the system in a runnable, tested state.
    cache hooks ready to accept operator-configurable limits. Dependencies: Slices 1–2.
    Effort: 1/5
 
-5. [ ] **Frontend scaffold** — pnpm monorepo (`packages/api-client`, `packages/types`,
+5. [x] **Frontend scaffold** — pnpm monorepo (`packages/api-client`, `packages/types`,
    `apps/admin-web`, `apps/tech-web`, `apps/tech-mobile`), TypeScript config, ESLint,
    Prettier, shared API client skeleton. Dependencies: Slice 1. Effort: 2/5
 
-5a. [ ] **Admin web shell (login + navigation stub)** — **EARLY GUI VISIBILITY.**
+5a. [x] **Admin web shell (login + navigation stub)** — **EARLY GUI VISIBILITY.**
     Working login page connected to real JWT auth, top-level navigation shell with
     placeholder pages for all major sections (Jobs, Dispatch, Vehicles, Users).
     Demonstrates full auth flow end-to-end. Deployable and demeable after this slice.
@@ -84,7 +84,7 @@ Ordered by dependency and value. Each slice is independently demonstrable.
 
 ### Platform / Operator
 
-7. [ ] **Tenant management** — Operator CRUD for Tenants; Tenant provisioning creates
+7. [x] **Tenant management** — Operator CRUD for Tenants; Tenant provisioning creates
    DB schema, sets back\_office\_adapter. Dependencies: Slices 1–4. Risk: Low. Effort: 2/5
 
 7a. [ ] **Operator observability dashboard** — Metrics & log viewer with live control panel
@@ -92,7 +92,7 @@ Ordered by dependency and value. Each slice is independently demonstrable.
    access to health metrics and enables operators to alter protection rules at runtime.
    Dependencies: Slices 3–4. Risk: Medium. Effort: 3/5
 
-8. [ ] **User management** — TenantAdmin CRUD for Users within their Tenant (all roles
+8. [x] **User management** — TenantAdmin CRUD for Users within their Tenant (all roles
    except Operator). Includes role-builder UI allowing TenantAdmins to create and modify
    tenant‑scoped roles/permission sets. Self-registration disabled by default (Operator or
    TenantAdmin invites). **GUI:** User list + invite form in Admin web shell (depends on 5a).
@@ -100,11 +100,11 @@ Ordered by dependency and value. Each slice is independently demonstrable.
 
 ### Core FSM
 
-9. [ ] **Customer & Location management** — CRUD for Customers and their Locations
+9. [x] **Customer & Location management** — CRUD for Customers and their Locations
    (geocoded lat/lng via ORS or Nominatim). RLS enforced. **GUI:** Customer list +
    create form visible in Admin web. Dependencies: Slices 2–3, 7. Risk: Low. Effort: 2/5
 
-10. [ ] **Job management (core CRUD)** — Create/read/update/cancel Jobs; industry-specific
+10. [x] **Job management (core CRUD)** — Create/read/update/cancel Jobs; industry-specific
     `custom_fields` JSONB with per-industry templates; Job status lifecycle (pending →
     scheduled → in\_progress → complete / cancelled). **GUI:** Job list + create/edit
     forms. Dependencies: Slices 3, 7, 9. Risk: Low. Effort: 3/5
@@ -113,13 +113,13 @@ Ordered by dependency and value. Each slice is independently demonstrable.
     (cron-style); links to Customer + service type + frequency.
     Dependencies: Slice 10. Risk: Medium. Effort: 3/5
 
-12. [ ] **Vehicle & VehicleCrew management** — CRUD for Vehicles; daily crew assignment
+12. [x] **Vehicle & VehicleCrew management** — CRUD for Vehicles; daily crew assignment
     (VehicleCrew: Vehicle + Technicians + date + roles). **GUI:** Vehicle list + crew
     assignment UI. Dependencies: Slices 3, 7–8. Risk: Low. Effort: 2/5
 
 ### Dispatch & Routing
 
-13. [ ] **Routing engine integration** — ORS adapter (`RoutingAdapter` protocol + ORS
+13. [x] **Routing engine integration** — ORS adapter (`RoutingAdapter` protocol + ORS
     HTTP client, with SSRF allowlist); `POST /jobs/{id}/routing-options` returns three
     ranked options (nearest, earliest-completion, balanced-load). Unit tests mock adapter.
     Dependencies: Slices 4, 10, 12. Risk: High. Effort: 3/5
@@ -168,7 +168,7 @@ Ordered by dependency and value. Each slice is independently demonstrable.
 
 ### AI Integration
 
-23. [ ] **MCP server** — Python MCP server wrapping the REST API as MCP tools.
+23. [x] **MCP server** — Python MCP server wrapping the REST API as MCP tools.
     Auto-generated from FastAPI's OpenAPI spec where possible; manual tools for
     complex operations (dispatch, routing). Same auth/RBAC as API.
     Dependencies: Slices 3, 10, 14. Risk: Medium. Effort: 3/5
