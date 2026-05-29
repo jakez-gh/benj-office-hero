@@ -218,7 +218,6 @@ export interface ScheduleOptionItem {
   vehicle_display: string;
   suggested_start: string;
   travel_seconds: number;
-  distance_meters: number;
   rank: number;
 }
 

@@ -175,7 +175,10 @@ function CreateJobModal({
 function tomorrowWindow(): { start: string; end: string } {
   const d = new Date();
   d.setDate(d.getDate() + 1);
-  const dateStr = d.toISOString().slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const dateStr = `${year}-${month}-${day}`;
   return {
     start: `${dateStr}T08:00`,
     end: `${dateStr}T17:00`,
@@ -207,6 +210,7 @@ function ScheduleModal({
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<ScheduleOptionItem | null>(null);
+  const windowInvalid = windowEnd <= windowStart;
   const [dispatching, setDispatching] = useState(false);
   const [dispatchError, setDispatchError] = useState<string | null>(null);
 
@@ -258,8 +262,9 @@ function ScheduleModal({
           </div>
           <button
             type="button"
-            className="rounded p-1 text-neutral-400 hover:text-neutral-600"
+            className="rounded p-1 text-neutral-400 hover:text-neutral-600 disabled:opacity-40"
             onClick={onClose}
+            disabled={dispatching}
           >
             ✕
           </button>
@@ -288,11 +293,14 @@ function ScheduleModal({
           </div>
         </div>
 
+        {windowInvalid && (
+          <p className="mb-2 text-sm text-red-600">Window end must be after window start.</p>
+        )}
         <Button
           type="button"
           variant="outline"
           onClick={() => void fetchOptions()}
-          disabled={loadingOptions}
+          disabled={loadingOptions || windowInvalid}
           className="mb-4 w-full"
         >
           {loadingOptions ? 'Finding options…' : 'Find available slots'}
@@ -317,7 +325,7 @@ function ScheduleModal({
                 </p>
                 {options.map((opt) => (
                   <button
-                    key={opt.vehicle_id}
+                    key={`${opt.vehicle_id}-${opt.suggested_start}`}
                     type="button"
                     onClick={() => setSelectedOption(opt)}
                     className={`w-full rounded-lg border p-3 text-left transition-colors ${
