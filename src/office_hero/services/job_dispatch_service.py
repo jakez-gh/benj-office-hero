@@ -89,8 +89,6 @@ class JobDispatchService:
             assigned_vehicle_id=vehicle_id,
             scheduled_for=scheduled_for,
         )
-        if updated is None:
-            raise JobNotFoundError(f"Job {job_id} disappeared during dispatch")
         log.info(
             "job.dispatched",
             job_id=str(job_id),

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from datetime import datetime
+from typing import Annotated, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
@@ -79,14 +80,11 @@ def create_dispatch_router(*, service_provider) -> APIRouter:
                 detail=exc.message,
             ) from exc
 
-        # Guaranteed non-None: dispatch service just set both fields
-        assert job.assigned_vehicle_id is not None
-        assert job.scheduled_for is not None
         return JobDispatchResponse(
             id=job.id,
             status=job.status,
-            assigned_vehicle_id=job.assigned_vehicle_id,
-            scheduled_for=job.scheduled_for,
+            assigned_vehicle_id=cast(UUID, job.assigned_vehicle_id),
+            scheduled_for=cast(datetime, job.scheduled_for),
             title=job.title,
             customer_id=job.customer_id,
             location_id=job.location_id,
