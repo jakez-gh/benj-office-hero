@@ -154,7 +154,7 @@ Ordered by dependency and value. Each slice is independently demonstrable.
 
 ### Web GUIs
 
-20. [ ] **Tenant Admin web — Job entry & customer lookup** — React SPA: search/create
+20. [x] **Tenant Admin web — Job entry & customer lookup** — React SPA: search/create
     Customer + Location, enter Job, view routing options, dispatch. Uses shared API client.
     Dependencies: Slices 5a, 9–10, 13–14. Risk: Medium. Effort: 3/5
 

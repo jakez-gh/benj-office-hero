@@ -2,10 +2,10 @@
 docType: slice-design
 parent: ../project-guides/003-slices.office-hero.md
 project: office-hero
-slice: "20"
+slice: schedule-ui
 dateCreated: 20260528
-dateUpdated: 20260528
-status: in_progress
+dateUpdated: 20260529
+status: complete
 ---
 
 # Slice Design 016: Tenant Admin Web — Job Entry & Schedule UI
