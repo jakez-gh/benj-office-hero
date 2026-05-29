@@ -72,9 +72,16 @@ def _auth_headers(tenant_id, user_id, *, perms="job:read,vehicle:read") -> dict[
 
 @pytest.fixture(autouse=True)
 def _reset_rate_limiter():
-    _reset_limiter()
+    """Give each test its own rate-limit bucket (avoids 429s from shared IP)."""
+    test_key = str(uuid4())
+    saved: list[tuple] = []
+    for limits in limiter._route_limits.values():
+        for lim in limits:
+            saved.append((lim, lim.key_func))
+            lim.key_func = lambda *_a, **_k: test_key
     yield
-    _reset_limiter()
+    for lim, orig in saved:
+        lim.key_func = orig
 
 
 @pytest.fixture()
