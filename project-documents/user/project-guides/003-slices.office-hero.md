@@ -5,7 +5,7 @@ hld: ../architecture/050-arch.hld-office-hero.md
 project: office-hero
 dateCreated: 20260308
 dateUpdated: 20260308
-status: approved
+status: in_progress
 ---
 
 # Slice Plan: Office Hero
