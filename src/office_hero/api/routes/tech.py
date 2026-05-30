@@ -5,7 +5,7 @@ GET /vehicles/my-crew-today  — returns the caller's vehicle assignment for tod
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -21,7 +21,7 @@ log = get_logger(__name__)
 class MyCrewTodayResponse(BaseModel):
     crew_id: UUID
     vehicle_id: UUID
-    work_date: str
+    work_date: date
 
 
 def _tenant_id(request: Request) -> UUID:
@@ -79,7 +79,7 @@ def create_tech_router(*, crew_service_provider) -> APIRouter:
         return MyCrewTodayResponse(
             crew_id=crew.id,
             vehicle_id=crew.vehicle_id,
-            work_date=str(today),
+            work_date=today,
         )
 
     return router

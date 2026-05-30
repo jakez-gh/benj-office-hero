@@ -33,7 +33,10 @@ export class ApiError extends Error {
 async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (_token) headers['Authorization'] = `Bearer ${_token}`;
-  const resp = await fetch(`${BASE}${path}`, { ...opts, headers });
+  const resp = await fetch(`${BASE}${path}`, {
+    ...opts,
+    headers: { ...((opts.headers as Record<string, string>) ?? {}), ...headers },
+  });
   if (!resp.ok) {
     const body = await resp.json().catch(() => ({}));
     throw new ApiError(resp.status, body.detail ?? resp.statusText);

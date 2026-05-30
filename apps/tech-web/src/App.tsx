@@ -18,10 +18,6 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function todayIso(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 function fmtTime(iso: string | null): string {
   if (!iso) return '—';
@@ -167,7 +163,7 @@ function JobDetailView({ job, onBack, onUpdate }: {
 // New job form
 // ---------------------------------------------------------------------------
 
-function NewJobView({ onBack, onCreated }: { onBack: () => void; onCreated: (j: JobSummary) => void }) {
+function NewJobView({ onBack, onCreated }: { onBack: () => void; onCreated: () => void }) {
   const [form, setForm] = useState<JobCreatePayload>({
     customer_id: '', location_id: '', title: '', service_type: null, estimated_duration_min: 60,
   });
@@ -177,7 +173,7 @@ function NewJobView({ onBack, onCreated }: { onBack: () => void; onCreated: (j: 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError(null);
-    try { onCreated(await createJobApi(form)); }
+    try { await createJobApi(form); onCreated(); }
     catch (err) { setError(fmtErr(err)); }
     finally { setLoading(false); }
   }
@@ -274,9 +270,9 @@ function TodayView({ vehicleId, workDate, onLogout }: { vehicleId: string; workD
     return (
       <NewJobView
         onBack={() => setShowNew(false)}
-        onCreated={(j) => {
-          setJobs(prev => [...prev, j]);
+        onCreated={() => {
           setShowNew(false);
+          void loadJobs();
         }}
       />
     );
