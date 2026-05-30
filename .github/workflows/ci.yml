@@ -9,6 +9,8 @@ on:
 jobs:
   sync-check:
     name: Branch up-to-date check
+    # Skip on direct pushes to main — HEAD is always up to date with itself
+    if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -126,17 +128,15 @@ jobs:
         run: poetry install --with dev --no-interaction
 
       - name: Run tests
-        id: run-tests
         run: |
           if find tests -name "test_*.py" | grep -q .; then
             poetry run pytest -q --tb=short
           else
             echo "No test files found — skipping pytest."
           fi
-        continue-on-error: true
 
       - name: Open GitHub issue on test failure
-        if: steps.run-tests.outcome == 'failure'
+        if: failure()
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -155,7 +155,6 @@ jobs:
               body,
               labels: ['ci-failure'],
             });
-            core.setFailed('Tests failed — issue created.');
 
       - name: Upload coverage report
         if: always()
