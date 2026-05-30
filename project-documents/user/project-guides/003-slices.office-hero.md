@@ -162,7 +162,7 @@ Ordered by dependency and value. Each slice is independently demonstrable.
     Routes for the day), drag-and-drop resequencing, live Vehicle positions (polling),
     day-of exception handling UI. Dependencies: Slices 12–16, 20. Risk: High. Effort: 4/5
 
-22. [ ] **Technician web view** — Lighter React view: own Route for the day, Job details,
+22. [x] **Technician web view** — Lighter React view: own Route for the day, Job details,
     basic Job entry. Separate from Technician Android app; useful for desktop/laptop use.
     Dependencies: Slices 5a, 14. Risk: Low. Effort: 2/5
 
