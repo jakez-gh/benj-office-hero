@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  ApiError,
   type JobSummary,
   type JobCreatePayload,
   type LoginResponse,
@@ -28,7 +29,7 @@ function fmtTime(iso: string | null): string {
 }
 
 function fmtErr(e: unknown): string {
-  if (e && typeof e === 'object' && 'detail' in e) return String((e as { detail: unknown }).detail);
+  if (e instanceof ApiError) return e.detail;
   if (e instanceof Error) return e.message;
   return String(e);
 }
@@ -235,7 +236,7 @@ function TodayView({ vehicleId, onLogout }: { vehicleId: string; onLogout: () =>
   const [selectedJob, setSelectedJob] = useState<JobSummary | null>(null);
   const [showNew, setShowNew] = useState(false);
 
-  async function loadJobs() {
+  const loadJobs = useCallback(async () => {
     setLoading(true); setError(null);
     try {
       const data = await listJobsApi({ assigned_vehicle_id: vehicleId, scheduled_for_date: todayIso() });
@@ -249,9 +250,9 @@ function TodayView({ vehicleId, onLogout }: { vehicleId: string; onLogout: () =>
     } finally {
       setLoading(false);
     }
-  }
+  }, [vehicleId]);
 
-  useEffect(() => { void loadJobs(); }, [vehicleId]);
+  useEffect(() => { void loadJobs(); }, [loadJobs]);
 
   if (selectedJob) {
     return (
@@ -326,7 +327,12 @@ function TodayView({ vehicleId, onLogout }: { vehicleId: string; onLogout: () =>
 // Root App
 // ---------------------------------------------------------------------------
 
-type View = { kind: 'login' } | { kind: 'loading' } | { kind: 'today'; vehicleId: string } | { kind: 'no-crew' };
+type View =
+  | { kind: 'login' }
+  | { kind: 'loading' }
+  | { kind: 'today'; vehicleId: string }
+  | { kind: 'no-crew' }
+  | { kind: 'error'; message: string };
 
 export default function App() {
   const [view, setView] = useState<View>(getToken() ? { kind: 'loading' } : { kind: 'login' });
@@ -336,14 +342,14 @@ export default function App() {
     myCrewTodayApi()
       .then(c => setView({ kind: 'today', vehicleId: c.vehicle_id }))
       .catch(err => {
-        const status = err && typeof err === 'object' && 'status' in err ? (err as { status: number }).status : 0;
+        const status = err instanceof ApiError ? err.status : 0;
         if (status === 401 || status === 403) {
           setToken(null);
           setView({ kind: 'login' });
         } else if (status === 404) {
           setView({ kind: 'no-crew' });
         } else {
-          setView({ kind: 'no-crew' });
+          setView({ kind: 'error', message: fmtErr(err) });
         }
       });
   }, [view.kind]);
@@ -359,9 +365,15 @@ export default function App() {
   }
 
   if (view.kind === 'login') return <LoginView onLogin={handleLogin} />;
+  if (view.kind === 'loading') return <div className="empty" style={{ paddingTop: 80 }}>Loading…</div>;
 
-  if (view.kind === 'loading') {
-    return <div className="empty" style={{ paddingTop: 80 }}>Loading…</div>;
+  if (view.kind === 'error') {
+    return (
+      <div className="screen" style={{ paddingTop: 48 }}>
+        <div className="alert alert-error">{view.message}</div>
+        <button className="btn btn-secondary" onClick={handleLogout}>Sign out</button>
+      </div>
+    );
   }
 
   if (view.kind === 'no-crew') {

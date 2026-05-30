@@ -23,13 +23,20 @@ export function setToken(t: string | null) {
 
 export function getToken(): string | null { return _token; }
 
+export class ApiError extends Error {
+  constructor(public status: number, public detail: string) {
+    super(detail);
+    this.name = 'ApiError';
+  }
+}
+
 async function req<T>(path: string, opts: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (_token) headers['Authorization'] = `Bearer ${_token}`;
   const resp = await fetch(`${BASE}${path}`, { ...opts, headers });
   if (!resp.ok) {
     const body = await resp.json().catch(() => ({}));
-    throw { status: resp.status, detail: body.detail ?? resp.statusText };
+    throw new ApiError(resp.status, body.detail ?? resp.statusText);
   }
   return resp.json() as Promise<T>;
 }

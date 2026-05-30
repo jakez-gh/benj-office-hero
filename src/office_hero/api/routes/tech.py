@@ -6,19 +6,19 @@ GET /vehicles/my-crew-today  — returns the caller's vehicle assignment for tod
 from __future__ import annotations
 
 from datetime import UTC, datetime
-
-from fastapi import APIRouter, HTTPException, Request, status
-from pydantic import BaseModel, ConfigDict
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel
 
 from office_hero.api.deps import require_permission
 from office_hero.api.limiter import limiter
-from fastapi import Depends
+from office_hero.core.logging import get_logger
+
+log = get_logger(__name__)
 
 
 class MyCrewTodayResponse(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
     crew_id: UUID
     vehicle_id: UUID
     work_date: str
@@ -65,6 +65,14 @@ def create_tech_router(*, crew_service_provider) -> APIRouter:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No crew assignment found for today",
+            )
+
+        if len(crews) > 1:
+            log.warning(
+                "user.multiple_crew_assignments",
+                user_id=str(user_id),
+                count=len(crews),
+                work_date=str(today),
             )
 
         crew = crews[0]
