@@ -121,6 +121,7 @@ def vehicle(v_repo, tenant_id):
             model="Transit",
             year=2023,
         )
+
     return _run(_create())
 
 
@@ -184,8 +185,12 @@ def test_my_crew_today_cross_tenant_isolation(client, tenant_id, user_id, v_repo
 
     async def _setup():
         v = await v_repo.create(
-            other_tenant, license_plate="OTH-001", nickname="Other Van",
-            make="Ford", model="Transit", year=2022,
+            other_tenant,
+            license_plate="OTH-001",
+            nickname="Other Van",
+            make="Ford",
+            model="Transit",
+            year=2022,
         )
         from office_hero.core.crew_role import CrewRole
         from office_hero.repositories.vehicle_crew_repository import CrewMemberInput
@@ -229,6 +234,7 @@ def app_with_job_repo(crew_service, job_repo) -> FastAPI:
     from office_hero.repositories.location_repository import InMemoryLocationRepository
 
     from office_hero.services.custom_field_templates import registry as template_registry
+
     job_service = JobService(
         repo=job_repo,
         customer_repo=InMemoryCustomerRepository(),
@@ -247,26 +253,53 @@ def app_with_job_repo(crew_service, job_repo) -> FastAPI:
 
 def test_jobs_filter_assigned_vehicle_id(app_with_job_repo, job_repo, tenant_id, user_id, v_repo):
     """GET /jobs?assigned_vehicle_id=X returns only jobs assigned to that vehicle."""
+
     async def _setup():
         v1 = await v_repo.create(
-            tenant_id, license_plate="V1", nickname="Van 1",
-            make="Ford", model="Transit", year=2023,
+            tenant_id,
+            license_plate="V1",
+            nickname="Van 1",
+            make="Ford",
+            model="Transit",
+            year=2023,
         )
         v2 = await v_repo.create(
-            tenant_id, license_plate="V2", nickname="Van 2",
-            make="Ford", model="Transit", year=2023,
+            tenant_id,
+            license_plate="V2",
+            nickname="Van 2",
+            make="Ford",
+            model="Transit",
+            year=2023,
         )
         job1 = await job_repo.create(
-            tenant_id, customer_id=uuid4(), location_id=uuid4(), industry="plumbing",
-            title="Job for V1", description=None, priority=50, service_type=None,
-            requested_at=None, requested_until=None, estimated_duration_min=60,
-            custom_fields={}, created_by_user_id=user_id,
+            tenant_id,
+            customer_id=uuid4(),
+            location_id=uuid4(),
+            industry="plumbing",
+            title="Job for V1",
+            description=None,
+            priority=50,
+            service_type=None,
+            requested_at=None,
+            requested_until=None,
+            estimated_duration_min=60,
+            custom_fields={},
+            created_by_user_id=user_id,
         )
         job2 = await job_repo.create(
-            tenant_id, customer_id=uuid4(), location_id=uuid4(), industry="plumbing",
-            title="Job for V2", description=None, priority=50, service_type=None,
-            requested_at=None, requested_until=None, estimated_duration_min=60,
-            custom_fields={}, created_by_user_id=user_id,
+            tenant_id,
+            customer_id=uuid4(),
+            location_id=uuid4(),
+            industry="plumbing",
+            title="Job for V2",
+            description=None,
+            priority=50,
+            service_type=None,
+            requested_at=None,
+            requested_until=None,
+            estimated_duration_min=60,
+            custom_fields={},
+            created_by_user_id=user_id,
         )
         await job_repo.update_fields(job1.id, tenant_id, assigned_vehicle_id=v1.id)
         await job_repo.update_fields(job2.id, tenant_id, assigned_vehicle_id=v2.id)

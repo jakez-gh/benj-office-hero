@@ -37,6 +37,7 @@ Reuse the pnpm monorepo shared packages (`packages/api-client`, `packages/types`
 Add a minimal new Vite app with Tailwind v3.
 
 **Pages:**
+
 - **Login** — reuse the same JWT auth flow as admin-web. On success, redirect to
   `/today`.
 - **Today** (`/today`) — main screen.
