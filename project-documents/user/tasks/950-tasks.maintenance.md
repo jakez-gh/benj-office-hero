@@ -6,6 +6,8 @@ description: Ongoing maintenance tasks and one-time dev environment setup
 dateCreated: 20260308
 dateUpdated: 20260308
 status: in_progress
+slice: maintenance
+project: office-hero
 ---
 
 # 950: Maintenance & Dev Environment Setup Tasks

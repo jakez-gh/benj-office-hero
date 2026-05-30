@@ -7,6 +7,7 @@ projectState: Project initialized with Git repo. No Python code yet. Ready to es
 dateCreated: 20260308
 dateUpdated: 20260308
 status: not_started
+docType: tasks
 ---
 
 ## Context Summary

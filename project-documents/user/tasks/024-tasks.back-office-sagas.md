@@ -8,6 +8,7 @@ projectState: Foundation (Slices 1–4) and Core FSM (Slices 9–14) complete. P
 dateCreated: 20260308
 dateUpdated: 20260308
 status: not_started
+docType: tasks
 ---
 
 ## Context Summary

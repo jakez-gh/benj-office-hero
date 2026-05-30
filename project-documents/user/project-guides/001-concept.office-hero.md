@@ -8,8 +8,9 @@ description: Concept for Office Hero
 dependsOn: []
 dateCreated: 20260308
 dateUpdated: 20260308
-status: approved
----
+status: complete
+docType: concept
+project: office-hero---
 
 # Office Hero
 

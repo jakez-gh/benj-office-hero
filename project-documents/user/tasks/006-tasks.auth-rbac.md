@@ -7,6 +7,7 @@ projectState: Slices 1-2 complete (Python scaffold, database foundation with RLS
 dateCreated: 20260308
 dateUpdated: 20260308
 status: not_started
+docType: tasks
 ---
 
 ## Context Summary

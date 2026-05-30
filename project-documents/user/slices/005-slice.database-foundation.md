@@ -4,6 +4,8 @@ parent: ../project-guides/003-slices.office-hero.md
 project: office-hero
 dateCreated: 20260308
 status: in_progress
+slice: database-foundation
+dateUpdated: 20260308
 ---
 
 # Slice Design 005: Database foundation

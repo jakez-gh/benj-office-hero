@@ -4,6 +4,8 @@ parent: ../project-guides/003-slices.office-hero.md
 project: office-hero
 dateCreated: 20260308
 status: not_started
+slice: frontend-scaffold
+dateUpdated: 20260308
 ---
 
 # Slice Design 008: Frontend scaffold

@@ -5,6 +5,9 @@ audience: [human, ai]
 description: Helpful git workflow reminders (pre-commit integration)
 dateCreated: 20260308
 dateUpdated: 20260308
+slice: git-workflow
+project: office-hero
+status: not_started
 ---
 
 # Git Workflow Notes

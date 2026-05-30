@@ -4,6 +4,8 @@ parent: ../project-guides/003-slices.office-hero.md
 project: office-hero
 dateCreated: 20260524
 status: not_started
+slice: routing-engine
+dateUpdated: 20260524
 ---
 
 # Slice Design 014: Routing engine integration

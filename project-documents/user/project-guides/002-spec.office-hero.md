@@ -8,8 +8,8 @@ description: Specification for Office Hero
 dependsOn: [001-concept.office-hero.md]
 dateCreated: 20260308
 dateUpdated: 20260308
-status: approved
----
+status: complete
+docType: spec---
 
 # Office Hero — Specification
 

@@ -7,6 +7,7 @@ projectState: Slices 1-1a complete (Python scaffold with pyproject.toml, Makefil
 dateCreated: 20260308
 dateUpdated: 20260308
 status: not_started
+docType: tasks
 ---
 
 ## Context Summary

@@ -4,6 +4,8 @@ parent: ../project-guides/003-slices.office-hero.md
 project: office-hero
 dateCreated: 20260308
 status: not_started
+slice: admin-web-shell
+dateUpdated: 20260308
 ---
 
 # Slice Design 009: Admin web shell (login + navigation stub)
