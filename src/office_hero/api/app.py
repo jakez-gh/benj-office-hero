@@ -24,6 +24,7 @@ from office_hero.api.routes.admin import audit_router, create_admin_router
 from office_hero.api.routes.customers import create_customer_router
 from office_hero.api.routes.dispatch import create_dispatch_router
 from office_hero.api.routes.jobs import create_job_router
+from office_hero.api.routes.tech import create_tech_router
 from office_hero.api.routes.locations import create_location_router
 from office_hero.api.routes.sagas import create_saga_router
 from office_hero.api.routes.schedule_options import create_schedule_options_router
@@ -291,6 +292,11 @@ def create_app(
         service_provider=lambda: job_dispatch_service,
     )
     application.include_router(dispatch_router, tags=["dispatch"])
+
+    tech_router = create_tech_router(
+        crew_service_provider=lambda: vehicle_crew_service,
+    )
+    application.include_router(tech_router, tags=["tech"])
 
     return application
 
