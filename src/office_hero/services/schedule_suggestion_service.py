@@ -13,6 +13,9 @@ from uuid import UUID
 
 from office_hero.adapters.routing.protocol import RoutingAdapter
 from office_hero.core.exceptions import JobNotFoundError, SchedulingNotAvailableError
+from office_hero.repositories.vehicle_location_repository import (
+    VehicleLocationRepositoryProtocol,
+)
 
 
 @dataclass
@@ -50,11 +53,13 @@ class ScheduleSuggestionService:
         vehicle_repo,
         routing_adapter: RoutingAdapter,
         clock=None,
+        vehicle_location_repo: VehicleLocationRepositoryProtocol | None = None,
     ) -> None:
         self._job_repo = job_repo
         self._vehicle_repo = vehicle_repo
         self._routing = routing_adapter
         self._clock = clock or (lambda: datetime.now(UTC))
+        self._vehicle_location_repo = vehicle_location_repo
 
     async def get_options(
         self,
@@ -93,8 +98,23 @@ class ScheduleSuggestionService:
             if busy_jobs:
                 continue
 
-            from_lat = float(vehicle.home_base_lat) if vehicle.home_base_lat is not None else 0.0
-            from_lng = float(vehicle.home_base_lng) if vehicle.home_base_lng is not None else 0.0
+            # Prefer live GPS position; fall back to home base; last resort 0,0
+            if self._vehicle_location_repo is not None:
+                latest = await self._vehicle_location_repo.get_latest(tenant_id, vehicle.id)
+            else:
+                latest = None
+
+            if latest is not None:
+                from_lat = float(latest.lat)
+                from_lng = float(latest.lng)
+            elif vehicle.home_base_lat is not None:
+                from_lat = float(vehicle.home_base_lat)
+                from_lng = (
+                    float(vehicle.home_base_lng) if vehicle.home_base_lng is not None else 0.0
+                )
+            else:
+                from_lat = 0.0
+                from_lng = 0.0
 
             route = await self._routing.get_route(from_lat, from_lng, job_lat, job_lng)
             if route is None:

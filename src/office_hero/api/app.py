@@ -217,7 +217,16 @@ def create_app(
     set_vehicle_service(vehicle_service)
     set_vehicle_crew_service(vehicle_crew_service)
 
-    # Slice-13: schedule suggestion service
+    # Slice-15: shared location repo (created before slice-13 so routing can use live positions)
+    _default_location_repo: InMemoryVehicleLocationRepository | None = None
+    if vehicle_location_service is None:
+        _default_location_repo = InMemoryVehicleLocationRepository()
+        vehicle_location_service = VehicleLocationService(
+            location_repo=_default_location_repo,
+            vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
+        )
+
+    # Slice-13: schedule suggestion service (uses live GPS positions when available)
     if schedule_suggestion_service is None:
         from office_hero.adapters.routing.stub import StubRoutingAdapter
 
@@ -225,6 +234,7 @@ def create_app(
             job_repo=_default_job_repo or InMemoryJobRepository(),
             vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
             routing_adapter=StubRoutingAdapter(),
+            vehicle_location_repo=_default_location_repo,
         )
     set_schedule_suggestion_service(schedule_suggestion_service)
 
@@ -304,12 +314,6 @@ def create_app(
     )
     application.include_router(dispatch_router, tags=["dispatch"])
 
-    # Slice-15: vehicle location
-    if vehicle_location_service is None:
-        vehicle_location_service = VehicleLocationService(
-            location_repo=InMemoryVehicleLocationRepository(),
-            vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
-        )
     vehicle_location_router = create_vehicle_location_router(
         service_provider=lambda: vehicle_location_service,
     )
