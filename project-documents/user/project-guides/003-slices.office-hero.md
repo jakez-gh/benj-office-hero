@@ -129,7 +129,7 @@ Ordered by dependency and value. Each slice is independently demonstrable.
     fourth; `GET /routes` for daily view. **GUI:** Route selection UI in Admin web.
     Dependencies: Slice 13. Risk: Medium. Effort: 3/5
 
-15. [ ] **Vehicle location tracking** — `PUT /vehicles/{id}/location` endpoint;
+15. [x] **Vehicle location tracking** — `PUT /vehicles/{id}/location` endpoint;
     VehicleLocation time-series storage; latest-position query for routing engine.
     Dependencies: Slices 2, 12. Risk: Low. Effort: 2/5
 
