@@ -66,9 +66,11 @@ No FK enforce on `vehicle_id` to allow async writes without locking the vehicles
 - Permission: `vehicle:write` (Technician role has it)
 - Rate-limited: `120/minute` (higher than most endpoints — GPS updates are frequent)
 - Request body:
+
   ```json
   { "lat": 37.7749, "lng": -122.4194, "accuracy_m": 5.0, "recorded_at": "2026-05-30T14:00:00Z" }
   ```
+
 - Response: `200` with the stored location record
 - `recorded_at` is `AwareDatetime` (rejects naive timestamps)
 - Returns `404` if vehicle not found in tenant
