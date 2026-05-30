@@ -29,6 +29,7 @@ from office_hero.api.routes.sagas import create_saga_router
 from office_hero.api.routes.schedule_options import create_schedule_options_router
 from office_hero.api.routes.tech import create_tech_router
 from office_hero.api.routes.vehicle_crews import create_vehicle_crew_router
+from office_hero.api.routes.vehicle_location import create_vehicle_location_router
 from office_hero.api.routes.vehicles import create_vehicle_router
 from office_hero.api.state import (
     set_auth_service,
@@ -57,6 +58,7 @@ from office_hero.repositories.mocks import (
 )
 from office_hero.repositories.protocols import OutboxRepository
 from office_hero.repositories.vehicle_crew_repository import InMemoryVehicleCrewRepository
+from office_hero.repositories.vehicle_location_repository import InMemoryVehicleLocationRepository
 from office_hero.repositories.vehicle_repository import InMemoryVehicleRepository
 from office_hero.services.custom_field_templates import (
     registry as _template_registry_module,
@@ -68,6 +70,7 @@ from office_hero.services.location_service import LocationService
 from office_hero.services.saga_service import SagaService
 from office_hero.services.schedule_suggestion_service import ScheduleSuggestionService
 from office_hero.services.vehicle_crew_service import VehicleCrewService
+from office_hero.services.vehicle_location_service import VehicleLocationService
 from office_hero.services.vehicle_service import VehicleService
 
 log = get_logger(__name__)
@@ -129,6 +132,7 @@ def create_app(
     vehicle_crew_service: VehicleCrewService | None = None,
     schedule_suggestion_service: ScheduleSuggestionService | None = None,
     job_dispatch_service: JobDispatchService | None = None,
+    vehicle_location_service: VehicleLocationService | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application.
 
@@ -213,7 +217,20 @@ def create_app(
     set_vehicle_service(vehicle_service)
     set_vehicle_crew_service(vehicle_crew_service)
 
-    # Slice-13: schedule suggestion service
+    # Slice-15: shared location repo (created before slice-13 so routing can use live positions).
+    # NOTE: the default VehicleLocationService uses _default_v_repo (set when vehicle_service
+    # is None). If you inject vehicle_service without also injecting vehicle_location_service,
+    # the two services will have disconnected vehicle repos and location writes will 404.
+    # Always inject vehicle_location_service when injecting vehicle_service in tests.
+    _default_location_repo: InMemoryVehicleLocationRepository | None = None
+    if vehicle_location_service is None:
+        _default_location_repo = InMemoryVehicleLocationRepository()
+        vehicle_location_service = VehicleLocationService(
+            location_repo=_default_location_repo,
+            vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
+        )
+
+    # Slice-13: schedule suggestion service (uses live GPS positions when available)
     if schedule_suggestion_service is None:
         from office_hero.adapters.routing.stub import StubRoutingAdapter
 
@@ -221,6 +238,7 @@ def create_app(
             job_repo=_default_job_repo or InMemoryJobRepository(),
             vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
             routing_adapter=StubRoutingAdapter(),
+            vehicle_location_repo=_default_location_repo,
         )
     set_schedule_suggestion_service(schedule_suggestion_service)
 
@@ -299,6 +317,11 @@ def create_app(
         service_provider=lambda: job_dispatch_service,
     )
     application.include_router(dispatch_router, tags=["dispatch"])
+
+    vehicle_location_router = create_vehicle_location_router(
+        service_provider=lambda: vehicle_location_service,
+    )
+    application.include_router(vehicle_location_router, tags=["vehicle-location"])
 
     return application
 
