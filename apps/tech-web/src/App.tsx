@@ -193,21 +193,24 @@ function NewJobView({ onBack, onCreated }: { onBack: () => void; onCreated: (j: 
         {error && <div className="alert alert-error">{error}</div>}
         <div className="card">
           <form onSubmit={(e) => void handleSubmit(e)}>
-            {([
-              ['title', 'Job title *', 'text', true],
-              ['customer_id', 'Customer ID *', 'text', true],
-              ['location_id', 'Location ID *', 'text', true],
-              ['service_type', 'Service type', 'text', false],
-            ] as const).map(([key, label, type, required]) => (
+            {(['title', 'customer_id', 'location_id'] as const).map((key) => (
               <div className="field" key={key}>
-                <label htmlFor={key}>{label}</label>
+                <label htmlFor={key}>{key === 'title' ? 'Job title *' : key === 'customer_id' ? 'Customer ID *' : 'Location ID *'}</label>
                 <input
-                  id={key} type={type} required={required}
-                  value={(form as unknown as Record<string, unknown>)[key] as string ?? ''}
-                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value || null }))}
+                  id={key} type="text" required
+                  value={form[key]}
+                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                 />
               </div>
             ))}
+            <div className="field">
+              <label htmlFor="service_type">Service type</label>
+              <input
+                id="service_type" type="text"
+                value={form.service_type ?? ''}
+                onChange={e => setForm(f => ({ ...f, service_type: e.target.value || null }))}
+              />
+            </div>
             <div className="field">
               <label htmlFor="duration">Duration (min)</label>
               <input id="duration" type="number" min={5} max={1440}
@@ -229,7 +232,7 @@ function NewJobView({ onBack, onCreated }: { onBack: () => void; onCreated: (j: 
 // Today view
 // ---------------------------------------------------------------------------
 
-function TodayView({ vehicleId, onLogout }: { vehicleId: string; onLogout: () => void }) {
+function TodayView({ vehicleId, workDate, onLogout }: { vehicleId: string; workDate: string; onLogout: () => void }) {
   const [jobs, setJobs] = useState<JobSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -239,7 +242,7 @@ function TodayView({ vehicleId, onLogout }: { vehicleId: string; onLogout: () =>
   const loadJobs = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const data = await listJobsApi({ assigned_vehicle_id: vehicleId, scheduled_for_date: todayIso() });
+      const data = await listJobsApi({ assigned_vehicle_id: vehicleId, scheduled_for_date: workDate });
       setJobs(data.items.slice().sort((a, b) => {
         if (!a.scheduled_for) return 1;
         if (!b.scheduled_for) return -1;
@@ -250,7 +253,7 @@ function TodayView({ vehicleId, onLogout }: { vehicleId: string; onLogout: () =>
     } finally {
       setLoading(false);
     }
-  }, [vehicleId]);
+  }, [vehicleId, workDate]);
 
   useEffect(() => { void loadJobs(); }, [loadJobs]);
 
@@ -330,7 +333,7 @@ function TodayView({ vehicleId, onLogout }: { vehicleId: string; onLogout: () =>
 type View =
   | { kind: 'login' }
   | { kind: 'loading' }
-  | { kind: 'today'; vehicleId: string }
+  | { kind: 'today'; vehicleId: string; workDate: string }
   | { kind: 'no-crew' }
   | { kind: 'error'; message: string };
 
@@ -340,7 +343,7 @@ export default function App() {
   useEffect(() => {
     if (view.kind !== 'loading') return;
     myCrewTodayApi()
-      .then(c => setView({ kind: 'today', vehicleId: c.vehicle_id }))
+      .then(c => setView({ kind: 'today', vehicleId: c.vehicle_id, workDate: c.work_date }))
       .catch(err => {
         const status = err instanceof ApiError ? err.status : 0;
         if (status === 401 || status === 403) {
@@ -387,5 +390,5 @@ export default function App() {
     );
   }
 
-  return <TodayView vehicleId={view.vehicleId} onLogout={handleLogout} />;
+  return <TodayView vehicleId={view.vehicleId} workDate={view.workDate} onLogout={handleLogout} />;
 }

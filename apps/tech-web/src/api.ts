@@ -87,10 +87,6 @@ export function listJobsApi(params: {
   return req(`/jobs?${q}`);
 }
 
-export function getJobApi(jobId: string): Promise<JobSummary> {
-  return req(`/jobs/${jobId}`);
-}
-
 export function startJobApi(jobId: string): Promise<JobSummary> {
   return req(`/jobs/${jobId}/start`, { method: 'POST' });
 }

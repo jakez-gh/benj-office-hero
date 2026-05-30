@@ -13,6 +13,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from office_hero.api.app import create_app
 from office_hero.api.limiter import limiter
+from office_hero.repositories.job_repository import InMemoryJobRepository
 from office_hero.repositories.vehicle_crew_repository import InMemoryVehicleCrewRepository
 from office_hero.repositories.vehicle_repository import InMemoryVehicleRepository
 from office_hero.services.vehicle_crew_service import VehicleCrewService
@@ -206,3 +207,84 @@ def test_my_crew_today_cross_tenant_isolation(client, tenant_id, user_id, v_repo
         headers=_headers(tenant_id, user_id),
     )
     assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Jobs filter: assigned_vehicle_id
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def job_repo() -> InMemoryJobRepository:
+    return InMemoryJobRepository()
+
+
+@pytest.fixture()
+def app_with_job_repo(crew_service, job_repo) -> FastAPI:
+    """App fixture that exposes the job repo so tests can seed data into it."""
+    from office_hero.api.limiter import limiter
+    from office_hero.services.job_service import JobService
+    from office_hero.repositories.mocks import InMemoryAuditService
+    from office_hero.repositories.customer_repository import InMemoryCustomerRepository
+    from office_hero.repositories.location_repository import InMemoryLocationRepository
+
+    from office_hero.services.custom_field_templates import registry as template_registry
+    job_service = JobService(
+        repo=job_repo,
+        customer_repo=InMemoryCustomerRepository(),
+        location_repo=InMemoryLocationRepository(),
+        audit=InMemoryAuditService(),
+        template_registry=template_registry,
+    )
+    saved = dict(limiter._route_limits)
+    limiter._route_limits.clear()
+    a = create_app(vehicle_crew_service=crew_service, job_service=job_service)
+    a.add_middleware(_TechTestAuthMiddleware)
+    yield a
+    limiter._route_limits.clear()
+    limiter._route_limits.update(saved)
+
+
+def test_jobs_filter_assigned_vehicle_id(app_with_job_repo, job_repo, tenant_id, user_id, v_repo):
+    """GET /jobs?assigned_vehicle_id=X returns only jobs assigned to that vehicle."""
+    async def _setup():
+        v1 = await v_repo.create(
+            tenant_id, license_plate="V1", nickname="Van 1",
+            make="Ford", model="Transit", year=2023,
+        )
+        v2 = await v_repo.create(
+            tenant_id, license_plate="V2", nickname="Van 2",
+            make="Ford", model="Transit", year=2023,
+        )
+        job1 = await job_repo.create(
+            tenant_id, customer_id=uuid4(), location_id=uuid4(), industry="plumbing",
+            title="Job for V1", description=None, priority=50, service_type=None,
+            requested_at=None, requested_until=None, estimated_duration_min=60,
+            custom_fields={}, created_by_user_id=user_id,
+        )
+        job2 = await job_repo.create(
+            tenant_id, customer_id=uuid4(), location_id=uuid4(), industry="plumbing",
+            title="Job for V2", description=None, priority=50, service_type=None,
+            requested_at=None, requested_until=None, estimated_duration_min=60,
+            custom_fields={}, created_by_user_id=user_id,
+        )
+        await job_repo.update_fields(job1.id, tenant_id, assigned_vehicle_id=v1.id)
+        await job_repo.update_fields(job2.id, tenant_id, assigned_vehicle_id=v2.id)
+        return v1, job1, job2
+
+    v1, job1, job2 = _run(_setup())
+
+    with TestClient(app_with_job_repo) as c:
+        resp = c.get(
+            f"/jobs?assigned_vehicle_id={v1.id}",
+            headers={
+                "X-Test-Tenant-Id": str(tenant_id),
+                "X-Test-User-Id": str(user_id),
+                "X-Test-Role": "dispatcher",
+                "X-Test-Permissions": "jobs:read",
+            },
+        )
+    assert resp.status_code == 200
+    ids = [j["id"] for j in resp.json()["items"]]
+    assert str(job1.id) in ids
+    assert str(job2.id) not in ids
