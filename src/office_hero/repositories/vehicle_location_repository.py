@@ -25,9 +25,7 @@ class VehicleLocationRepositoryProtocol(Protocol):
         recorded_at: datetime,
     ) -> VehicleLocation: ...
 
-    async def get_latest(
-        self, tenant_id: UUID, vehicle_id: UUID
-    ) -> VehicleLocation | None: ...
+    async def get_latest(self, tenant_id: UUID, vehicle_id: UUID) -> VehicleLocation | None: ...
 
 
 class VehicleLocationRepository:
@@ -59,9 +57,7 @@ class VehicleLocationRepository:
         await self.session.refresh(row)
         return row
 
-    async def get_latest(
-        self, tenant_id: UUID, vehicle_id: UUID
-    ) -> VehicleLocation | None:
+    async def get_latest(self, tenant_id: UUID, vehicle_id: UUID) -> VehicleLocation | None:
         stmt = (
             select(VehicleLocation)
             .where(
@@ -104,13 +100,8 @@ class InMemoryVehicleLocationRepository:
         self._rows.append(row)
         return row
 
-    async def get_latest(
-        self, tenant_id: UUID, vehicle_id: UUID
-    ) -> VehicleLocation | None:
-        matches = [
-            r for r in self._rows
-            if r.tenant_id == tenant_id and r.vehicle_id == vehicle_id
-        ]
+    async def get_latest(self, tenant_id: UUID, vehicle_id: UUID) -> VehicleLocation | None:
+        matches = [r for r in self._rows if r.tenant_id == tenant_id and r.vehicle_id == vehicle_id]
         if not matches:
             return None
         return max(matches, key=lambda r: r.recorded_at)

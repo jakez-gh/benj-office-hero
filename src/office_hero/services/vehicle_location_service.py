@@ -62,9 +62,7 @@ class VehicleLocationService:
         )
         return fix
 
-    async def get_latest(
-        self, tenant_id: UUID, vehicle_id: UUID
-    ) -> VehicleLocation | None:
+    async def get_latest(self, tenant_id: UUID, vehicle_id: UUID) -> VehicleLocation | None:
         """Return the most recent GPS fix for a vehicle, or None.
 
         Used by ScheduleSuggestionService (routing engine) to seed the vehicle

@@ -187,21 +187,23 @@ def test_record_location_lat_out_of_range(client, tenant_id, user_id, vehicle):
 
 def test_get_latest_returns_most_recent(loc_repo, v_repo, tenant_id):
     """get_latest returns the newest fix by recorded_at."""
-    import asyncio
     from decimal import Decimal
 
     v = _run(
-        v_repo.create(tenant_id, license_plate="GL-001", nickname="V",
-                      make="Ford", model="Transit", year=2023)
+        v_repo.create(
+            tenant_id, license_plate="GL-001", nickname="V", make="Ford", model="Transit", year=2023
+        )
     )
 
     async def _seed():
         t1 = datetime(2026, 5, 30, 10, 0, tzinfo=UTC)
         t2 = datetime(2026, 5, 30, 11, 0, tzinfo=UTC)
-        await loc_repo.create(tenant_id, v.id, lat=Decimal("1.0"), lng=Decimal("1.0"),
-                              accuracy_m=None, recorded_at=t1)
-        await loc_repo.create(tenant_id, v.id, lat=Decimal("2.0"), lng=Decimal("2.0"),
-                              accuracy_m=None, recorded_at=t2)
+        await loc_repo.create(
+            tenant_id, v.id, lat=Decimal("1.0"), lng=Decimal("1.0"), accuracy_m=None, recorded_at=t1
+        )
+        await loc_repo.create(
+            tenant_id, v.id, lat=Decimal("2.0"), lng=Decimal("2.0"), accuracy_m=None, recorded_at=t2
+        )
         return await loc_repo.get_latest(tenant_id, v.id)
 
     latest = _run(_seed())
