@@ -274,6 +274,13 @@ def create_app(
     job_router = create_job_router(service_provider=lambda: job_service)
     application.include_router(job_router, prefix="/jobs", tags=["jobs"])
 
+    # Tech router must be registered before the vehicles router so that
+    # /vehicles/my-crew-today is matched before /{vehicle_id} catches it.
+    tech_router = create_tech_router(
+        crew_service_provider=lambda: vehicle_crew_service,
+    )
+    application.include_router(tech_router, tags=["tech"])
+
     vehicle_router = create_vehicle_router(service_provider=lambda: vehicle_service)
     application.include_router(vehicle_router, prefix="/vehicles", tags=["vehicles"])
 
@@ -292,11 +299,6 @@ def create_app(
         service_provider=lambda: job_dispatch_service,
     )
     application.include_router(dispatch_router, tags=["dispatch"])
-
-    tech_router = create_tech_router(
-        crew_service_provider=lambda: vehicle_crew_service,
-    )
-    application.include_router(tech_router, tags=["tech"])
 
     return application
 

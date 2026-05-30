@@ -46,7 +46,7 @@ def create_tech_router(*, crew_service_provider) -> APIRouter:
         "/vehicles/my-crew-today",
         response_model=MyCrewTodayResponse,
         status_code=status.HTTP_200_OK,
-        dependencies=[Depends(require_permission("vehicle:read"))],
+        dependencies=[Depends(require_permission("vehicles:read"))],
     )
     @limiter.limit("60/minute")
     async def my_crew_today(request: Request) -> MyCrewTodayResponse:
