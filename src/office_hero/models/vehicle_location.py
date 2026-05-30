@@ -6,7 +6,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, Index, Numeric, String
+from sqlalchemy import DateTime, ForeignKey, Index, Numeric
 from sqlalchemy.orm import Mapped, mapped_column
 
 from office_hero.models import Base
@@ -23,7 +23,7 @@ class VehicleLocation(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     tenant_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
-    vehicle_id: Mapped[UUID] = mapped_column(nullable=False)
+    vehicle_id: Mapped[UUID] = mapped_column(ForeignKey("vehicles.id"), nullable=False)
     lat: Mapped[Decimal] = mapped_column(Numeric(9, 6), nullable=False)
     lng: Mapped[Decimal] = mapped_column(Numeric(9, 6), nullable=False)
     accuracy_m: Mapped[Decimal | None] = mapped_column(Numeric(8, 2), nullable=True)

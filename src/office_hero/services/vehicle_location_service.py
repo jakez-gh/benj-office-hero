@@ -65,5 +65,10 @@ class VehicleLocationService:
     async def get_latest(
         self, tenant_id: UUID, vehicle_id: UUID
     ) -> VehicleLocation | None:
-        """Return the most recent GPS fix for a vehicle, or None."""
+        """Return the most recent GPS fix for a vehicle, or None.
+
+        Used by ScheduleSuggestionService (routing engine) to seed the vehicle
+        start position. Returns None when no fix has been recorded — callers
+        should fall back to a depot coordinate in that case.
+        """
         return await self._location_repo.get_latest(tenant_id, vehicle_id)

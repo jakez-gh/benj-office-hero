@@ -35,6 +35,7 @@ def upgrade() -> None:
             nullable=False,
             server_default=sa.text("now()"),
         ),
+        sa.ForeignKeyConstraint(["vehicle_id"], ["vehicles.id"], name="fk_vehicle_locations_vehicle"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(

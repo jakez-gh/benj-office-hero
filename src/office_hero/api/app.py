@@ -132,7 +132,7 @@ def create_app(
     vehicle_crew_service: VehicleCrewService | None = None,
     schedule_suggestion_service: ScheduleSuggestionService | None = None,
     job_dispatch_service: JobDispatchService | None = None,
-    vehicle_location_service=None,
+    vehicle_location_service: VehicleLocationService | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application.
 

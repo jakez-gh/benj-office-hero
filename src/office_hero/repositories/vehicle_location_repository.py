@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Protocol
 from uuid import UUID, uuid4
@@ -91,8 +91,6 @@ class InMemoryVehicleLocationRepository:
         accuracy_m: Decimal | None,
         recorded_at: datetime,
     ) -> VehicleLocation:
-        from datetime import UTC
-
         row = VehicleLocation(
             id=uuid4(),
             tenant_id=tenant_id,
