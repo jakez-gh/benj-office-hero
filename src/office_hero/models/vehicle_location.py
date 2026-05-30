@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import DateTime, Index, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from office_hero.db.base import Base
+from office_hero.models import Base
 
 
 class VehicleLocation(Base):

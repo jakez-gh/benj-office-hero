@@ -24,6 +24,7 @@ from office_hero.api.routes.admin import audit_router, create_admin_router
 from office_hero.api.routes.customers import create_customer_router
 from office_hero.api.routes.dispatch import create_dispatch_router
 from office_hero.api.routes.jobs import create_job_router
+from office_hero.api.routes.vehicle_location import create_vehicle_location_router
 from office_hero.api.routes.locations import create_location_router
 from office_hero.api.routes.sagas import create_saga_router
 from office_hero.api.routes.schedule_options import create_schedule_options_router
@@ -57,6 +58,7 @@ from office_hero.repositories.mocks import (
 )
 from office_hero.repositories.protocols import OutboxRepository
 from office_hero.repositories.vehicle_crew_repository import InMemoryVehicleCrewRepository
+from office_hero.repositories.vehicle_location_repository import InMemoryVehicleLocationRepository
 from office_hero.repositories.vehicle_repository import InMemoryVehicleRepository
 from office_hero.services.custom_field_templates import (
     registry as _template_registry_module,
@@ -68,6 +70,7 @@ from office_hero.services.location_service import LocationService
 from office_hero.services.saga_service import SagaService
 from office_hero.services.schedule_suggestion_service import ScheduleSuggestionService
 from office_hero.services.vehicle_crew_service import VehicleCrewService
+from office_hero.services.vehicle_location_service import VehicleLocationService
 from office_hero.services.vehicle_service import VehicleService
 
 log = get_logger(__name__)
@@ -129,6 +132,7 @@ def create_app(
     vehicle_crew_service: VehicleCrewService | None = None,
     schedule_suggestion_service: ScheduleSuggestionService | None = None,
     job_dispatch_service: JobDispatchService | None = None,
+    vehicle_location_service=None,
 ) -> FastAPI:
     """Create and configure the FastAPI application.
 
@@ -299,6 +303,17 @@ def create_app(
         service_provider=lambda: job_dispatch_service,
     )
     application.include_router(dispatch_router, tags=["dispatch"])
+
+    # Slice-15: vehicle location
+    if vehicle_location_service is None:
+        vehicle_location_service = VehicleLocationService(
+            location_repo=InMemoryVehicleLocationRepository(),
+            vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
+        )
+    vehicle_location_router = create_vehicle_location_router(
+        service_provider=lambda: vehicle_location_service,
+    )
+    application.include_router(vehicle_location_router, tags=["vehicle-location"])
 
     return application
 
