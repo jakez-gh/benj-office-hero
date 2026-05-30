@@ -217,7 +217,11 @@ def create_app(
     set_vehicle_service(vehicle_service)
     set_vehicle_crew_service(vehicle_crew_service)
 
-    # Slice-15: shared location repo (created before slice-13 so routing can use live positions)
+    # Slice-15: shared location repo (created before slice-13 so routing can use live positions).
+    # NOTE: the default VehicleLocationService uses _default_v_repo (set when vehicle_service
+    # is None). If you inject vehicle_service without also injecting vehicle_location_service,
+    # the two services will have disconnected vehicle repos and location writes will 404.
+    # Always inject vehicle_location_service when injecting vehicle_service in tests.
     _default_location_repo: InMemoryVehicleLocationRepository | None = None
     if vehicle_location_service is None:
         _default_location_repo = InMemoryVehicleLocationRepository()

@@ -22,7 +22,7 @@ class VehicleLocation(Base):
     __tablename__ = "vehicle_locations"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    tenant_id: Mapped[UUID] = mapped_column(nullable=False, index=True)
+    tenant_id: Mapped[UUID] = mapped_column(nullable=False)
     vehicle_id: Mapped[UUID] = mapped_column(ForeignKey("vehicles.id"), nullable=False)
     lat: Mapped[Decimal] = mapped_column(Numeric(9, 6), nullable=False)
     lng: Mapped[Decimal] = mapped_column(Numeric(9, 6), nullable=False)
@@ -39,6 +39,7 @@ class VehicleLocation(Base):
             "vehicle_id",
             "recorded_at",
         ),
+        Index("idx_vehicle_locations_tenant_id", "tenant_id"),
     )
 
     def __repr__(self) -> str:
