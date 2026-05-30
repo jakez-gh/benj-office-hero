@@ -47,7 +47,7 @@ jobs:
       - name: Run bandit
         run: |
           if find src -name "*.py" 2>/dev/null | grep -q .; then
-            bandit -r src -ll -f json -o bandit-report.json 2>&1 | tee /dev/stderr
+            bandit -r src -ll -f json -o bandit-report.json
           else
             echo "No Python source files in src/ — skipping."
           fi
