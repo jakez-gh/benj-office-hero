@@ -217,3 +217,39 @@ class VehicleAlreadyBookedError(Exception):
         self.scheduled_for = scheduled_for
         self.request_id = request_id
         super().__init__(message)
+
+
+class RouteNotFoundError(Exception):
+    """Raised when a Route cannot be found for the given tenant."""
+
+    def __init__(self, message: str = "Route not found"):
+        self.message = message
+        super().__init__(message)
+
+
+class InvalidRouteTransitionError(Exception):
+    """Raised when a route status transition is not permitted."""
+
+    def __init__(self, from_status: str, to_status: str):
+        self.from_status = from_status
+        self.to_status = to_status
+        self.message = f"Cannot transition route from '{from_status}' to '{to_status}'"
+        super().__init__(self.message)
+
+
+class RouteCommitConflictError(Exception):
+    """Raised when a dispatch commit conflicts with existing route/job state."""
+
+    def __init__(self, message: str, reason: str = "conflict"):
+        self.message = message
+        self.reason = reason
+        super().__init__(message)
+
+
+class ManualSequenceInvalidError(Exception):
+    """Raised when a manual dispatch sequence fails validation."""
+
+    def __init__(self, message: str, errors: list[str] | None = None):
+        self.message = message
+        self.errors = errors or []
+        super().__init__(message)
