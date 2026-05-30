@@ -9,6 +9,8 @@ on:
 jobs:
   sync-check:
     name: Branch up-to-date check
+    # Skip on direct pushes to main — HEAD is always up to date with itself
+    if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +31,9 @@ jobs:
     name: Lint & format
     runs-on: ubuntu-latest
     needs: sync-check
+    # Run even when sync-check was skipped (direct push to main); skip only on
+    # explicit failure or cancellation of sync-check.
+    if: always() && !cancelled() && (needs.sync-check.result == 'success' || needs.sync-check.result == 'skipped')
     steps:
       - uses: actions/checkout@v4
 
@@ -75,7 +80,7 @@ jobs:
         run: poetry export --with dev --without-hashes --format=requirements.txt --output=requirements-audit.txt
 
       - name: Install security tools
-        run: pip install bandit pip-audit
+        run: pip install "bandit==1.7.10" "pip-audit==2.7.3"
 
       - name: Run bandit (static analysis)
         run: |
@@ -126,17 +131,15 @@ jobs:
         run: poetry install --with dev --no-interaction
 
       - name: Run tests
-        id: run-tests
         run: |
           if find tests -name "test_*.py" | grep -q .; then
             poetry run pytest -q --tb=short
           else
             echo "No test files found — skipping pytest."
           fi
-        continue-on-error: true
 
       - name: Open GitHub issue on test failure
-        if: steps.run-tests.outcome == 'failure'
+        if: failure()
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -155,7 +158,6 @@ jobs:
               body,
               labels: ['ci-failure'],
             });
-            core.setFailed('Tests failed — issue created.');
 
       - name: Upload coverage report
         if: always()

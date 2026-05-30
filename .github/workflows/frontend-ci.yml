@@ -57,6 +57,8 @@ jobs:
         run: pnpm -r --if-present run build
 
       - name: Test
+        # tech-mobile excluded: React Native / Expo tests require a device
+        # emulator not available in standard Linux CI runners
         run: pnpm -r --filter '!tech-mobile' --if-present run test
 
   e2e:
@@ -96,9 +98,14 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Run E2E tests
+        id: e2e
         working-directory: apps/admin-web
         run: npx playwright test
         continue-on-error: true
+
+      - name: Warn on E2E failure
+        if: steps.e2e.outcome == 'failure'
+        run: echo "::warning::E2E tests failed — check the Playwright report artifact"
 
       - name: Upload Playwright report
         if: always()

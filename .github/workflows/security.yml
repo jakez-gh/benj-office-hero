@@ -2,8 +2,8 @@ name: Scheduled Security Scan
 
 on:
   schedule:
-    # 4x daily: 06:00, 12:00, 18:00, 00:00 UTC
-    - cron: "0 6,12,18,0 * * *"
+    # Once daily at 06:00 UTC — CVE feeds update at most daily
+    - cron: "0 6 * * *"
   workflow_dispatch:
 
 jobs:
@@ -18,11 +18,17 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install Poetry
+        run: pipx install poetry==1.8.3
+
+      - name: Export requirements from lockfile
+        run: poetry export --with dev --without-hashes --format=requirements.txt --output=requirements-audit.txt
+
       - name: Install pip-audit
-        run: pip install pip-audit
+        run: pip install "pip-audit==2.7.3"
 
       - name: Audit dependencies
-        run: pip-audit --desc
+        run: pip-audit --desc -r requirements-audit.txt
 
   bandit:
     name: Bandit static analysis
@@ -36,13 +42,12 @@ jobs:
           python-version: "3.11"
 
       - name: Install bandit
-        run: pip install bandit
+        run: pip install "bandit==1.7.10"
 
       - name: Run bandit
         run: |
           if find src -name "*.py" 2>/dev/null | grep -q .; then
             bandit -r src -ll -f json -o bandit-report.json
-            bandit -r src -ll
           else
             echo "No Python source files in src/ — skipping."
           fi
