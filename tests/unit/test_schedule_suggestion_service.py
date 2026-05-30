@@ -260,3 +260,48 @@ async def test_suggested_start_rounded_to_15_minutes(j_repo, v_repo, tenant_id, 
 
     assert len(options) == 1
     assert options[0].suggested_start.minute == 30
+
+
+async def test_live_gps_position_used_when_available(j_repo, v_repo, tenant_id, user_id):
+    """ScheduleSuggestionService uses the latest GPS fix over home_base coords."""
+    from decimal import Decimal
+
+    from office_hero.repositories.vehicle_location_repository import (
+        InMemoryVehicleLocationRepository,
+    )
+
+    loc_repo = InMemoryVehicleLocationRepository()
+    called_with: list[tuple[float, float]] = []
+
+    class _CapturingRouter:
+        async def get_route(self, from_lat, from_lng, to_lat, to_lng):
+            called_with.append((from_lat, from_lng))
+            return RouteResult(duration_seconds=300, distance_meters=2000)
+
+    svc = ScheduleSuggestionService(
+        job_repo=j_repo,
+        vehicle_repo=v_repo,
+        routing_adapter=_CapturingRouter(),
+        vehicle_location_repo=loc_repo,
+    )
+
+    vehicle = await v_repo.create(tenant_id, license_plate="GPS-001")
+    job = await _make_job(j_repo, tenant_id, user_id)
+
+    # Post a GPS fix far from home base
+    gps_lat, gps_lng = 51.5074, -0.1278
+    await loc_repo.create(
+        tenant_id,
+        vehicle.id,
+        lat=Decimal(str(gps_lat)),
+        lng=Decimal(str(gps_lng)),
+        accuracy_m=None,
+        recorded_at=datetime(2026, 6, 1, 8, 0, tzinfo=UTC),
+    )
+
+    start, end = _window()
+    options = await svc.get_options(tenant_id, job.id, window_start=start, window_end=end)
+
+    assert len(options) == 1
+    assert called_with[0][0] == pytest.approx(gps_lat)
+    assert called_with[0][1] == pytest.approx(gps_lng)
