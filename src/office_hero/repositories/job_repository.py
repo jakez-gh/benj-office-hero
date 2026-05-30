@@ -51,6 +51,7 @@ class JobRepositoryProtocol(Protocol):
         *,
         status: list[str] | None = None,
         customer_id: UUID | None = None,
+        assigned_vehicle_id: UUID | None = None,
         scheduled_for_date: date | None = None,
         search: str | None = None,
         limit: int = 50,
@@ -140,6 +141,7 @@ class JobRepository:
         *,
         status: list[str] | None = None,
         customer_id: UUID | None = None,
+        assigned_vehicle_id: UUID | None = None,
         scheduled_for_date: date | None = None,
         search: str | None = None,
         limit: int = 50,
@@ -152,6 +154,8 @@ class JobRepository:
             where_clauses.append(Job.status.in_(status))
         if customer_id is not None:
             where_clauses.append(Job.customer_id == customer_id)
+        if assigned_vehicle_id is not None:
+            where_clauses.append(Job.assigned_vehicle_id == assigned_vehicle_id)
         if scheduled_for_date is not None:
             # Cast the timestamptz to date for comparison.
             where_clauses.append(func.date(Job.scheduled_for) == scheduled_for_date)
@@ -350,6 +354,7 @@ class InMemoryJobRepository:
         *,
         status: list[str] | None = None,
         customer_id: UUID | None = None,
+        assigned_vehicle_id: UUID | None = None,
         scheduled_for_date: date | None = None,
         search: str | None = None,
         limit: int = 50,
@@ -362,6 +367,8 @@ class InMemoryJobRepository:
             rows = [r for r in rows if r["status"] in status]
         if customer_id is not None:
             rows = [r for r in rows if r["customer_id"] == customer_id]
+        if assigned_vehicle_id is not None:
+            rows = [r for r in rows if r.get("assigned_vehicle_id") == assigned_vehicle_id]
         if scheduled_for_date is not None:
             rows = [
                 r

@@ -206,6 +206,12 @@ class VehicleCrewService:
         """Return the crew for a specific vehicle and date."""
         return await self.crew_repo.get_for_vehicle_date(tenant_id, vehicle_id, work_date)
 
+    async def list_for_user_date(
+        self, tenant_id: UUID, user_id: UUID, work_date: date
+    ) -> list[VehicleCrew]:
+        """Return crews the user is a member of on the given date."""
+        return await self.crew_repo.list_for_user_date(tenant_id, user_id, work_date)
+
     async def update_details(
         self,
         tenant_id: UUID,
