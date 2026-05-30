@@ -27,6 +27,7 @@ from office_hero.api.routes.jobs import create_job_router
 from office_hero.api.routes.locations import create_location_router
 from office_hero.api.routes.sagas import create_saga_router
 from office_hero.api.routes.schedule_options import create_schedule_options_router
+from office_hero.api.routes.tech import create_tech_router
 from office_hero.api.routes.vehicle_crews import create_vehicle_crew_router
 from office_hero.api.routes.vehicles import create_vehicle_router
 from office_hero.api.state import (
@@ -272,6 +273,13 @@ def create_app(
 
     job_router = create_job_router(service_provider=lambda: job_service)
     application.include_router(job_router, prefix="/jobs", tags=["jobs"])
+
+    # Tech router must be registered before the vehicles router so that
+    # /vehicles/my-crew-today is matched before /{vehicle_id} catches it.
+    tech_router = create_tech_router(
+        crew_service_provider=lambda: vehicle_crew_service,
+    )
+    application.include_router(tech_router, tags=["tech"])
 
     vehicle_router = create_vehicle_router(service_provider=lambda: vehicle_service)
     application.include_router(vehicle_router, prefix="/vehicles", tags=["vehicles"])
