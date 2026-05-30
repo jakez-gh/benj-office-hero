@@ -11,6 +11,7 @@ Adds:
 """
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "0008_vehicle_locations"
@@ -35,7 +36,9 @@ def upgrade() -> None:
             nullable=False,
             server_default=sa.text("now()"),
         ),
-        sa.ForeignKeyConstraint(["vehicle_id"], ["vehicles.id"], name="fk_vehicle_locations_vehicle"),
+        sa.ForeignKeyConstraint(
+            ["vehicle_id"], ["vehicles.id"], name="fk_vehicle_locations_vehicle"
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
