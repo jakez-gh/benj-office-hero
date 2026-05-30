@@ -24,10 +24,10 @@ from office_hero.api.routes.admin import audit_router, create_admin_router
 from office_hero.api.routes.customers import create_customer_router
 from office_hero.api.routes.dispatch import create_dispatch_router
 from office_hero.api.routes.jobs import create_job_router
-from office_hero.api.routes.tech import create_tech_router
 from office_hero.api.routes.locations import create_location_router
 from office_hero.api.routes.sagas import create_saga_router
 from office_hero.api.routes.schedule_options import create_schedule_options_router
+from office_hero.api.routes.tech import create_tech_router
 from office_hero.api.routes.vehicle_crews import create_vehicle_crew_router
 from office_hero.api.routes.vehicles import create_vehicle_router
 from office_hero.api.state import (

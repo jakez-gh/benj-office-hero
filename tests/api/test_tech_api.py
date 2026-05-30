@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, date, datetime, time
+from datetime import UTC, datetime, time
 from uuid import UUID, uuid4
 
 import pytest
@@ -228,12 +228,11 @@ def job_repo() -> InMemoryJobRepository:
 def app_with_job_repo(crew_service, job_repo) -> FastAPI:
     """App fixture that exposes the job repo so tests can seed data into it."""
     from office_hero.api.limiter import limiter
-    from office_hero.services.job_service import JobService
-    from office_hero.repositories.mocks import InMemoryAuditService
     from office_hero.repositories.customer_repository import InMemoryCustomerRepository
     from office_hero.repositories.location_repository import InMemoryLocationRepository
-
+    from office_hero.repositories.mocks import InMemoryAuditService
     from office_hero.services.custom_field_templates import registry as template_registry
+    from office_hero.services.job_service import JobService
 
     job_service = JobService(
         repo=job_repo,
