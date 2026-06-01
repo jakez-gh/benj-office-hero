@@ -10,7 +10,10 @@ from office_hero.services.auth_service import AuthService
 
 if TYPE_CHECKING:
     from office_hero.adapters.geocoding.protocol import GeocodingAdapter
+    from office_hero.repositories.route_repository import RouteRepositoryProtocol
+    from office_hero.repositories.route_stop_repository import RouteStopRepositoryProtocol
     from office_hero.services.customer_service import CustomerService
+    from office_hero.services.dispatch_service import DispatchService
     from office_hero.services.job_dispatch_service import JobDispatchService
     from office_hero.services.job_service import JobService
     from office_hero.services.location_service import LocationService
@@ -29,6 +32,9 @@ _vehicle_service: VehicleService | None = None
 _vehicle_crew_service: VehicleCrewService | None = None
 _schedule_suggestion_service: ScheduleSuggestionService | None = None
 _job_dispatch_service: JobDispatchService | None = None
+_route_repository: RouteRepositoryProtocol | None = None
+_route_stop_repository: RouteStopRepositoryProtocol | None = None
+_dispatch_service: DispatchService | None = None
 
 
 def get_engine() -> AsyncEngine:
@@ -195,3 +201,51 @@ def get_job_dispatch_service() -> JobDispatchService:
             "JobDispatchService not initialized. " "Ensure app has been created with create_app()."
         )
     return _job_dispatch_service
+
+
+# --- Slice 14: Route management service and repositories ---
+
+
+def set_route_repository(repo: RouteRepositoryProtocol) -> None:
+    """Register the route repository."""
+    global _route_repository
+    _route_repository = repo
+
+
+def get_route_repository() -> RouteRepositoryProtocol:
+    """Retrieve the registered route repository."""
+    if _route_repository is None:
+        raise RuntimeError(
+            "RouteRepository not initialized. Ensure app has been created with create_app()."
+        )
+    return _route_repository
+
+
+def set_route_stop_repository(repo: RouteStopRepositoryProtocol) -> None:
+    """Register the route stop repository."""
+    global _route_stop_repository
+    _route_stop_repository = repo
+
+
+def get_route_stop_repository() -> RouteStopRepositoryProtocol:
+    """Retrieve the registered route stop repository."""
+    if _route_stop_repository is None:
+        raise RuntimeError(
+            "RouteStopRepository not initialized. Ensure app has been created with create_app()."
+        )
+    return _route_stop_repository
+
+
+def set_dispatch_service(service: DispatchService) -> None:
+    """Register the dispatch service."""
+    global _dispatch_service
+    _dispatch_service = service
+
+
+def get_dispatch_service() -> DispatchService:
+    """Retrieve the registered dispatch service."""
+    if _dispatch_service is None:
+        raise RuntimeError(
+            "DispatchService not initialized. Ensure app has been created with create_app()."
+        )
+    return _dispatch_service
