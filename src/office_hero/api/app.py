@@ -201,6 +201,7 @@ def create_app(
 
     # Slice-12 defaults: in-memory vehicle repos
     _default_v_repo: InMemoryVehicleRepository | None = None
+    vc_repo: InMemoryVehicleCrewRepository | None = None
     if vehicle_service is None or vehicle_crew_service is None:
         v_audit = InMemoryAuditService()
         _default_v_repo = InMemoryVehicleRepository()
@@ -265,7 +266,7 @@ def create_app(
         stop_repo=route_stop_repo,
         job_repo=_default_job_repo or InMemoryJobRepository(),
         vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
-        vehicle_crew_repo=vc_repo if vehicle_crew_service else InMemoryVehicleCrewRepository(),
+        vehicle_crew_repo=vc_repo or InMemoryVehicleCrewRepository(),
         schedule_service=schedule_suggestion_service,
         audit=audit,
     )
