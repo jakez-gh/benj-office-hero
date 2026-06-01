@@ -12,8 +12,12 @@ from office_hero.core.exceptions import (
     CustomFieldValidationError,
     InvalidCrewMemberError,
     InvalidJobTransitionError,
+    InvalidRouteTransitionError,
     JobNotFoundError,
+    ManualSequenceInvalidError,
     PermissionError,
+    RouteCommitConflictError,
+    RouteNotFoundError,
     RoutingError,
     TenantError,
     VehicleCrewNotFoundError,
@@ -202,6 +206,72 @@ async def routing_error_handler(request: Request, exc: RoutingError) -> JSONResp
     )
 
 
+async def route_not_found_handler(request: Request, exc: RouteNotFoundError) -> JSONResponse:
+    """Convert RouteNotFoundError to 404 Not Found."""
+    request_id = getattr(request.state, "request_id", None)
+    return JSONResponse(
+        status_code=404,
+        content={"detail": str(exc), "request_id": request_id},
+    )
+
+
+async def invalid_route_transition_handler(
+    request: Request, exc: InvalidRouteTransitionError
+) -> JSONResponse:
+    """Convert InvalidRouteTransitionError to 422 Unprocessable Entity."""
+    request_id = getattr(request.state, "request_id", None)
+    log.warning(
+        "route.invalid_transition",
+        from_status=str(exc.from_status),
+        to_status=str(exc.to_status),
+        request_id=request_id,
+    )
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": "Invalid route status transition",
+            "from": str(exc.from_status),
+            "to": str(exc.to_status),
+            "request_id": request_id,
+        },
+    )
+
+
+async def route_commit_conflict_handler(
+    request: Request, exc: RouteCommitConflictError
+) -> JSONResponse:
+    """Convert RouteCommitConflictError to 409 Conflict."""
+    request_id = getattr(request.state, "request_id", None)
+    log.warning(
+        "route.commit_conflict",
+        reason=exc.reason,
+        request_id=request_id,
+    )
+    return JSONResponse(
+        status_code=409,
+        content={
+            "detail": str(exc),
+            "reason": exc.reason,
+            "request_id": request_id,
+        },
+    )
+
+
+async def manual_sequence_invalid_handler(
+    request: Request, exc: ManualSequenceInvalidError
+) -> JSONResponse:
+    """Convert ManualSequenceInvalidError to 422 Unprocessable Entity."""
+    request_id = getattr(request.state, "request_id", None)
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": str(exc),
+            "errors": getattr(exc, "errors", []),
+            "request_id": request_id,
+        },
+    )
+
+
 def register_exception_handlers(app) -> None:
     """Register all global exception handlers on the FastAPI app."""
     app.add_exception_handler(AuthError, auth_error_handler)
@@ -214,6 +284,10 @@ def register_exception_handlers(app) -> None:
     app.add_exception_handler(VehicleCrewNotFoundError, vehicle_crew_not_found_handler)
     app.add_exception_handler(CrewAssignmentConflictError, crew_assignment_conflict_handler)
     app.add_exception_handler(InvalidCrewMemberError, invalid_crew_member_handler)
+    app.add_exception_handler(RouteNotFoundError, route_not_found_handler)
+    app.add_exception_handler(InvalidRouteTransitionError, invalid_route_transition_handler)
+    app.add_exception_handler(RouteCommitConflictError, route_commit_conflict_handler)
+    app.add_exception_handler(ManualSequenceInvalidError, manual_sequence_invalid_handler)
     app.add_exception_handler(RoutingError, routing_error_handler)
     app.add_exception_handler(RateLimitExceeded, rate_limit_error_handler)
     app.add_exception_handler(Exception, unhandled_exception_handler)
