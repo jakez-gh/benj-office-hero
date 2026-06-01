@@ -25,6 +25,7 @@ from office_hero.api.routes.customers import create_customer_router
 from office_hero.api.routes.dispatch import create_dispatch_router
 from office_hero.api.routes.jobs import create_job_router
 from office_hero.api.routes.locations import create_location_router
+from office_hero.api.routes.routes import create_routes_router
 from office_hero.api.routes.sagas import create_saga_router
 from office_hero.api.routes.schedule_options import create_schedule_options_router
 from office_hero.api.routes.tech import create_tech_router
@@ -34,11 +35,14 @@ from office_hero.api.routes.vehicles import create_vehicle_router
 from office_hero.api.state import (
     set_auth_service,
     set_customer_service,
+    set_dispatch_service,
     set_engine,
     set_geocoding_adapter,
     set_job_dispatch_service,
     set_job_service,
     set_location_service,
+    set_route_repository,
+    set_route_stop_repository,
     set_schedule_suggestion_service,
     set_vehicle_crew_service,
     set_vehicle_service,
@@ -57,6 +61,8 @@ from office_hero.repositories.mocks import (
     MockSagaRepository,
 )
 from office_hero.repositories.protocols import OutboxRepository
+from office_hero.repositories.route_repository import InMemoryRouteRepository
+from office_hero.repositories.route_stop_repository import InMemoryRouteStopRepository
 from office_hero.repositories.vehicle_crew_repository import InMemoryVehicleCrewRepository
 from office_hero.repositories.vehicle_location_repository import InMemoryVehicleLocationRepository
 from office_hero.repositories.vehicle_repository import InMemoryVehicleRepository
@@ -64,6 +70,7 @@ from office_hero.services.custom_field_templates import (
     registry as _template_registry_module,
 )  # noqa: F401
 from office_hero.services.customer_service import CustomerService
+from office_hero.services.dispatch_service import DispatchService
 from office_hero.services.job_dispatch_service import JobDispatchService
 from office_hero.services.job_service import JobService
 from office_hero.services.location_service import LocationService
@@ -250,6 +257,22 @@ def create_app(
         )
     set_job_dispatch_service(job_dispatch_service)
 
+    # Slice-14 (dispatch route management): route repositories and dispatch service
+    route_repo = InMemoryRouteRepository()
+    route_stop_repo = InMemoryRouteStopRepository()
+    dispatch_service = DispatchService(
+        route_repo=route_repo,
+        stop_repo=route_stop_repo,
+        job_repo=_default_job_repo or InMemoryJobRepository(),
+        vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
+        vehicle_crew_repo=vc_repo if vehicle_crew_service else InMemoryVehicleCrewRepository(),
+        schedule_service=schedule_suggestion_service,
+        audit=audit,
+    )
+    set_route_repository(route_repo)
+    set_route_stop_repository(route_stop_repo)
+    set_dispatch_service(dispatch_service)
+
     application = FastAPI(
         title="Office Hero",
         description="Back-office management API for office services",
@@ -322,6 +345,12 @@ def create_app(
         service_provider=lambda: vehicle_location_service,
     )
     application.include_router(vehicle_location_router, tags=["vehicle-location"])
+
+    routes_router = create_routes_router(
+        service_provider=lambda: dispatch_service,
+        repo_provider=lambda: route_repo,
+    )
+    application.include_router(routes_router, tags=["routes"])
 
     return application
 
