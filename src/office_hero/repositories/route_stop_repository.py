@@ -23,6 +23,8 @@ class StopRow:
 
 
 class RouteStopRepositoryProtocol(Protocol):
+    async def get_by_id(self, stop_id: UUID, tenant_id: UUID) -> RouteStop | None: ...
+
     async def bulk_insert(
         self, tenant_id: UUID, route_id: UUID, stops: list[StopRow]
     ) -> list[RouteStop]: ...
@@ -51,6 +53,13 @@ class RouteStopRepository:
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
+
+    async def get_by_id(self, stop_id: UUID, tenant_id: UUID) -> RouteStop | None:
+        stmt = select(RouteStop).where(
+            RouteStop.id == stop_id, RouteStop.tenant_id == tenant_id
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def bulk_insert(
         self, tenant_id: UUID, route_id: UUID, stops: list[StopRow]
@@ -126,6 +135,10 @@ class InMemoryRouteStopRepository:
 
     def __init__(self) -> None:
         self._rows: dict[UUID, RouteStop] = {}
+
+    async def get_by_id(self, stop_id: UUID, tenant_id: UUID) -> RouteStop | None:
+        stop = self._rows.get(stop_id)
+        return stop if (stop is not None and stop.tenant_id == tenant_id) else None
 
     async def bulk_insert(
         self, tenant_id: UUID, route_id: UUID, stops: list[StopRow]
