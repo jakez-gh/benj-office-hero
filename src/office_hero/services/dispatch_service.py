@@ -125,7 +125,6 @@ class DispatchService:
             )
 
         # 3. Resolve crew for this vehicle/date
-        crews = await self._crew_repo.list_for_user_date(tenant_id, user_id, work_date)
         crew = await self._crew_repo.get_for_vehicle_date(tenant_id, vehicle_id, work_date)
         if crew is None:
             raise RouteCommitConflictError(
@@ -255,7 +254,9 @@ class DispatchService:
     async def mark_stop_arrived(
         self, tenant_id: UUID, user_id: UUID, stop_id: UUID
     ) -> RouteStop:
-        stop = await self._get_stop_or_raise(tenant_id, stop_id)
+        stop = await self._stop_repo.get_by_id(stop_id, tenant_id)
+        if stop is None:
+            raise RouteNotFoundError(f"RouteStop {stop_id} not found")
         if not can_stop_transition(RouteStopStatus(stop.status), RouteStopStatus.ARRIVED):
             raise InvalidRouteTransitionError(stop.status, RouteStopStatus.ARRIVED)
         return await self._stop_repo.update_status(
@@ -265,7 +266,9 @@ class DispatchService:
     async def mark_stop_complete(
         self, tenant_id: UUID, user_id: UUID, stop_id: UUID
     ) -> RouteStop:
-        stop = await self._get_stop_or_raise(tenant_id, stop_id)
+        stop = await self._stop_repo.get_by_id(stop_id, tenant_id)
+        if stop is None:
+            raise RouteNotFoundError(f"RouteStop {stop_id} not found")
         if not can_stop_transition(RouteStopStatus(stop.status), RouteStopStatus.COMPLETE):
             raise InvalidRouteTransitionError(stop.status, RouteStopStatus.COMPLETE)
         stop = await self._stop_repo.update_status(
@@ -275,9 +278,11 @@ class DispatchService:
         return stop
 
     async def mark_stop_skipped(
-        self, tenant_id: UUID, user_id: UUID, stop_id: UUID
+        self, tenant_id: UUID, user_id: UUID, stop_id: UUID, reason: str = ""
     ) -> RouteStop:
-        stop = await self._get_stop_or_raise(tenant_id, stop_id)
+        stop = await self._stop_repo.get_by_id(stop_id, tenant_id)
+        if stop is None:
+            raise RouteNotFoundError(f"RouteStop {stop_id} not found")
         if not can_stop_transition(RouteStopStatus(stop.status), RouteStopStatus.SKIPPED):
             raise InvalidRouteTransitionError(stop.status, RouteStopStatus.SKIPPED)
         stop = await self._stop_repo.update_status(stop_id, tenant_id, RouteStopStatus.SKIPPED)
@@ -377,21 +382,6 @@ class DispatchService:
             for i, jid in enumerate(sequence)
         ]
         return vehicle_id, stop_rows
-
-    async def _get_stop_or_raise(self, tenant_id: UUID, stop_id: UUID) -> RouteStop:
-        stops = await self._stop_repo.get_for_route(tenant_id, stop_id)
-        # get_for_route takes route_id — need direct stop lookup
-        from office_hero.models.route import RouteStop as _RS
-
-        if hasattr(self._stop_repo, "_rows"):
-            stop = self._stop_repo._rows.get(stop_id)  # type: ignore[union-attr]
-            if stop is None or stop.tenant_id != tenant_id:
-                raise RouteNotFoundError(f"RouteStop {stop_id} not found")
-            return stop
-        # SQLAlchemy path — delegate to update_status get
-        from sqlalchemy import select
-
-        raise RouteNotFoundError(f"RouteStop {stop_id} — use SA impl for prod")
 
     async def _maybe_finalise_route(self, tenant_id: UUID, route_id: UUID) -> None:
         stops = await self._stop_repo.get_for_route(tenant_id, route_id)
