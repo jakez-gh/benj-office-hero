@@ -6,7 +6,7 @@ from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, field_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, field_validator, model_validator
 
 
 class RouteStopRead(BaseModel):
@@ -89,9 +89,9 @@ class DispatchCommitRequest(BaseModel):
             raise ValueError("notes must be <= 2048 characters")
         return v
 
-    def __init__(self, **data):
-        super().__init__(**data)
-        # Validate exactly one of option_kind or (manual_vehicle_id, manual_sequence)
+    @model_validator(mode="after")
+    def validate_exactly_one_mode(self) -> "DispatchCommitRequest":
+        """Validate exactly one of option_kind or (manual_vehicle_id, manual_sequence) is provided."""
         has_option = self.option_kind is not None
         has_manual = (
             self.manual_vehicle_id is not None and self.manual_sequence is not None
@@ -100,6 +100,7 @@ class DispatchCommitRequest(BaseModel):
             raise ValueError(
                 "Exactly one of option_kind or (manual_vehicle_id, manual_sequence) must be provided"
             )
+        return self
 
 
 class RouteCancelRequest(BaseModel):
