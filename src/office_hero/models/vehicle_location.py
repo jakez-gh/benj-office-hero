@@ -8,7 +8,7 @@ from uuid import UUID
 from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from office_hero.db.base import Base
+from office_hero.models import Base
 
 
 class VehicleLocation(Base):

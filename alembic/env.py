@@ -1,13 +1,25 @@
 import asyncio
+import os
 from logging.config import fileConfig
 
+from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
+# Load .env file
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# Get DATABASE_URL from environment
+database_url = os.environ.get("DATABASE_URL")
+if database_url:
+    # Convert asyncpg URL to sync psycopg URL for alembic
+    database_url = database_url.replace("postgresql+asyncpg://", "postgresql+psycopg://")
+    config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -59,19 +71,22 @@ def run_migrations_online():
     In this scenario we need to create an Engine
     and associate a connection with the context.
     """
+    # Build the configuration dict
+    configuration = config.get_section(config.config_ini_section)
+    configuration["sqlalchemy.url"] = config.get_main_option("sqlalchemy.url")
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
         future=True,
     )
 
-    # Async engine support
-    async def run():
-        async with connectable.connect() as connection:
-            await connection.run_sync(do_run_migrations)
-
-    asyncio.run(run())
+    # Use sync connection
+    with connectable.connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
+        with context.begin_transaction():
+            context.run_migrations()
 
 
 if context.is_offline_mode():
