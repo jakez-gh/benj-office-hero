@@ -43,7 +43,7 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
     """Construct the routes router with injected providers."""
     router = APIRouter(prefix="/routes", tags=["routes"])
 
-    @router.get("", response_model=RouteListResponse)
+    @router.get("", response_model=RouteListResponse, dependencies=[Depends(require_permission("route:read"))])
     @limiter.limit("60/minute")
     async def list_routes(
         request: Request,
@@ -144,18 +144,13 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
         service = service_provider()
         repo = repo_provider()
 
-        try:
-            await service.mark_stop_arrived(tenant_id, user_id, stop_id)
-            route = await repo.get_by_id(route_id, tenant_id)
-            if not route:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail="Route not found"
-                )
-            return route
-        except ValueError as exc:
+        await service.mark_stop_arrived(tenant_id, user_id, stop_id)
+        route = await repo.get_by_id(route_id, tenant_id)
+        if not route:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+                status_code=status.HTTP_404_NOT_FOUND, detail="Route not found"
+            )
+        return route
 
     @router.post("/{route_id}/stops/{stop_id}/complete", response_model=RouteRead, dependencies=[Depends(require_permission("route:write"))])
     @limiter.limit("60/minute")
@@ -170,18 +165,13 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
         service = service_provider()
         repo = repo_provider()
 
-        try:
-            await service.mark_stop_complete(tenant_id, user_id, stop_id)
-            route = await repo.get_by_id(route_id, tenant_id)
-            if not route:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail="Route not found"
-                )
-            return route
-        except ValueError as exc:
+        await service.mark_stop_complete(tenant_id, user_id, stop_id)
+        route = await repo.get_by_id(route_id, tenant_id)
+        if not route:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+                status_code=status.HTTP_404_NOT_FOUND, detail="Route not found"
+            )
+        return route
 
     @router.post("/{route_id}/stops/{stop_id}/skip", response_model=RouteRead, dependencies=[Depends(require_permission("route:write"))])
     @limiter.limit("60/minute")
@@ -197,17 +187,12 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
         service = service_provider()
         repo = repo_provider()
 
-        try:
-            await service.mark_stop_skipped(tenant_id, user_id, stop_id, body.reason)
-            route = await repo.get_by_id(route_id, tenant_id)
-            if not route:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail="Route not found"
-                )
-            return route
-        except ValueError as exc:
+        await service.mark_stop_skipped(tenant_id, user_id, stop_id, body.reason)
+        route = await repo.get_by_id(route_id, tenant_id)
+        if not route:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+                status_code=status.HTTP_404_NOT_FOUND, detail="Route not found"
+            )
+        return route
 
     return router

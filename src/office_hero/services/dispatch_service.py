@@ -144,11 +144,13 @@ class DispatchService:
                     f"Route is already {status} and cannot be re-dispatched",
                     reason=f"route_{status}",
                 )
-            # Idempotency check: same sequence → no-op
-            current_job_ids = [s.job_id for s in (existing_route.stops or [])]
+            # Idempotency check: same sequence → no-op (fetch stops explicitly)
+            existing_stops = await self._stop_repo.get_for_route(tenant_id, existing_route.id)
+            current_job_ids = [s.job_id for s in existing_stops]
             requested_job_ids = [s.job_id for s in stop_rows]
             if current_job_ids == requested_job_ids:
                 log.info("dispatch.idempotent", route_id=str(existing_route.id))
+                existing_route.stops = existing_stops
                 return existing_route
 
             # Replace stops atomically
@@ -385,7 +387,7 @@ class DispatchService:
 
     async def _maybe_finalise_route(self, tenant_id: UUID, route_id: UUID) -> None:
         stops = await self._stop_repo.get_for_route(tenant_id, route_id)
-        if all(is_terminal_stop(RouteStopStatus(s.status)) for s in stops):
+        if stops and all(is_terminal_stop(RouteStopStatus(s.status)) for s in stops):
             await self._route_repo.update_status(
                 route_id, tenant_id, RouteStatus.COMPLETE,
                 completed_at=datetime.now(UTC),

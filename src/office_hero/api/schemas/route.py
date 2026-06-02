@@ -12,6 +12,8 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, field_validator, mode
 class RouteStopRead(BaseModel):
     """A single RouteStop with embedded Job summary."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     route_id: UUID
     job_id: UUID
@@ -27,6 +29,8 @@ class RouteStopRead(BaseModel):
 class VehicleSummary(BaseModel):
     """Summary of a Vehicle for route response."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     nickname: str
     license_plate: str
@@ -35,6 +39,8 @@ class VehicleSummary(BaseModel):
 class VehicleCrewSummary(BaseModel):
     """Summary of a VehicleCrew for route response."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     vehicle_id: UUID
     work_date: date
@@ -42,6 +48,8 @@ class VehicleCrewSummary(BaseModel):
 
 class RouteRead(BaseModel):
     """A committed Route with all stops and metadata."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     tenant_id: UUID
@@ -66,6 +74,8 @@ class RouteRead(BaseModel):
 
 class RouteListResponse(BaseModel):
     """Paginated list of routes."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     items: list[RouteRead]
     total: int
