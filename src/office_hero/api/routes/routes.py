@@ -15,9 +15,12 @@ from office_hero.api.schemas.route import (
     RouteRead,
     RouteCancelRequest,
     StopSkipRequest,
+    DispatchCommitRequest,
 )
 from office_hero.core.exceptions import (
     InvalidRouteTransitionError,
+    ManualSequenceInvalidError,
+    RouteCommitConflictError,
     RouteNotFoundError,
 )
 from office_hero.core.logging import get_logger
@@ -77,6 +80,45 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
         route = await repo.get_by_id(route_id, tenant_id)
         if not route:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Route not found")
+
+        return route
+
+    @router.post("", response_model=RouteRead, dependencies=[Depends(require_permission("route:write"))])
+    @limiter.limit("60/minute")
+    async def commit_dispatch(
+        request: Request,
+        job_id: Annotated[UUID, Query(description="Job ID to dispatch")],
+        body: DispatchCommitRequest,
+    ) -> RouteRead:
+        """Create a route by committing a dispatch (option or manual sequence)."""
+        from office_hero.services.dispatch_service import DispatchCommitPayload
+        from office_hero.api.state import get_dispatch_service
+
+        tenant_id = _tenant_id(request)
+        user_id = _user_id(request)
+        service = get_dispatch_service()
+
+        try:
+            payload = DispatchCommitPayload(
+                date=body.date,
+                option_kind=body.option_kind,
+                manual_vehicle_id=body.manual_vehicle_id,
+                manual_sequence=body.manual_sequence,
+                notes=body.notes,
+            )
+            route = await service.commit_dispatch(
+                tenant_id, user_id, job_id=job_id, payload=payload
+            )
+        except RouteCommitConflictError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=str(exc),
+            ) from exc
+        except ManualSequenceInvalidError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=str(exc),
+            ) from exc
 
         return route
 
