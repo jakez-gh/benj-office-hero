@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from office_hero.adapters.geocoding.protocol import GeocodingAdapter
     from office_hero.repositories.route_repository import RouteRepositoryProtocol
     from office_hero.repositories.route_stop_repository import RouteStopRepositoryProtocol
+    from office_hero.repositories.vehicle_location_repository import VehicleLocationRepositoryProtocol
     from office_hero.services.customer_service import CustomerService
     from office_hero.services.dispatch_service import DispatchService
     from office_hero.services.job_dispatch_service import JobDispatchService
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
     from office_hero.services.location_service import LocationService
     from office_hero.services.schedule_suggestion_service import ScheduleSuggestionService
     from office_hero.services.vehicle_crew_service import VehicleCrewService
+    from office_hero.services.vehicle_location_service import VehicleLocationService
     from office_hero.services.vehicle_service import VehicleService
 
 # Global variables for app lifecycle
@@ -35,6 +37,8 @@ _job_dispatch_service: JobDispatchService | None = None
 _route_repository: RouteRepositoryProtocol | None = None
 _route_stop_repository: RouteStopRepositoryProtocol | None = None
 _dispatch_service: DispatchService | None = None
+_vehicle_location_repository: VehicleLocationRepositoryProtocol | None = None
+_vehicle_location_service: VehicleLocationService | None = None
 
 
 def get_engine() -> AsyncEngine:
@@ -249,3 +253,36 @@ def get_dispatch_service() -> DispatchService:
             "DispatchService not initialized. Ensure app has been created with create_app()."
         )
     return _dispatch_service
+
+
+# --- Slice 15: Vehicle location tracking ---
+
+
+def set_vehicle_location_repository(repo: VehicleLocationRepositoryProtocol) -> None:
+    """Register the vehicle location repository."""
+    global _vehicle_location_repository
+    _vehicle_location_repository = repo
+
+
+def get_vehicle_location_repository() -> VehicleLocationRepositoryProtocol:
+    """Retrieve the registered vehicle location repository."""
+    if _vehicle_location_repository is None:
+        raise RuntimeError(
+            "VehicleLocationRepository not initialized. Ensure app has been created with create_app()."
+        )
+    return _vehicle_location_repository
+
+
+def set_vehicle_location_service(service: VehicleLocationService) -> None:
+    """Register the vehicle location service."""
+    global _vehicle_location_service
+    _vehicle_location_service = service
+
+
+def get_vehicle_location_service() -> VehicleLocationService:
+    """Retrieve the registered vehicle location service."""
+    if _vehicle_location_service is None:
+        raise RuntimeError(
+            "VehicleLocationService not initialized. Ensure app has been created with create_app()."
+        )
+    return _vehicle_location_service

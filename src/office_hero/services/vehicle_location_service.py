@@ -1,72 +1,56 @@
-"""VehicleLocationService — records GPS positions posted by Technicians."""
+"""Service for vehicle location tracking (Slice 15)."""
 
 from __future__ import annotations
 
-from datetime import datetime
-from decimal import Decimal
+from datetime import datetime, UTC
 from uuid import UUID
 
-from office_hero.core.exceptions import VehicleNotFoundError
-from office_hero.core.logging import get_logger
 from office_hero.models.vehicle_location import VehicleLocation
-from office_hero.repositories.vehicle_location_repository import (
-    VehicleLocationRepositoryProtocol,
-)
-from office_hero.repositories.vehicle_repository import VehicleRepositoryProtocol
-
-log = get_logger(__name__)
+from office_hero.repositories.vehicle_location_repository import VehicleLocationRepositoryProtocol
 
 
 class VehicleLocationService:
-    def __init__(
-        self,
-        location_repo: VehicleLocationRepositoryProtocol,
-        vehicle_repo: VehicleRepositoryProtocol,
-    ) -> None:
-        self._location_repo = location_repo
-        self._vehicle_repo = vehicle_repo
+    """Service for recording and querying vehicle GPS locations."""
 
-    async def record(
+    def __init__(self, location_repo: VehicleLocationRepositoryProtocol):
+        self._location_repo = location_repo
+
+    async def record_location(
         self,
         tenant_id: UUID,
         vehicle_id: UUID,
-        *,
-        lat: Decimal,
-        lng: Decimal,
-        accuracy_m: Decimal | None,
-        recorded_at: datetime,
+        latitude: float,
+        longitude: float,
+        accuracy_meters: int | None = None,
+        recorded_at: datetime | None = None,
     ) -> VehicleLocation:
-        """Persist a GPS fix for a vehicle.
+        """Record a vehicle's current GPS location."""
+        recorded_at = recorded_at or datetime.now(UTC)
 
-        Raises VehicleNotFoundError if the vehicle doesn't exist in the tenant.
-        """
-        vehicle = await self._vehicle_repo.get_by_id(vehicle_id, tenant_id)
-        if vehicle is None:
-            raise VehicleNotFoundError(f"Vehicle {vehicle_id} not found")
-
-        fix = await self._location_repo.create(
-            tenant_id,
-            vehicle_id,
-            lat=lat,
-            lng=lng,
-            accuracy_m=accuracy_m,
+        location = VehicleLocation(
+            id=UUID(int=0),  # DB generates
+            tenant_id=tenant_id,
+            vehicle_id=vehicle_id,
+            latitude=latitude,
+            longitude=longitude,
+            accuracy_meters=accuracy_meters,
             recorded_at=recorded_at,
+            created_at=datetime.now(UTC),
         )
-        log.info(
-            "vehicle.location.recorded",
-            vehicle_id=str(vehicle_id),
-            lat=str(lat),
-            lng=str(lng),
-            recorded_at=recorded_at.isoformat(),
-            tenant_id=str(tenant_id),
-        )
-        return fix
 
-    async def get_latest(self, tenant_id: UUID, vehicle_id: UUID) -> VehicleLocation | None:
-        """Return the most recent GPS fix for a vehicle, or None.
+        return await self._location_repo.create(tenant_id, location)
 
-        Used by ScheduleSuggestionService (routing engine) to seed the vehicle
-        start position. Returns None when no fix has been recorded — callers
-        should fall back to a depot coordinate in that case.
-        """
+    async def get_latest_location(
+        self, tenant_id: UUID, vehicle_id: UUID
+    ) -> VehicleLocation | None:
+        """Get the most recent location for a vehicle."""
         return await self._location_repo.get_latest(tenant_id, vehicle_id)
+
+    async def get_location_history(
+        self,
+        tenant_id: UUID,
+        vehicle_id: UUID,
+        since: datetime,
+    ) -> list[VehicleLocation]:
+        """Get all locations since a timestamp (for analytics/replay)."""
+        return await self._location_repo.list_since(tenant_id, vehicle_id, since)

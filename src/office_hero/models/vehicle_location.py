@@ -1,49 +1,35 @@
-"""VehicleLocation model — time-series GPS positions posted by Technicians."""
+"""Vehicle location tracking model (Slice 15)."""
 
 from __future__ import annotations
 
 from datetime import datetime
-from decimal import Decimal
-from uuid import UUID, uuid4
+from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Index, Numeric
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from office_hero.models import Base
+from office_hero.db.base import Base
 
 
 class VehicleLocation(Base):
-    """One GPS fix posted by a Technician for a Vehicle.
-
-    Rows are append-only. The latest row per vehicle is used by the routing
-    engine; older rows are available for auditing but not queried in hot paths.
-    """
+    """Time-series record of a vehicle's GPS position."""
 
     __tablename__ = "vehicle_locations"
 
-    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    tenant_id: Mapped[UUID] = mapped_column(nullable=False)
-    vehicle_id: Mapped[UUID] = mapped_column(ForeignKey("vehicles.id"), nullable=False)
-    lat: Mapped[Decimal] = mapped_column(Numeric(9, 6), nullable=False)
-    lng: Mapped[Decimal] = mapped_column(Numeric(9, 6), nullable=False)
-    accuracy_m: Mapped[Decimal | None] = mapped_column(Numeric(8, 2), nullable=True)
-    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default="now()"
-    )
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="CASCADE"))
+    vehicle_id: Mapped[UUID] = mapped_column(ForeignKey("vehicles.id", ondelete="CASCADE"))
+
+    latitude: Mapped[float] = mapped_column(Float)
+    longitude: Mapped[float] = mapped_column(Float)
+    accuracy_meters: Mapped[int] = mapped_column(Integer, nullable=True)
+
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
 
     __table_args__ = (
-        Index(
-            "idx_vehicle_locations_tenant_vehicle_recorded",
-            "tenant_id",
-            "vehicle_id",
-            "recorded_at",
-        ),
-        Index("idx_vehicle_locations_tenant_id", "tenant_id"),
+        UniqueConstraint("tenant_id", "vehicle_id", "recorded_at", name="uq_vehicle_location_recorded"),
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<VehicleLocation(id={self.id}, vehicle_id={self.vehicle_id},"
-            f" lat={self.lat}, lng={self.lng}, recorded_at={self.recorded_at})>"
-        )
+        return f"<VehicleLocation(vehicle_id={self.vehicle_id}, lat={self.latitude}, lng={self.longitude}, recorded_at={self.recorded_at})>"
