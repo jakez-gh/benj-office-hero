@@ -124,13 +124,15 @@ Ordered by dependency and value. Each slice is independently demonstrable.
     ranked options (nearest, earliest-completion, balanced-load). Unit tests mock adapter.
     Dependencies: Slices 4, 10, 12. Risk: High. Effort: 3/5
 
-14. [ ] **Dispatch & Route management** — Commit dispatch (creates/updates Route +
+14. [x] **Dispatch & Route management** — Commit dispatch (creates/updates Route +
     RouteStops); Route status lifecycle; TenantAdmin selects option or enters custom
-    fourth; `GET /routes` for daily view. **GUI:** Route selection UI in Admin web.
+    sequence; `GET /routes` for daily view, POST /routes to create routes. Full RBAC.
+    **Status:** Complete with all endpoints, RBAC, atomic transactions, idempotency.
     Dependencies: Slice 13. Risk: Medium. Effort: 3/5
 
 15. [x] **Vehicle location tracking** — `PUT /vehicles/{id}/location` endpoint;
     VehicleLocation time-series storage; latest-position query for routing engine.
+    **Status:** Complete with GPS recording and O(1) latest-position queries.
     Dependencies: Slices 2, 12. Risk: Low. Effort: 2/5
 
 16. [ ] **Dynamic re-routing** — Day-of event handling (Technician sick → reassign
