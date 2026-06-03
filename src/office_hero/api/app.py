@@ -19,6 +19,7 @@ from office_hero.api.exception_handlers import register_exception_handlers
 from office_hero.api.limiter import limiter
 from office_hero.api.middleware.logging import LoggingMiddleware
 from office_hero.api.middleware.security_headers import SecurityHeadersMiddleware
+from office_hero.api.middleware.test_auth import TestAuthMiddleware
 from office_hero.api.routes import health
 from office_hero.api.routes.admin import audit_router, create_admin_router
 from office_hero.api.routes.customers import create_customer_router
@@ -235,7 +236,6 @@ def create_app(
         _default_location_repo = InMemoryVehicleLocationRepository()
         vehicle_location_service = VehicleLocationService(
             location_repo=_default_location_repo,
-            vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
         )
 
     # Slice-13: schedule suggestion service (uses live GPS positions when available)
@@ -282,6 +282,8 @@ def create_app(
     )
 
     # --- Middleware (outermost -> innermost) ---
+    # Test auth middleware (for demos/testing without real JWT)
+    application.add_middleware(TestAuthMiddleware)
     application.add_middleware(SecurityHeadersMiddleware)
     application.add_middleware(LoggingMiddleware)
 
@@ -343,7 +345,7 @@ def create_app(
     application.include_router(dispatch_router, tags=["dispatch"])
 
     vehicle_location_router = create_vehicle_location_router(
-        service_provider=lambda: vehicle_location_service,
+        repo_provider=lambda: _default_location_repo,
     )
     application.include_router(vehicle_location_router, tags=["vehicle-location"])
 
