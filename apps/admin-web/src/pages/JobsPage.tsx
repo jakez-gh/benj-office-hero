@@ -1,5 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  listCustomers,
+  listLocations,
+  type CustomerSummary,
+  type LocationRead,
+} from '@office-hero/api-client';
+import {
   type ApiError,
   type DispatchResponse,
   type JobCreate,
@@ -78,6 +84,45 @@ function CreateJobModal({
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [customers, setCustomers] = useState<CustomerSummary[]>([]);
+  const [locations, setLocations] = useState<LocationRead[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    listCustomers({ page_size: 100 })
+      .then((r) => {
+        if (!cancelled) setCustomers(r.items);
+      })
+      .catch(() => {
+        // Customer list is a convenience; creation will still validate server-side.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!form.customer_id) {
+      setLocations([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingLocations(true);
+    listLocations(form.customer_id)
+      .then((r) => {
+        if (!cancelled) setLocations(r.items);
+      })
+      .catch(() => {
+        if (!cancelled) setLocations([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingLocations(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [form.customer_id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,22 +161,53 @@ function CreateJobModal({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-sm font-medium text-neutral-700">Customer ID *</label>
-              <Input
+              <label htmlFor="job-customer" className="mb-1 block text-sm font-medium text-neutral-700">
+                Customer *
+              </label>
+              <select
+                id="job-customer"
+                className="block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 value={form.customer_id}
-                onChange={(e) => setForm((f) => ({ ...f, customer_id: e.target.value }))}
-                placeholder="UUID"
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, customer_id: e.target.value, location_id: '' }))
+                }
                 required
-              />
+              >
+                <option value="">Select a customer…</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-neutral-700">Location ID *</label>
-              <Input
+              <label htmlFor="job-location" className="mb-1 block text-sm font-medium text-neutral-700">
+                Location *
+              </label>
+              <select
+                id="job-location"
+                className="block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-neutral-50 disabled:text-neutral-400"
                 value={form.location_id}
                 onChange={(e) => setForm((f) => ({ ...f, location_id: e.target.value }))}
-                placeholder="UUID"
+                disabled={!form.customer_id || loadingLocations}
                 required
-              />
+              >
+                <option value="">
+                  {!form.customer_id
+                    ? 'Select a customer first'
+                    : loadingLocations
+                      ? 'Loading…'
+                      : locations.length === 0
+                        ? 'No locations on file'
+                        : 'Select a location…'}
+                </option>
+                {locations.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.label || loc.formatted_address}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">

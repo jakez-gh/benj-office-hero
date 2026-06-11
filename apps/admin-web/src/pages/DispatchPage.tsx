@@ -10,6 +10,11 @@ import React, { useState } from 'react';
 import { type ApiError, type SagaState, createSaga } from '../api';
 import { SagaStatusBadge } from '../components/SagaStatusBadge';
 import { useSagaStatus } from '../hooks/useSagaStatus';
+import { Alert } from '../components/ui/Alert';
+import { Button } from '../components/ui/Button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
+import { Label } from '../components/ui/Label';
 
 export const DispatchPage: React.FC = () => {
   const [tenantId, setTenantId] = useState('');
@@ -53,109 +58,104 @@ export const DispatchPage: React.FC = () => {
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    display: 'block',
-    width: '100%',
-    padding: '0.5rem',
-    marginTop: '0.25rem',
-    marginBottom: '0.75rem',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-  };
-
   return (
     <div>
-      <h1>Dispatch</h1>
-      <p style={{ color: '#666', marginBottom: '1rem' }}>
-        Dispatch a job through the backoffice saga orchestrator.
-      </p>
-
-      <form onSubmit={(e) => void handleSubmit(e)} style={{ maxWidth: '32rem' }}>
-        <label htmlFor="dispatch-tenant">
-          Tenant ID
-          <input
-            id="dispatch-tenant"
-            type="text"
-            value={tenantId}
-            onChange={(e) => setTenantId(e.target.value)}
-            required
-            style={inputStyle}
-          />
-        </label>
-
-        <label htmlFor="dispatch-job">
-          Job ID
-          <input
-            id="dispatch-job"
-            type="text"
-            value={jobId}
-            onChange={(e) => setJobId(e.target.value)}
-            required
-            style={inputStyle}
-          />
-        </label>
-
-        <label htmlFor="dispatch-technician">
-          Technician ID
-          <input
-            id="dispatch-technician"
-            type="text"
-            value={technicianId}
-            onChange={(e) => setTechnicianId(e.target.value)}
-            required
-            style={inputStyle}
-          />
-        </label>
-
-        <button
-          type="submit"
-          disabled={submitting}
-          style={{
-            padding: '0.5rem 1rem',
-            background: submitting ? '#94a3b8' : '#3b82f6',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: submitting ? 'not-allowed' : 'pointer',
-          }}
-        >
-          {submitting ? 'Dispatching…' : 'Dispatch Job'}
-        </button>
-      </form>
-
-      {submitError && (
-        <p role="alert" style={{ color: '#b00020', marginTop: '1rem' }}>
-          {submitError}
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-neutral-900">Dispatch</h1>
+        <p className="mt-0.5 text-sm text-neutral-500">
+          Dispatch a job through the backoffice saga orchestrator.
         </p>
-      )}
+      </div>
 
-      {displaySaga && (
-        <section style={{ marginTop: '2rem', padding: '1rem', background: '#f8fafc', borderRadius: '6px' }}>
-          <h2 style={{ marginTop: 0 }}>Saga state</h2>
-          <p>
-            <strong>ID:</strong> <code>{displaySaga.saga_id}</code>
-          </p>
-          <p>
-            <strong>Status:</strong> <SagaStatusBadge status={displaySaga.status} />
-          </p>
-          <p>
-            <strong>Current step:</strong> {displaySaga.current_step}
-          </p>
-          {displaySaga.last_error && (
-            <p style={{ color: '#b00020' }}>
-              <strong>Last error:</strong> {displaySaga.last_error}
-            </p>
-          )}
-          {pollError && (
-            <p role="alert" style={{ color: '#b00020' }}>
-              Polling error: {pollError}
-            </p>
-          )}
-          <button onClick={refresh} style={{ marginTop: '0.5rem' }}>
-            Refresh
-          </button>
-        </section>
-      )}
+      <div className="grid max-w-4xl gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle>Job details</CardTitle>
+            <CardDescription>
+              Assign a job to a technician and track the orchestration live.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="dispatch-tenant">Tenant ID</Label>
+                <Input
+                  id="dispatch-tenant"
+                  value={tenantId}
+                  onChange={(e) => setTenantId(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="dispatch-job">Job ID</Label>
+                <Input
+                  id="dispatch-job"
+                  value={jobId}
+                  onChange={(e) => setJobId(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="dispatch-technician">Technician ID</Label>
+                <Input
+                  id="dispatch-technician"
+                  value={technicianId}
+                  onChange={(e) => setTechnicianId(e.target.value)}
+                  required
+                />
+              </div>
+
+              <Button type="submit" disabled={submitting} className="w-full">
+                {submitting ? 'Dispatching…' : 'Dispatch Job'}
+              </Button>
+            </form>
+
+            {submitError && (
+              <Alert variant="destructive" role="alert" className="mt-4">
+                {submitError}
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+
+        {displaySaga && (
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle>Saga state</CardTitle>
+              <CardDescription>Live orchestration status for this dispatch.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-500">ID</span>
+                <code className="rounded bg-neutral-100 px-1.5 py-0.5 text-xs">
+                  {displaySaga.saga_id}
+                </code>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-500">Status</span>
+                <SagaStatusBadge status={displaySaga.status} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-500">Current step</span>
+                <span className="font-medium text-neutral-900">{displaySaga.current_step}</span>
+              </div>
+              {displaySaga.last_error && (
+                <Alert variant="destructive">Last error: {displaySaga.last_error}</Alert>
+              )}
+              {pollError && (
+                <Alert variant="destructive" role="alert">
+                  Polling error: {pollError}
+                </Alert>
+              )}
+              <Button variant="outline" size="sm" onClick={refresh}>
+                Refresh
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };

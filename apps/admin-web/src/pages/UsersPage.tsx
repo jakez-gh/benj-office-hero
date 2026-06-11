@@ -1,6 +1,47 @@
 import React, { useEffect, useState } from 'react';
 import { listUsers } from '@office-hero/api-client';
 import type { AdminUser } from '@office-hero/api-client';
+import { Alert } from '../components/ui/Alert';
+import { Skeleton } from '../components/ui/Skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui/Table';
+
+const ROLE_COLORS: Record<string, string> = {
+  admin:        'bg-purple-100 text-purple-800',
+  tenant_admin: 'bg-purple-100 text-purple-800',
+  dispatcher:   'bg-blue-100 text-blue-800',
+  technician:   'bg-teal-100 text-teal-800',
+  tech:         'bg-teal-100 text-teal-800',
+};
+
+function RoleBadge({ role }: { role: string }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${ROLE_COLORS[role] ?? 'bg-neutral-100 text-neutral-600'}`}
+    >
+      {role}
+    </span>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const active = status === 'active';
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+        active ? 'bg-green-100 text-green-800' : 'bg-neutral-100 text-neutral-500'
+      }`}
+    >
+      {status}
+    </span>
+  );
+}
 
 export const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -30,45 +71,65 @@ export const UsersPage: React.FC = () => {
     return () => { cancelled = true; };
   }, []);
 
-  if (loading) return <div><h1>Users</h1><p>Loading users…</p></div>;
+  if (loading) {
+    return (
+      <div>
+        <h1 className="mb-6 text-2xl font-semibold text-neutral-900">Users</h1>
+        <p className="sr-only">Loading users…</p>
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
       <div>
-        <h1>Users</h1>
-        <p role="alert" style={{ color: '#b00020' }}>{error}</p>
+        <h1 className="mb-6 text-2xl font-semibold text-neutral-900">Users</h1>
+        <Alert variant="destructive" role="alert">{error}</Alert>
       </div>
     );
   }
 
   return (
     <div>
-      <h1>Users</h1>
-      <p style={{ marginBottom: '0.75rem' }}>Live users: {users.length}</p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-neutral-900">Users</h1>
+        <p className="mt-0.5 text-sm text-neutral-500">Live users: {users.length}</p>
+      </div>
 
       {users.length === 0 ? (
-        <p style={{ color: '#666' }}>No users found.</p>
+        <div className="rounded-lg border border-dashed border-neutral-300 py-12 text-center">
+          <p className="text-neutral-500">No users found.</p>
+        </div>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: '0.5rem' }}>User ID</th>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: '0.5rem' }}>Email</th>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: '0.5rem' }}>Role</th>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: '0.5rem' }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>User ID</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {users.map((user, index) => (
-              <tr key={user.id ?? `user-${String(index)}`}>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: '0.5rem' }}>{user.id}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: '0.5rem' }}>{user.email ?? user.full_name ?? '—'}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: '0.5rem' }}>{user.role ?? '—'}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: '0.5rem' }}>{user.status ?? '—'}</td>
-              </tr>
+              <TableRow key={user.id ?? `user-${String(index)}`}>
+                <TableCell className="max-w-[10rem] truncate font-mono text-xs text-neutral-400">
+                  {user.id}
+                </TableCell>
+                <TableCell className="font-medium">
+                  {user.email ?? user.full_name ?? '—'}
+                </TableCell>
+                <TableCell>{user.role ? <RoleBadge role={user.role} /> : '—'}</TableCell>
+                <TableCell>{user.status ? <StatusBadge status={user.status} /> : '—'}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       )}
     </div>
   );

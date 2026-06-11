@@ -1,12 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import { listVehicles } from '@office-hero/api-client';
 import type { AdminVehicle } from '@office-hero/api-client';
+import { Alert } from '../components/ui/Alert';
+import { Skeleton } from '../components/ui/Skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui/Table';
 
 /** Derive a display name from make/model when `name` is absent. */
 function vehicleDisplayName(v: AdminVehicle): string {
   if (v.name) return v.name;
   const parts = [v.make, v.model].filter(Boolean);
   return parts.length > 0 ? parts.join(' ') : '—';
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  active:      'bg-green-100 text-green-800',
+  idle:        'bg-neutral-100 text-neutral-600',
+  maintenance: 'bg-amber-100 text-amber-800',
+  archived:    'bg-neutral-100 text-neutral-500',
+};
+
+function StatusBadge({ status }: { status: string }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[status] ?? 'bg-neutral-100 text-neutral-600'}`}
+    >
+      {status}
+    </span>
+  );
 }
 
 export const VehiclesPage: React.FC = () => {
@@ -37,45 +64,65 @@ export const VehiclesPage: React.FC = () => {
     return () => { cancelled = true; };
   }, []);
 
-  if (loading) return <div><h1>Vehicles</h1><p>Loading vehicles…</p></div>;
+  if (loading) {
+    return (
+      <div>
+        <h1 className="mb-6 text-2xl font-semibold text-neutral-900">Vehicles</h1>
+        <p className="sr-only">Loading vehicles…</p>
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
       <div>
-        <h1>Vehicles</h1>
-        <p role="alert" style={{ color: '#b00020' }}>{error}</p>
+        <h1 className="mb-6 text-2xl font-semibold text-neutral-900">Vehicles</h1>
+        <Alert variant="destructive" role="alert">{error}</Alert>
       </div>
     );
   }
 
   return (
     <div>
-      <h1>Vehicles</h1>
-      <p style={{ marginBottom: '0.75rem' }}>Live vehicles: {vehicles.length}</p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-neutral-900">Vehicles</h1>
+        <p className="mt-0.5 text-sm text-neutral-500">Live vehicles: {vehicles.length}</p>
+      </div>
 
       {vehicles.length === 0 ? (
-        <p style={{ color: '#666' }}>No vehicles found.</p>
+        <div className="rounded-lg border border-dashed border-neutral-300 py-12 text-center">
+          <p className="text-neutral-500">No vehicles found.</p>
+        </div>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: '0.5rem' }}>Vehicle ID</th>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: '0.5rem' }}>Vehicle</th>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: '0.5rem' }}>License Plate</th>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: '0.5rem' }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Vehicle ID</TableHead>
+              <TableHead>Vehicle</TableHead>
+              <TableHead>License Plate</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {vehicles.map((vehicle, index) => (
-              <tr key={vehicle.id ?? `vehicle-${String(index)}`}>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: '0.5rem' }}>{vehicle.id}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: '0.5rem' }}>{vehicleDisplayName(vehicle)}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: '0.5rem' }}>{vehicle.license_plate ?? '—'}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: '0.5rem' }}>{vehicle.status ?? '—'}</td>
-              </tr>
+              <TableRow key={vehicle.id ?? `vehicle-${String(index)}`}>
+                <TableCell className="max-w-[10rem] truncate font-mono text-xs text-neutral-400">
+                  {vehicle.id}
+                </TableCell>
+                <TableCell className="font-medium">{vehicleDisplayName(vehicle)}</TableCell>
+                <TableCell className="text-neutral-500">{vehicle.license_plate ?? '—'}</TableCell>
+                <TableCell>
+                  {vehicle.status ? <StatusBadge status={vehicle.status} /> : '—'}
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       )}
     </div>
   );

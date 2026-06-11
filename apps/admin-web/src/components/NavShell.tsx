@@ -51,7 +51,7 @@ export const NavShell: React.FC<{ children?: React.ReactNode }> = ({ children })
         </div>
       </header>
 
-      <main>{children}</main>
+      <main className="mx-auto max-w-6xl p-6">{children}</main>
     </div>
   );
 };
