@@ -1,32 +1,37 @@
 ﻿"""API contract tests for Slice 14 route management endpoints."""
 
+from datetime import date
+from uuid import uuid4
+
 import pytest
-from datetime import date, datetime
-from uuid import UUID, uuid4
+from fastapi import Request
 from httpx import ASGITransport, AsyncClient
+from starlette.middleware.base import BaseHTTPMiddleware
+
+from office_hero.adapters.routing.stub import StubRoutingAdapter
 from office_hero.api.app import create_app
+from office_hero.api.state import (
+    set_dispatch_service,
+    set_job_service,
+    set_route_repository,
+    set_route_stop_repository,
+    set_schedule_suggestion_service,
+    set_vehicle_crew_service,
+    set_vehicle_service,
+)
+from office_hero.repositories.customer_repository import InMemoryCustomerRepository
+from office_hero.repositories.job_repository import InMemoryJobRepository
+from office_hero.repositories.location_repository import InMemoryLocationRepository
+from office_hero.repositories.mocks import InMemoryAuditService
 from office_hero.repositories.route_repository import InMemoryRouteRepository
 from office_hero.repositories.route_stop_repository import InMemoryRouteStopRepository
-from office_hero.services.dispatch_service import DispatchService
-from office_hero.repositories.mocks import InMemoryAuditService
-from office_hero.repositories.job_repository import InMemoryJobRepository
-from office_hero.repositories.vehicle_repository import InMemoryVehicleRepository
 from office_hero.repositories.vehicle_crew_repository import InMemoryVehicleCrewRepository
-from office_hero.services.schedule_suggestion_service import ScheduleSuggestionService
-from office_hero.adapters.routing.stub import StubRoutingAdapter
-from office_hero.api.state import (
-    set_route_repository, set_route_stop_repository, set_dispatch_service,
-    set_job_service, set_vehicle_service, set_vehicle_crew_service,
-    set_schedule_suggestion_service,
-)
+from office_hero.repositories.vehicle_repository import InMemoryVehicleRepository
+from office_hero.services.dispatch_service import DispatchService
 from office_hero.services.job_service import JobService
-from office_hero.services.vehicle_service import VehicleService
+from office_hero.services.schedule_suggestion_service import ScheduleSuggestionService
 from office_hero.services.vehicle_crew_service import VehicleCrewService
-from office_hero.repositories.customer_repository import InMemoryCustomerRepository
-from office_hero.repositories.location_repository import InMemoryLocationRepository
-from office_hero.core.job_status import JobStatus
-from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
+from office_hero.services.vehicle_service import VehicleService
 
 
 class _RouteTestAuthMiddleware(BaseHTTPMiddleware):
@@ -58,7 +63,7 @@ async def app_with_routes():
     route_repo = InMemoryRouteRepository()
     stop_repo = InMemoryRouteStopRepository()
     audit = InMemoryAuditService()
-    
+
     # Create services
     routing_adapter = StubRoutingAdapter()
     schedule_svc = ScheduleSuggestionService(
@@ -76,7 +81,7 @@ async def app_with_routes():
         schedule_service=schedule_svc,
         audit=audit,
     )
-    
+
     # Create remaining services
     cust_repo = InMemoryCustomerRepository()
     loc_repo = InMemoryLocationRepository()
@@ -94,7 +99,7 @@ async def app_with_routes():
         user_repo=_NoopUserRepo(),
         audit=audit,
     )
-    
+
     # Wire providers
     set_job_service(job_svc)
     set_vehicle_service(vehicle_svc)
@@ -103,7 +108,7 @@ async def app_with_routes():
     set_route_repository(route_repo)
     set_route_stop_repository(stop_repo)
     set_dispatch_service(dispatch_svc)
-    
+
     # Create app
     app = create_app(
         job_service=job_svc,

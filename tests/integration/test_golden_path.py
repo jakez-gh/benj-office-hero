@@ -1,41 +1,47 @@
 ﻿"""Golden path smoke test for Office Hero MVP dispatch flow."""
 
 import asyncio
-from datetime import date, datetime, time, UTC
+from datetime import date, time
 from uuid import uuid4
-import pytest
-from fastapi.testclient import TestClient
 
+import pytest
+from fastapi import Request
+from fastapi.testclient import TestClient
+from starlette.middleware.base import BaseHTTPMiddleware
+
+from office_hero.adapters.routing.stub import StubRoutingAdapter
 from office_hero.api.app import create_app
+from office_hero.api.state import (
+    set_dispatch_service,
+    set_job_service,
+    set_route_repository,
+    set_route_stop_repository,
+    set_schedule_suggestion_service,
+    set_vehicle_crew_service,
+    set_vehicle_service,
+)
+from office_hero.core.crew_role import CrewRole
+from office_hero.repositories.customer_repository import InMemoryCustomerRepository
 from office_hero.repositories.job_repository import InMemoryJobRepository
-from office_hero.repositories.vehicle_repository import InMemoryVehicleRepository
+from office_hero.repositories.location_repository import InMemoryLocationRepository
+from office_hero.repositories.mocks import InMemoryAuditService
 from office_hero.repositories.route_repository import InMemoryRouteRepository
 from office_hero.repositories.route_stop_repository import InMemoryRouteStopRepository
-from office_hero.repositories.customer_repository import InMemoryCustomerRepository
-from office_hero.repositories.location_repository import InMemoryLocationRepository
 from office_hero.repositories.vehicle_crew_repository import (
     CrewMemberInput,
     InMemoryVehicleCrewRepository,
 )
-from office_hero.core.crew_role import CrewRole
-from office_hero.repositories.mocks import InMemoryAuditService
+from office_hero.repositories.vehicle_repository import InMemoryVehicleRepository
 from office_hero.services.dispatch_service import DispatchService
 from office_hero.services.job_service import JobService
-from office_hero.services.vehicle_service import VehicleService
-from office_hero.services.vehicle_crew_service import VehicleCrewService
 from office_hero.services.schedule_suggestion_service import ScheduleSuggestionService
-from office_hero.adapters.routing.stub import StubRoutingAdapter
-from office_hero.api.state import (
-    set_route_repository, set_route_stop_repository, set_dispatch_service,
-    set_job_service, set_vehicle_service, set_vehicle_crew_service,
-    set_schedule_suggestion_service,
-)
-from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
+from office_hero.services.vehicle_crew_service import VehicleCrewService
+from office_hero.services.vehicle_service import VehicleService
 
 
 class _GoldenPathAuthMiddleware(BaseHTTPMiddleware):
     """Test auth middleware - sets request.state from headers."""
+
     async def dispatch(self, request: Request, call_next):
         request.state.tenant_id = request.headers.get("X-Test-Tenant-Id")
         request.state.user_id = request.headers.get("X-Test-User-Id")
@@ -58,6 +64,24 @@ def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
 
+def _isolate_rate_limit_key() -> list[tuple]:
+    """Point every registered rate limit at a fresh key so quota consumed by
+    earlier test files (same process, same default key) cannot 429 these
+    requests. Must run AFTER create_app(), which registers the route limits.
+
+    Mirrors the pattern in tests/api/test_vehicle_location_api.py.
+    """
+    from office_hero.api.limiter import limiter
+
+    test_key = str(uuid4())
+    saved: list[tuple] = []
+    for limits in limiter._route_limits.values():
+        for lim in limits:
+            saved.append((lim, lim.key_func))
+            lim.key_func = lambda *_a, **_k: test_key
+    return saved
+
+
 @pytest.fixture()
 def setup():
     """Set up all repositories and services."""
@@ -65,8 +89,7 @@ def setup():
     user_id = uuid4()
     customer_id = uuid4()
     location_id = uuid4()
-    vehicle_id = None
-    
+
     # Repositories
     job_repo = InMemoryJobRepository()
     vehicle_repo = InMemoryVehicleRepository()
@@ -76,7 +99,7 @@ def setup():
     cust_repo = InMemoryCustomerRepository()
     loc_repo = InMemoryLocationRepository()
     audit = InMemoryAuditService()
-    
+
     # Services
     routing_adapter = StubRoutingAdapter()
     schedule_svc = ScheduleSuggestionService(
@@ -94,11 +117,13 @@ def setup():
         schedule_service=schedule_svc,
         audit=audit,
     )
+
     # Create a simple mock template registry
     class MockTemplateRegistry:
         @staticmethod
         def get_template(industry):
             from office_hero.services.custom_field_templates.generic import GenericTemplate
+
             return GenericTemplate()
 
     job_svc = JobService(
@@ -115,7 +140,7 @@ def setup():
         user_repo=None,
         audit=audit,
     )
-    
+
     # Wire providers
     set_job_service(job_svc)
     set_vehicle_service(vehicle_svc)
@@ -124,8 +149,14 @@ def setup():
     set_route_repository(route_repo)
     set_route_stop_repository(stop_repo)
     set_dispatch_service(dispatch_svc)
-    
-    # Create app
+
+    # Create app. Clear accumulated route limits first (every create_app in
+    # earlier test files re-registered limits under the same endpoint names,
+    # sharing storage buckets) so only this app's limits are active.
+    from office_hero.api.limiter import limiter
+
+    saved_route_limits = dict(limiter._route_limits)
+    limiter._route_limits.clear()
     app = create_app(
         job_service=job_svc,
         vehicle_service=vehicle_svc,
@@ -134,9 +165,11 @@ def setup():
         dispatch_service=dispatch_svc,
     )
     app.add_middleware(_GoldenPathAuthMiddleware)
-    
+
+    saved_key_funcs = _isolate_rate_limit_key()
+
     with TestClient(app) as client:
-        return {
+        yield {
             "client": client,
             "tenant_id": tenant_id,
             "user_id": user_id,
@@ -150,6 +183,11 @@ def setup():
             "loc_repo": loc_repo,
             "vc_repo": vc_repo,
         }
+
+    for lim, orig in saved_key_funcs:
+        lim.key_func = orig
+    limiter._route_limits.clear()
+    limiter._route_limits.update(saved_route_limits)
 
 
 def test_golden_path_dispatch_flow(setup):
@@ -167,6 +205,7 @@ def test_golden_path_dispatch_flow(setup):
     auth_headers = _auth_headers(tenant_id, user_id)
 
     print("\n=== Step 0: Seed Customer and Location ===")
+
     async def seed_data():
         cust = await cust_repo.create(tenant_id, name="Test Customer", email="test@example.com")
         loc = await loc_repo.create(
@@ -186,6 +225,7 @@ def test_golden_path_dispatch_flow(setup):
             source="test",
         )
         return cust.id, loc.id
+
     cid, lid = _run(seed_data())
     customer_id = cid
     location_id = lid
@@ -198,6 +238,7 @@ def test_golden_path_dispatch_flow(setup):
     print("âœ… PASS: Health check")
 
     print("\n=== Step 2: Create Vehicle (with crew for today) ===")
+
     async def create_vehicle():
         vehicle = await vehicle_repo.create(
             tenant_id,
@@ -219,6 +260,7 @@ def test_golden_path_dispatch_flow(setup):
             members=[CrewMemberInput(user_id=user_id, role_on_crew=CrewRole.LEAD)],
         )
         return vehicle
+
     vehicle = _run(create_vehicle())
     vehicle_id = vehicle.id
     print(f"âœ… PASS: Vehicle created {vehicle_id}")
@@ -235,7 +277,7 @@ def test_golden_path_dispatch_flow(setup):
         return job
 
     job_repo.get_by_id = get_by_id_with_location
-    
+
     print("\n=== Step 3: Create Job ===")
     resp = client.post(
         "/jobs",
@@ -254,7 +296,7 @@ def test_golden_path_dispatch_flow(setup):
     job_id = job_data["id"]
     assert job_data["status"] == "pending"
     print(f"âœ… PASS: Job created {job_id} with status={job_data['status']}")
-    
+
     print("\n=== Step 4: Dispatch Job to Create Route ===")
     test_date = date.today().isoformat()
     resp = client.post(
@@ -270,7 +312,7 @@ def test_golden_path_dispatch_flow(setup):
     stop_id = route_data["stops"][0]["id"]
     print(f"âœ… PASS: Route created {route_id} with status={route_data['status']}")
     print(f"         First stop: {stop_id}")
-    
+
     print("\n=== Step 5: List Routes ===")
     resp = client.get(
         f"/routes?date={test_date}",
@@ -281,7 +323,7 @@ def test_golden_path_dispatch_flow(setup):
     assert list_data["total"] > 0
     assert any(r["id"] == route_id for r in list_data["items"])
     print(f"âœ… PASS: Routes listed, found {list_data['total']} routes")
-    
+
     print("\n=== Step 6: Get Route by ID ===")
     resp = client.get(
         f"/routes/{route_id}",
@@ -292,7 +334,7 @@ def test_golden_path_dispatch_flow(setup):
     assert route_data["id"] == route_id
     assert route_data["status"] == "committed"
     print(f"âœ… PASS: Route retrieved: {route_id}")
-    
+
     print("\n=== Step 7: Start Route ===")
     resp = client.post(
         f"/routes/{route_id}/start",
@@ -302,7 +344,7 @@ def test_golden_path_dispatch_flow(setup):
     route_data = resp.json()
     assert route_data["status"] == "in_progress"
     print(f"âœ… PASS: Route started, status={route_data['status']}")
-    
+
     print("\n=== Step 8: Mark Stop Arrived ===")
     resp = client.post(
         f"/routes/{route_id}/stops/{stop_id}/arrived",
@@ -313,8 +355,8 @@ def test_golden_path_dispatch_flow(setup):
     found_stop = next((s for s in route_data["stops"] if s["id"] == stop_id), None)
     assert found_stop is not None
     assert found_stop["status"] == "arrived"
-    print(f"âœ… PASS: Stop marked arrived")
-    
+    print("âœ… PASS: Stop marked arrived")
+
     print("\n=== Step 9: Mark Stop Complete ===")
     resp = client.post(
         f"/routes/{route_id}/stops/{stop_id}/complete",
@@ -325,17 +367,19 @@ def test_golden_path_dispatch_flow(setup):
     found_stop = next((s for s in route_data["stops"] if s["id"] == stop_id), None)
     assert found_stop is not None
     assert found_stop["status"] == "complete"
-    
+
     # Check if route auto-completes (depends on whether there are other stops)
     if len(route_data["stops"]) == 1:
-        assert route_data["status"] == "complete", "Route should auto-complete when all stops terminal"
-    
-    print(f"âœ… PASS: Stop marked complete")
+        assert (
+            route_data["status"] == "complete"
+        ), "Route should auto-complete when all stops terminal"
+
+    print("âœ… PASS: Stop marked complete")
     print(f"         Route status: {route_data['status']}")
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print("ðŸŽ‰ GOLDEN PATH COMPLETE - ALL 9 STEPS PASSED")
-    print("="*60)
+    print("=" * 60)
 
 
 if __name__ == "__main__":

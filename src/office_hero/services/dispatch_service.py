@@ -1,4 +1,4 @@
-"""DispatchService — commits routing options into persistent Routes (Slice 14).
+﻿"""DispatchService â€” commits routing options into persistent Routes (Slice 14).
 
 All DB mutations in commit_dispatch happen inside a single logical transaction
 so partial failure rolls back cleanly. The routing adapter is called BEFORE any
@@ -46,9 +46,9 @@ OptionKind = Literal["nearest", "earliest", "balanced"]
 
 @dataclass
 class DispatchCommitPayload:
-    """Validated payload for commit_dispatch — exactly one of option_kind or manual_* set."""
+    """Validated payload for commit_dispatch â€” exactly one of option_kind or manual_* set."""
 
-    date: "datetime.date"  # noqa: UP037 — avoid circular import with datetime module alias
+    date: "datetime.date"  # noqa: UP037 â€” avoid circular import with datetime module alias
     option_kind: OptionKind | None = None
     manual_vehicle_id: UUID | None = None
     manual_sequence: list[UUID] | None = None
@@ -102,22 +102,16 @@ class DispatchService:
         """
         # 1. Resolve vehicle_id and ordered job sequence (before any DB writes)
         if payload.option_kind is not None:
-            vehicle_id, stop_rows = await self._resolve_option_mode(
-                tenant_id, job_id, payload
-            )
+            vehicle_id, stop_rows = await self._resolve_option_mode(tenant_id, job_id, payload)
         else:
-            vehicle_id, stop_rows = await self._resolve_manual_mode(
-                tenant_id, job_id, payload
-            )
+            vehicle_id, stop_rows = await self._resolve_manual_mode(tenant_id, job_id, payload)
 
         work_date = payload.date
 
         # 2. Validate target job is dispatchable
         target_job = await self._job_repo.get_by_id(job_id, tenant_id)
         if target_job is None:
-            raise RouteCommitConflictError(
-                f"Job {job_id} not found", reason="job_not_found"
-            )
+            raise RouteCommitConflictError(f"Job {job_id} not found", reason="job_not_found")
         if target_job.status in (JobStatus.COMPLETE, JobStatus.CANCELLED):
             raise RouteCommitConflictError(
                 f"Job {job_id} is {target_job.status} and cannot be dispatched",
@@ -144,7 +138,7 @@ class DispatchService:
                     f"Route is already {status} and cannot be re-dispatched",
                     reason=f"route_{status}",
                 )
-            # Idempotency check: same sequence → no-op (fetch stops explicitly)
+            # Idempotency check: same sequence â†’ no-op (fetch stops explicitly)
             existing_stops = await self._stop_repo.get_for_route(tenant_id, existing_route.id)
             current_job_ids = [s.job_id for s in existing_stops]
             requested_job_ids = [s.job_id for s in stop_rows]
@@ -159,7 +153,8 @@ class DispatchService:
             total_dist = sum(s.planned_distance_from_prev_m for s in stop_rows)
             total_dur = sum(s.planned_duration_from_prev_s for s in stop_rows)
             route = await self._route_repo.update_totals(
-                existing_route.id, tenant_id,
+                existing_route.id,
+                tenant_id,
                 total_distance_m=total_dist,
                 total_duration_s=total_dur,
             )
@@ -185,9 +180,7 @@ class DispatchService:
 
         # 5. Transition target job to scheduled if pending
         if target_job.status == JobStatus.PENDING:
-            await self._job_repo.update_fields(
-                job_id, tenant_id, status=JobStatus.SCHEDULED
-            )
+            await self._job_repo.update_fields(job_id, tenant_id, status=JobStatus.SCHEDULED)
 
         log.info(
             "dispatch.committed",
@@ -204,7 +197,7 @@ class DispatchService:
     # ------------------------------------------------------------------
 
     async def start_route(self, tenant_id: UUID, user_id: UUID, route_id: UUID) -> Route:
-        """Transition route from committed → in_progress."""
+        """Transition route from committed â†’ in_progress."""
         route = await self._route_repo.get_by_id(route_id, tenant_id)
         if route is None:
             raise RouteNotFoundError(f"Route {route_id} not found")
@@ -212,7 +205,9 @@ class DispatchService:
         if not can_route_transition(from_status, RouteStatus.IN_PROGRESS):
             raise InvalidRouteTransitionError(str(from_status), str(RouteStatus.IN_PROGRESS))
         return await self._route_repo.update_status(
-            route_id, tenant_id, RouteStatus.IN_PROGRESS,
+            route_id,
+            tenant_id,
+            RouteStatus.IN_PROGRESS,
             started_at=datetime.now(UTC),
         )
 
@@ -241,7 +236,9 @@ class DispatchService:
                 affected += 1
 
         route = await self._route_repo.update_status(
-            route_id, tenant_id, RouteStatus.CANCELLED,
+            route_id,
+            tenant_id,
+            RouteStatus.CANCELLED,
             cancelled_at=datetime.now(UTC),
             cancel_reason=reason,
         )
@@ -253,9 +250,7 @@ class DispatchService:
         )
         return route
 
-    async def mark_stop_arrived(
-        self, tenant_id: UUID, user_id: UUID, stop_id: UUID
-    ) -> RouteStop:
+    async def mark_stop_arrived(self, tenant_id: UUID, user_id: UUID, stop_id: UUID) -> RouteStop:
         stop = await self._stop_repo.get_by_id(stop_id, tenant_id)
         if stop is None:
             raise RouteNotFoundError(f"RouteStop {stop_id} not found")
@@ -265,9 +260,7 @@ class DispatchService:
             stop_id, tenant_id, RouteStopStatus.ARRIVED, arrived_at=datetime.now(UTC)
         )
 
-    async def mark_stop_complete(
-        self, tenant_id: UUID, user_id: UUID, stop_id: UUID
-    ) -> RouteStop:
+    async def mark_stop_complete(self, tenant_id: UUID, user_id: UUID, stop_id: UUID) -> RouteStop:
         stop = await self._stop_repo.get_by_id(stop_id, tenant_id)
         if stop is None:
             raise RouteNotFoundError(f"RouteStop {stop_id} not found")
@@ -322,7 +315,8 @@ class DispatchService:
     ) -> tuple[UUID, list[StopRow]]:
         """Re-fetch routing options and return (vehicle_id, stop_rows)."""
         options = await self._schedule_svc.get_options(
-            tenant_id, job_id,
+            tenant_id,
+            job_id,
             window_start=datetime.combine(payload.date, datetime.min.time()).replace(tzinfo=UTC),
             window_end=datetime.combine(payload.date, datetime.max.time()).replace(tzinfo=UTC),
         )
@@ -362,12 +356,10 @@ class DispatchService:
             errors.append("manual_sequence contains duplicate job IDs")
 
         if errors:
-            raise ManualSequenceInvalidError(
-                "Manual sequence failed validation", errors=errors
-            )
+            raise ManualSequenceInvalidError("Manual sequence failed validation", errors=errors)
 
         # Validate each job exists and is not terminal
-        for idx, jid in enumerate(sequence):
+        for jid in sequence:
             job = await self._job_repo.get_by_id(jid, tenant_id)
             if job is None:
                 errors.append(f"job {jid} not found in tenant")
@@ -375,21 +367,18 @@ class DispatchService:
                 errors.append(f"job {jid} is {job.status} and cannot be dispatched")
 
         if errors:
-            raise ManualSequenceInvalidError(
-                "Manual sequence contains invalid jobs", errors=errors
-            )
+            raise ManualSequenceInvalidError("Manual sequence contains invalid jobs", errors=errors)
 
-        stop_rows = [
-            StopRow(job_id=jid, sequence_index=i)
-            for i, jid in enumerate(sequence)
-        ]
+        stop_rows = [StopRow(job_id=jid, sequence_index=i) for i, jid in enumerate(sequence)]
         return vehicle_id, stop_rows
 
     async def _maybe_finalise_route(self, tenant_id: UUID, route_id: UUID) -> None:
         stops = await self._stop_repo.get_for_route(tenant_id, route_id)
         if stops and all(is_terminal_stop(RouteStopStatus(s.status)) for s in stops):
             await self._route_repo.update_status(
-                route_id, tenant_id, RouteStatus.COMPLETE,
+                route_id,
+                tenant_id,
+                RouteStatus.COMPLETE,
                 completed_at=datetime.now(UTC),
             )
             log.info("route.auto_completed", route_id=str(route_id))

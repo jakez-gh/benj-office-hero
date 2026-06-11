@@ -1,8 +1,8 @@
 # Office Hero MVP — Staging Smoke Test Plan
 
-**Target:** Slices 14–15 (Dispatch & Route Management, Vehicle Location Tracking)  
-**Scope:** Golden path + critical edge cases + RBAC + idempotency  
-**Duration:** ~30 min per full run  
+**Target:** Slices 14–15 (Dispatch & Route Management, Vehicle Location Tracking)
+**Scope:** Golden path + critical edge cases + RBAC + idempotency
+**Duration:** ~30 min per full run
 **Environment:** Staging (PostgreSQL + API server running)
 
 ---
@@ -50,8 +50,8 @@ WORK_DATE = "2026-06-02"  # Today (must match crew assignment)
 curl -s http://localhost:8000/health | jq '.'
 ```
 
-**Expected:** `{"status": "healthy"}`  
-**Validation:** API is responding  
+**Expected:** `{"status": "healthy"}`
+**Validation:** API is responding
 **Dependencies:** None
 
 ---
@@ -69,8 +69,8 @@ SELECT * FROM routes WHERE tenant_id != $1 LIMIT 1;
 -- Should return 0 rows (isolation working)
 ```
 
-**Expected:** All tables have RLS enabled; tenant isolation enforced  
-**Validation:** Query returns empty result set when filtering by different tenant  
+**Expected:** All tables have RLS enabled; tenant isolation enforced
+**Validation:** Query returns empty result set when filtering by different tenant
 **Dependencies:** None
 
 ---
@@ -87,8 +87,8 @@ SELECT indexname FROM pg_indexes
 WHERE tablename = 'route_stops' AND indexname LIKE '%route%sequence%';
 ```
 
-**Expected:** Indexes for vehicle+date, route+sequence exist  
-**Validation:** Both queries return non-empty results  
+**Expected:** Indexes for vehicle+date, route+sequence exist
+**Validation:** Both queries return non-empty results
 **Dependencies:** None
 
 ---
@@ -110,8 +110,8 @@ VALUES
   ON CONFLICT DO NOTHING;
 ```
 
-**Expected:** Users created with roles and permissions attached  
-**Validation:** Query returns exact user/tenant/role records  
+**Expected:** Users created with roles and permissions attached
+**Validation:** Query returns exact user/tenant/role records
 **Dependencies:** None (prerequisite for all remaining tests)
 
 ---
@@ -129,8 +129,8 @@ SELECT * FROM vehicle_crews
 WHERE vehicle_id = $VEHICLE_ID AND work_date = $WORK_DATE;
 ```
 
-**Expected:** One vehicle, one crew for test date  
-**Validation:** Both queries return exactly 1 row  
+**Expected:** One vehicle, one crew for test date
+**Validation:** Both queries return exactly 1 row
 **Dependencies:** 1.4 (test tenant/user setup)
 
 ---
@@ -143,8 +143,8 @@ WHERE vehicle_id = $VEHICLE_ID AND work_date = $WORK_DATE;
 SELECT id, status FROM jobs WHERE id = ANY($JOB_IDS) ORDER BY id;
 ```
 
-**Expected:** First 3 jobs are PENDING; job[3] is COMPLETE  
-**Validation:** Status matches expectations above  
+**Expected:** First 3 jobs are PENDING; job[3] is COMPLETE
+**Validation:** Status matches expectations above
 **Dependencies:** 1.4 (test tenant setup)
 
 ---
@@ -168,6 +168,7 @@ curl -X POST http://localhost:8000/jobs/$JOB_IDS[0]/dispatch \
 ```
 
 **Expected:** 200 OK
+
 ```json
 {
   "id": "$JOB_IDS[0]",
@@ -181,6 +182,7 @@ curl -X POST http://localhost:8000/jobs/$JOB_IDS[0]/dispatch \
 ```
 
 **Validation:**
+
 - Status is "scheduled" (job transitioned from PENDING)
 - Response contains all required fields
 - HTTP 200 (not 201 — existing job, status change only)
@@ -206,6 +208,7 @@ curl -X POST http://localhost:8000/jobs/$JOB_IDS[0]/commit-dispatch \
 ```
 
 **Expected:** 200 OK
+
 ```json
 {
   "id": "route-uuid",
@@ -229,6 +232,7 @@ curl -X POST http://localhost:8000/jobs/$JOB_IDS[0]/commit-dispatch \
 ```
 
 **Validation:**
+
 - Route status is "committed"
 - Single stop with job_id = $JOB_IDS[0]
 - Crew assignment captured
@@ -253,6 +257,7 @@ curl -s "http://localhost:8000/routes?date=2026-06-02&vehicle_id=$VEHICLE_ID" \
 ```
 
 **Expected:** 200 OK, array with at least the route from 2.2
+
 ```json
 {
   "items": [
@@ -268,6 +273,7 @@ curl -s "http://localhost:8000/routes?date=2026-06-02&vehicle_id=$VEHICLE_ID" \
 ```
 
 **Validation:**
+
 - Route appears in list with correct status
 - Filters work: vehicle_id, date
 - Total count is accurate
@@ -289,6 +295,7 @@ curl -s http://localhost:8000/routes/$ROUTE_ID \
 ```
 
 **Expected:** 200 OK with full RouteRead schema
+
 ```json
 {
   "id": "$ROUTE_ID",
@@ -305,6 +312,7 @@ curl -s http://localhost:8000/routes/$ROUTE_ID \
 ```
 
 **Validation:**
+
 - All nested stops present
 - Status field present and correct
 - Crew and vehicle summary objects populated
@@ -326,6 +334,7 @@ curl -X POST http://localhost:8000/routes/$ROUTE_ID/start \
 ```
 
 **Expected:** 200 OK
+
 ```json
 {
   "id": "$ROUTE_ID",
@@ -336,6 +345,7 @@ curl -X POST http://localhost:8000/routes/$ROUTE_ID/start \
 ```
 
 **Validation:**
+
 - Status changed to "in_progress"
 - started_at timestamp is recent (within 10 seconds)
 - Stops unchanged
@@ -357,6 +367,7 @@ curl -X POST http://localhost:8000/routes/$ROUTE_ID/stops/$STOP_ID/arrived \
 ```
 
 **Expected:** 200 OK
+
 ```json
 {
   "id": "$ROUTE_ID",
@@ -372,6 +383,7 @@ curl -X POST http://localhost:8000/routes/$ROUTE_ID/stops/$STOP_ID/arrived \
 ```
 
 **Validation:**
+
 - Stop status is "arrived"
 - actual_arrived_at is set and recent
 - Route status still "in_progress"
@@ -399,6 +411,7 @@ curl -X PUT http://localhost:8000/vehicles/$VEHICLE_ID/location \
 ```
 
 **Expected:** 201 Created
+
 ```json
 {
   "id": "location-uuid",
@@ -412,6 +425,7 @@ curl -X PUT http://localhost:8000/vehicles/$VEHICLE_ID/location \
 ```
 
 **Validation:**
+
 - Location record created with all fields
 - Coordinates valid (within bounds)
 - created_at is recent
@@ -433,6 +447,7 @@ curl -s http://localhost:8000/vehicles/$VEHICLE_ID/location \
 ```
 
 **Expected:** 200 OK with latest location from 2.7
+
 ```json
 {
   "id": "location-uuid",
@@ -446,6 +461,7 @@ curl -s http://localhost:8000/vehicles/$VEHICLE_ID/location \
 ```
 
 **Validation:**
+
 - Returned location matches most recent from 2.7
 - Coordinates exact match
 
@@ -466,6 +482,7 @@ curl -X POST http://localhost:8000/routes/$ROUTE_ID/stops/$STOP_ID/complete \
 ```
 
 **Expected:** 200 OK
+
 ```json
 {
   "id": "$ROUTE_ID",
@@ -482,6 +499,7 @@ curl -X POST http://localhost:8000/routes/$ROUTE_ID/stops/$STOP_ID/complete \
 ```
 
 **Validation:**
+
 - Stop status is "complete"
 - actual_completed_at is set and recent
 - **Route auto-transitioned to "complete"** (because all stops are terminal)
@@ -506,13 +524,14 @@ curl -X POST http://localhost:8000/routes/$ROUTE_ID/start \
 ```
 
 **Expected:** 403 Forbidden
+
 ```json
 {
   "detail": "Insufficient permissions"
 }
 ```
 
-**Validation:** Request rejected due to missing route:write  
+**Validation:** Request rejected due to missing route:write
 **Dependencies:** Any route exists (use one from Phase 2)
 
 ---
@@ -530,8 +549,8 @@ curl -X PUT http://localhost:8000/vehicles/$VEHICLE_ID/location \
   -d '{"latitude": 40.7, "longitude": -74.0}'
 ```
 
-**Expected:** 403 Forbidden  
-**Validation:** Request rejected  
+**Expected:** 403 Forbidden
+**Validation:** Request rejected
 **Dependencies:** 1.5
 
 ---
@@ -546,8 +565,8 @@ curl -s http://localhost:8000/routes \
   -H "X-Test-Permissions: route:read"
 ```
 
-**Expected:** 401 Unauthorized  
-**Validation:** Rejected at middleware  
+**Expected:** 401 Unauthorized
+**Validation:** Rejected at middleware
 **Dependencies:** None
 
 ---
@@ -564,13 +583,14 @@ curl -s http://localhost:8000/routes/00000000-0000-0000-0000-000000000000 \
 ```
 
 **Expected:** 404 Not Found
+
 ```json
 {
   "detail": "Route not found"
 }
 ```
 
-**Validation:** Appropriate error response  
+**Validation:** Appropriate error response
 **Dependencies:** None
 
 ---
@@ -590,13 +610,14 @@ curl -X POST http://localhost:8000/routes/$COMPLETED_ROUTE_ID/start \
 ```
 
 **Expected:** 422 Unprocessable Entity
+
 ```json
 {
   "detail": "Cannot transition from complete to in_progress"
 }
 ```
 
-**Validation:** State machine enforced at service layer  
+**Validation:** State machine enforced at service layer
 **Dependencies:** Completed route from Phase 2
 
 ---
@@ -615,8 +636,8 @@ curl -X POST http://localhost:8000/routes/$ROUTE_ID/stops/$COMPLETED_STOP_ID/arr
   -H "Content-Type: application/json"
 ```
 
-**Expected:** 422 Unprocessable Entity  
-**Validation:** Stop transition matrix enforced  
+**Expected:** 422 Unprocessable Entity
+**Validation:** Stop transition matrix enforced
 **Dependencies:** Completed stop from Phase 2
 
 ---
@@ -638,13 +659,14 @@ curl -X POST http://localhost:8000/jobs/$JOB_IDS[3]/commit-dispatch \
 ```
 
 **Expected:** 409 Conflict
+
 ```json
 {
   "detail": "Job ... is complete and cannot be dispatched"
 }
 ```
 
-**Validation:** Business logic prevents terminal job dispatch  
+**Validation:** Business logic prevents terminal job dispatch
 **Dependencies:** 1.6 (job[3] is complete)
 
 ---
@@ -679,6 +701,7 @@ curl -X POST http://localhost:8000/routes/$CANCEL_ROUTE_ID/cancel \
 ```
 
 **Expected:** 200 OK
+
 ```json
 {
   "id": "$CANCEL_ROUTE_ID",
@@ -701,9 +724,11 @@ curl -X POST http://localhost:8000/routes/$CANCEL_ROUTE_ID/cancel \
 ```
 
 **Validation:**
+
 - Route status is "cancelled"
 - All stops are "skipped"
 - Verify in DB that associated jobs are back to PENDING:
+
   ```sql
   SELECT id, status FROM jobs WHERE id IN ($JOB_IDS[1], $JOB_IDS[2]);
   -- Expected: both PENDING
@@ -729,6 +754,7 @@ curl -X POST http://localhost:8000/routes/$ROUTE_ID/stops/$FIRST_STOP_ID/skip \
 ```
 
 **Expected:** 200 OK
+
 ```json
 {
   "id": "$ROUTE_ID",
@@ -748,6 +774,7 @@ curl -X POST http://localhost:8000/routes/$ROUTE_ID/stops/$FIRST_STOP_ID/skip \
 ```
 
 **Validation:**
+
 - Single stop is skipped
 - Route does NOT auto-complete (only one stop done, one pending)
 - Reason captured in response
@@ -790,11 +817,13 @@ ROUTE_ID_2=$(curl -X POST http://localhost:8000/jobs/A/commit-dispatch \
 ```
 
 **Expected:**
+
 - Both calls return HTTP 200
 - ROUTE_ID_1 == ROUTE_ID_2 (same route returned)
 - Response includes all 2 stops
 
 **Validation:**
+
 ```sql
 SELECT COUNT(*) FROM routes
 WHERE vehicle_id = $VEHICLE_ID AND work_date = '2026-06-04';
@@ -826,6 +855,7 @@ curl -X POST http://localhost:8000/jobs/A/commit-dispatch \
 ```
 
 **Expected:** 409 Conflict
+
 ```json
 {
   "detail": "Manual sequence contains invalid jobs",
@@ -836,6 +866,7 @@ curl -X POST http://localhost:8000/jobs/A/commit-dispatch \
 ```
 
 **Validation:**
+
 ```sql
 SELECT COUNT(*) FROM routes
 WHERE vehicle_id = $VEHICLE_ID AND work_date = '2026-06-05';
@@ -860,6 +891,7 @@ curl -s "http://localhost:8000/routes?date=2026-06-02" \
 ```
 
 **Expected:** 200 OK with empty items array
+
 ```json
 {
   "items": [],
@@ -868,6 +900,7 @@ curl -s "http://localhost:8000/routes?date=2026-06-02" \
 ```
 
 **Validation:**
+
 - No routes visible (RLS working)
 - No error; empty result is correct
 
@@ -886,7 +919,7 @@ AND constraint_type = 'UNIQUE';
 -- Should include constraint on (tenant_id, vehicle_id, work_date)
 ```
 
-**Validation:** Constraint exists in schema  
+**Validation:** Constraint exists in schema
 **Dependencies:** Database setup (Phase 1)
 
 ---
@@ -901,8 +934,8 @@ SELECT constraint_name, delete_action FROM information_schema.referential_constr
 WHERE table_name = 'routes' AND column_name = 'vehicle_id';
 ```
 
-**Expected:** Constraint exists with CASCADE or RESTRICT action  
-**Validation:** FK constraint present and correctly configured  
+**Expected:** Constraint exists with CASCADE or RESTRICT action
+**Validation:** FK constraint present and correctly configured
 **Dependencies:** Database setup
 
 ---
@@ -927,8 +960,9 @@ done
 wait
 ```
 
-**Expected:** All 10 requests return 201 Created  
+**Expected:** All 10 requests return 201 Created
 **Validation:**
+
 ```sql
 SELECT COUNT(*) FROM vehicle_locations
 WHERE vehicle_id = $VEHICLE_ID;
@@ -955,8 +989,8 @@ done
 wait
 ```
 
-**Expected:** First 60 succeed (200), remaining get 429 Too Many Requests  
-**Validation:** Rate limiter enforced per endpoint  
+**Expected:** First 60 succeed (200), remaining get 429 Too Many Requests
+**Validation:** Rate limiter enforced per endpoint
 **Dependencies:** Route exists from Phase 2
 
 ---
@@ -979,8 +1013,8 @@ wait
 echo "All 150 requests should succeed"
 ```
 
-**Expected:** 200 on all 150 (< 300/minute limit)  
-**Validation:** Location endpoints have higher rate limit than route ops  
+**Expected:** 200 on all 150 (< 300/minute limit)
+**Validation:** Location endpoints have higher rate limit than route ops
 **Dependencies:** 1.5
 
 ---
@@ -1001,6 +1035,7 @@ echo "All 150 requests should succeed"
 ## Pass/Fail Criteria
 
 **PASS:** All of the following
+
 - Phase 1 (environment): All 6 checks pass
 - Phase 2 (golden path): All 9 steps complete in sequence, final route is "complete"
 - Phase 3 (RBAC): All 9 permission/state tests return expected error codes

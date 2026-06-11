@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 from typing import Literal
 from uuid import UUID
 
@@ -100,12 +100,10 @@ class DispatchCommitRequest(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_exactly_one_mode(self) -> "DispatchCommitRequest":
+    def validate_exactly_one_mode(self) -> DispatchCommitRequest:
         """Validate exactly one of option_kind or (manual_vehicle_id, manual_sequence) is provided."""
         has_option = self.option_kind is not None
-        has_manual = (
-            self.manual_vehicle_id is not None and self.manual_sequence is not None
-        )
+        has_manual = self.manual_vehicle_id is not None and self.manual_sequence is not None
         if not (has_option ^ has_manual):
             raise ValueError(
                 "Exactly one of option_kind or (manual_vehicle_id, manual_sequence) must be provided"

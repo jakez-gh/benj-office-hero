@@ -28,7 +28,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.execute(
-        "DROP POLICY IF EXISTS vehicle_location_tenant_isolation ON vehicle_locations;"
-    )
+    op.execute("DROP POLICY IF EXISTS vehicle_location_tenant_isolation ON vehicle_locations;")
     op.execute("ALTER TABLE vehicle_locations DISABLE ROW LEVEL SECURITY;")

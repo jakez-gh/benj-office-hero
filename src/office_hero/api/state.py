@@ -12,7 +12,9 @@ if TYPE_CHECKING:
     from office_hero.adapters.geocoding.protocol import GeocodingAdapter
     from office_hero.repositories.route_repository import RouteRepositoryProtocol
     from office_hero.repositories.route_stop_repository import RouteStopRepositoryProtocol
-    from office_hero.repositories.vehicle_location_repository import VehicleLocationRepositoryProtocol
+    from office_hero.repositories.vehicle_location_repository import (
+        VehicleLocationRepositoryProtocol,
+    )
     from office_hero.services.customer_service import CustomerService
     from office_hero.services.dispatch_service import DispatchService
     from office_hero.services.job_dispatch_service import JobDispatchService

@@ -1,8 +1,8 @@
 # Office Hero MVP - Project Completion Strategy
 
-**Document Type:** Project-Level Roadmap  
-**Scope:** Slice 14 verification + remaining MVP work  
-**Status:** In Execution (as of June 2, 2026)  
+**Document Type:** Project-Level Roadmap
+**Scope:** Slice 14 verification + remaining MVP work
+**Status:** In Execution (as of June 2, 2026)
 **Owner:** Mara (via Claude Code + squadron + context forge)
 
 ---
@@ -22,6 +22,7 @@
 ## Slice 14 - Status Summary
 
 ### Implementation ✅
+
 - **8 API endpoints** (POST /jobs/{id}/dispatch, GET /routes, GET /routes/{id}, POST /routes/{id}/start|cancel, POST /routes/{id}/stops/{id}/arrived|complete|skip)
 - **DispatchService** (420 lines, 9 async methods)
 - **Data models** (Route, RouteStop with 5-state and 4-state lifecycles)
@@ -33,6 +34,7 @@
 **Files:** 13 modified, 1,732 insertions
 
 ### Code Quality ✅
+
 - 8 critical issues identified by code review
 - 8/8 issues fixed
 - 5 additional findings from squadron review
@@ -40,12 +42,14 @@
 - All changes merged to main (11 commits total)
 
 ### Testing ✅
+
 - API contract tests (232 lines, 8 endpoints × 3+ cases)
 - Service unit tests (129 lines, all methods + error paths)
 - Verification approach document (6-phase test strategy)
 - Ready to run without database
 
 ### Code Review ✅
+
 - Static analysis complete
 - Pydantic v2 compliance verified
 - Schema validation fixed
@@ -53,6 +57,7 @@
 - Security checks passed
 
 ### What's Left for Slice 14
+
 - [ ] Run tests to verify they pass
 - [ ] Integration testing with real database
 - [ ] Full end-to-end flow verification
@@ -79,6 +84,7 @@ The MVP includes slices 1–14 plus slices 20, 22, 23:
 | 23 | MCP Server | ✅ Complete | AI integration | 3/5 |
 
 **Not MVP (future slices):**
+
 - Slice 11 (Contracts) — complex, can iterate post-MVP
 - Slice 16 (Dynamic re-routing) — high effort, handle in Phase 7
 - Slice 17-19 (Mobile app) — React Native, separate effort
@@ -91,9 +97,11 @@ The MVP includes slices 1–14 plus slices 20, 22, 23:
 ## Remaining Work Breakdown
 
 ### Phase 1: Slice 14 Verification (TODAY - 2 hours)
+
 **Goal:** Confirm all code works as implemented
 
 **Work:**
+
 1. Run API contract tests (30 min)
    - Command: `pytest tests/api/test_routes_api.py -xvs`
    - Expected: All pass ✓
@@ -108,6 +116,7 @@ The MVP includes slices 1–14 plus slices 20, 22, 23:
    - Coverage metrics
 
 **Deliverables:**
+
 - Test execution report (pass/fail/errors)
 - Any bug fixes needed
 - Confidence level for Phase 2
@@ -119,24 +128,28 @@ The MVP includes slices 1–14 plus slices 20, 22, 23:
 **Why needed:** Routing engine needs live GPS positions for optimal routing
 
 **Scope:**
+
 - `PUT /vehicles/{id}/location` endpoint
 - Background location posting from tech app
 - Time-series storage in database
 - Query latest position for routing
 
 **Files to create:**
+
 - `src/office_hero/models/vehicle_location.py`
 - `src/office_hero/repositories/vehicle_location_repository.py`
 - `src/office_hero/api/routes/vehicle_location.py`
 - `alembic/versions/XXXX_vehicle_location.py`
 
 **Tests needed:**
+
 - Location endpoint API tests
 - Location repository tests
 - Latest position query performance
 - Concurrent location updates
 
 **Success criteria:**
+
 - Endpoint accepts POST with lat/lng/timestamp
 - Latest position returned in O(1) time
 - Time-series queryable for analytics
@@ -147,6 +160,7 @@ The MVP includes slices 1–14 plus slices 20, 22, 23:
 ### Phase 3: API Documentation (1.5 hours)
 
 **Deliverables:**
+
 1. **OpenAPI/Swagger** (auto-generated from FastAPI)
    - Available at `/docs` in dev mode
    - Review for completeness
@@ -174,6 +188,7 @@ The MVP includes slices 1–14 plus slices 20, 22, 23:
 ### Phase 4: Feature Documentation (2 hours)
 
 **Deliverables:**
+
 1. **Dispatch Feature Guide**
    - When to use option mode vs manual mode
    - How ranking algorithm works
@@ -208,6 +223,7 @@ The MVP includes slices 1–14 plus slices 20, 22, 23:
 ### Phase 5: Staging Deployment (3 hours)
 
 **Prerequisites:**
+
 - All tests passing
 - Documentation complete
 - Environment variables configured
@@ -215,6 +231,7 @@ The MVP includes slices 1–14 plus slices 20, 22, 23:
 - Monitoring configured
 
 **Steps:**
+
 1. Create staging environment
    - Neon DB branch for staging
    - Fly.io app for staging
@@ -239,6 +256,7 @@ The MVP includes slices 1–14 plus slices 20, 22, 23:
    - Verify audit logging
 
 **Success criteria:**
+
 - All services up and healthy
 - API responding with correct data
 - Frontend loading without errors
@@ -249,6 +267,7 @@ The MVP includes slices 1–14 plus slices 20, 22, 23:
 ### Phase 6: Live Environment Validation (2 hours)
 
 **Manual testing:**
+
 1. Login as admin
 2. Create customer + location
 3. Create job
@@ -261,6 +280,7 @@ The MVP includes slices 1–14 plus slices 20, 22, 23:
 10. Route auto-completes
 
 **Automated checks:**
+
 - API response times
 - Database query performance
 - Audit log completeness
@@ -302,16 +322,19 @@ Phase 7+: Advanced features (Slices 16, 21, 24-27, 28-30)
 ## Risk Factors
 
 ### High Risk
+
 - **Slice 15 not done before MVP freeze** → Route quality degrades (can mitigate with stub routing)
 - **Integration tests fail** → Hidden dependencies discovered late (mitigate: run tests now)
 - **Performance issues under load** → Staging reveals bottlenecks (mitigate: monitor p95)
 
 ### Medium Risk
+
 - **Database schema issues** → Migrations fail (mitigate: test migrations fresh)
 - **Frontend integration issues** → UI can't call APIs (mitigate: check network tab)
 - **RBAC gaps** → Unauthorized access (mitigate: test with multiple roles)
 
 ### Low Risk
+
 - **Documentation incomplete** → Training delayed (can update post-deploy)
 - **Minor UI polish issues** → Non-critical (can iterate)
 
@@ -366,8 +389,7 @@ TOTAL: ~12 hours to complete MVP
 
 ---
 
-**Created:** June 2, 2026  
-**By:** Mara (via Claude Code + squadron + context forge)  
-**Status:** ACTIVE (being executed)  
+**Created:** June 2, 2026
+**By:** Mara (via Claude Code + squadron + context forge)
+**Status:** ACTIVE (being executed)
 **Next Review:** After Phase 1 completion
-

@@ -17,9 +17,9 @@ from fastapi import FastAPI
 from office_hero.adapters.geocoding.stub import StubGeocodingAdapter
 from office_hero.api.exception_handlers import register_exception_handlers
 from office_hero.api.limiter import limiter
+from office_hero.api.middleware.auth import JWTAuthMiddleware
 from office_hero.api.middleware.logging import LoggingMiddleware
 from office_hero.api.middleware.security_headers import SecurityHeadersMiddleware
-from office_hero.api.middleware.auth import JWTAuthMiddleware
 from office_hero.api.middleware.test_auth import TestAuthMiddleware, test_auth_enabled
 from office_hero.api.routes import auth, health
 from office_hero.api.routes.admin import audit_router, create_admin_router

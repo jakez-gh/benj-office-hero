@@ -1,7 +1,7 @@
-# Office Hero - Administrator Guide
+﻿# Office Hero - Administrator Guide
 
-**Version:** 1.0 MVP  
-**Audience:** TenantAdmins, Dispatchers  
+**Version:** 1.0 MVP
+**Audience:** TenantAdmins, Dispatchers
 **Last Updated:** June 2, 2026
 
 ---
@@ -11,6 +11,7 @@
 Office Hero is a dispatch and route management system that helps you assign jobs to technicians efficiently. This guide covers dispatching jobs, managing routes, and tracking technician progress.
 
 **Key Features:**
+
 - 3-option dispatch (nearest, earliest, balanced)
 - Custom route sequencing
 - Real-time technician tracking
@@ -32,6 +33,7 @@ Visit `https://admin.officehero.dev`
 ### 2. Main Dashboard
 
 The dashboard shows:
+
 - **Today's Overview:** Route count, vehicle status, jobs pending
 - **Quick Actions:** Dispatch new job, view routes, add customer
 - **Active Routes:** Routes in progress with stop count
@@ -69,6 +71,7 @@ You'll see 3 ranked options:
 | **Balanced** | Most even workload across vehicles | Fairness priority |
 
 Each option shows:
+
 - Assigned vehicle
 - Estimated distance and time
 - Current vehicle location
@@ -77,6 +80,7 @@ Each option shows:
 ### Step 3: Dispatch to a Vehicle
 
 #### Option A: Quick Dispatch
+
 1. Click **"Dispatch to Nearest"** (recommended for 80% of jobs)
 2. Review the vehicle and crew assigned
 3. Click **"Confirm"**
@@ -84,11 +88,13 @@ Each option shows:
 **Route created!** The technician will see it immediately.
 
 #### Option B: Choose Different Option
+
 1. Click on "Earliest" or "Balanced" tab
 2. Review the alternative
 3. Click **"Dispatch"**
 
 #### Option C: Custom Sequence
+
 1. Click **"Custom Sequence"** tab
 2. Drag jobs to reorder them
 3. Make sure your current job is included in the sequence
@@ -107,6 +113,7 @@ Each option shows:
 ### Route Details
 
 Each route shows:
+
 - Vehicle and crew assigned
 - All stops (jobs) in sequence
 - Stop status (Pending, Arrived, Complete, Skipped)
@@ -116,13 +123,17 @@ Each route shows:
 ### Transition Route States
 
 #### Start Route
+
 When technician begins work:
+
 1. Open the route
 2. Click **"Start Route"**
 3. Status changes to "In Progress"
 
 #### Cancel Route
+
 If circumstances change:
+
 1. Open the route
 2. Click **"Cancel Route"**
 3. Enter reason (required)
@@ -215,37 +226,43 @@ Coming soon: Interactive map showing all vehicle locations and route overlays.
 ## Reports & Analytics
 
 ### Today's Summary
+
 - Routes completed
 - On-time percentage
 - Average service time
 - Technician utilization
 
 ### Audit Trail
+
 Every action is logged:
+
 - Who dispatched each job
 - When routes were created/started/completed
 - Which technician marked each stop
 - Any route cancellations with reasons
 
-Access via: **"Settings" → "Audit Log"**
+Access via: **"Settings" â†’ "Audit Log"**
 
 ---
 
 ## Best Practices
 
 ### Dispatching
+
 1. **Batch dispatch:** Group related jobs to same technician
 2. **Check traffic:** Consider rush hours when estimating
 3. **Balance workload:** Use "Balanced" option to prevent overload
 4. **Confirm crews:** Always verify crew is assigned before dispatching
 
-### Managing Routes
+### Route Management Tips
+
 1. **Start early:** Begin routes 30 min before first job
 2. **Monitor progress:** Check mid-route for delays
 3. **Communicate:** Text/call technician if customer request changes
 4. **Complete records:** Ensure all stops marked before route considered done
 
 ### Customer Communication
+
 1. **Give time windows:** "We'll arrive between 10am-12pm"
 2. **Provide GPS:** Send stop location via SMS/email
 3. **Notify completion:** Confirm job done within 1 hour
@@ -260,6 +277,7 @@ Access via: **"Settings" → "Audit Log"**
 **Cause:** All vehicles already have committed routes for that date/time
 
 **Solution:**
+
 - Check if vehicle has crew assigned
 - Try different routing option
 - Postpone to next day
@@ -269,6 +287,7 @@ Access via: **"Settings" → "Audit Log"**
 **Cause:** Route is already completed
 
 **Solution:**
+
 - Only "Committed" and "In Progress" routes can be canceled
 - If all stops complete, route auto-completes (can't cancel)
 
@@ -277,6 +296,7 @@ Access via: **"Settings" → "Audit Log"**
 **Cause:** Tech-web not loading, or crew not assigned
 
 **Solution:**
+
 1. Verify crew is in the route
 2. Have technician reload their browser
 3. Check their internet connection
@@ -287,6 +307,7 @@ Access via: **"Settings" → "Audit Log"**
 **Cause:** Job was previously dispatched and is still pending dispatch completion
 
 **Solution:**
+
 - Cancel previous dispatch first
 - Or mark first dispatch as "Skipped"
 
@@ -295,13 +316,13 @@ Access via: **"Settings" → "Audit Log"**
 ## Support
 
 For help:
-- Email: support@officehero.dev
+
+- Email: <support@officehero.dev>
 - Chat: In-app support (bottom right)
 - Phone: 1-800-OFFICE-HERO
 
 ---
 
-**Next:** Technician Guide  
-**Admin Training:** 30 minutes  
+**Next:** Technician Guide
+**Admin Training:** 30 minutes
 **Typical Dispatch Time:** 2-3 minutes per job
-

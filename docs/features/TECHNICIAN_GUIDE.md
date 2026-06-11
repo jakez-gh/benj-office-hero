@@ -1,7 +1,7 @@
-# Office Hero - Technician Guide
+﻿# Office Hero - Technician Guide
 
-**Version:** 1.0 MVP  
-**Audience:** Field Technicians, Helpers  
+**Version:** 1.0 MVP
+**Audience:** Field Technicians, Helpers
 **Last Updated:** June 2, 2026
 
 ---
@@ -40,7 +40,7 @@ Your route shows:
 
 ```
 Route Information
-━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 Vehicle: Van 1 (ABC 123)
 Crew: You + Helper Name
 Total Distance: 45 km
@@ -48,14 +48,14 @@ Total Time: ~4 hours 30 min
 Status: In Progress (started 08:00)
 
 Stops (3 jobs)
-━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 Stop 1: 123 Main St (pending)
   Job: Plumbing repair
   ETA: 08:20
   Time window: 08:00 - 08:30
 
 Stop 2: 456 Oak Ave (pending)
-  Job: HVAC maintenance  
+  Job: HVAC maintenance
   ETA: 09:15
   Time window: 09:00 - 09:45
 
@@ -72,6 +72,7 @@ Stop 3: 789 Pine Rd (pending)
 ### 1. Morning Briefing
 
 When you start your shift:
+
 1. Open Office Hero app/web
 2. Review your route (all stops should appear)
 3. Note the first stop's address and ETA
@@ -81,6 +82,7 @@ When you start your shift:
 ### 2. Start Your Route
 
 When you're ready to begin (don't wait at office):
+
 1. Open your route
 2. Click **"Start Route"**
 3. Your route status changes to "In Progress"
@@ -95,23 +97,26 @@ When you're ready to begin (don't wait at office):
 ### 4. Arrive at Stop
 
 When you arrive:
+
 1. The app detects your location (or manually confirm)
 2. Click **"Mark Arrived"** on the stop
-3. Stop status changes from "Pending" → "Arrived"
+3. Stop status changes from "Pending" â†’ "Arrived"
 
 **Note:** You can start work after arrival. You'll confirm completion when done.
 
 ### 5. Complete the Stop
 
 When work is done:
+
 1. Click **"Mark Complete"**
-2. App shows: ✓ Stop completed at [time]
+2. App shows: âœ“ Stop completed at [time]
 3. Your manager gets notified
 4. Next stop's ETA automatically updates
 
 ### 6. Skip a Stop (If Needed)
 
 If you can't complete a job:
+
 1. Click **"Skip Stop"**
 2. Enter reason:
    - "Customer not available"
@@ -128,6 +133,7 @@ If you can't complete a job:
 ### Check Next Stop Details
 
 Before leaving current stop:
+
 1. Click the next stop in your list
 2. You'll see:
    - Address and GPS coordinates
@@ -140,6 +146,7 @@ Before leaving current stop:
 ### Handle Delays
 
 If you're running late:
+
 1. Your manager sees your location and ETA updates
 2. They'll adjust remaining stops' time windows
 3. You don't need to do anything - just keep going
@@ -148,6 +155,7 @@ If you're running late:
 ### Update Your Status
 
 If you need to stop (lunch, break, repair issue):
+
 1. Click **"Pause Route"** (not in app yet, coming soon)
 2. Or just take your break - your location stays visible
 3. No need to explicitly resume; click next stop when ready
@@ -157,12 +165,14 @@ If you need to stop (lunch, break, repair issue):
 ## Important Tips
 
 ### Safety
+
 - Always put phone in mount while driving
 - Don't text while driving
 - Use app's turn-by-turn navigation
 - Stop if you're feeling fatigued
 
 ### Professionalism
+
 - Arrive within time window
 - Introduce yourself at each stop
 - Explain the work you're doing
@@ -170,6 +180,7 @@ If you need to stop (lunch, break, repair issue):
 - Don't provide estimates unless authorized
 
 ### Job Completion
+
 - Complete work to standard before marking done
 - Take photos if instructed
 - Get customer signature if required
@@ -177,6 +188,7 @@ If you need to stop (lunch, break, repair issue):
 - Then click "Mark Complete"
 
 ### Communication
+
 - Read job notes before arriving
 - Call customer if running late (>15 min)
 - Text manager with questions/issues
@@ -202,6 +214,7 @@ If you need to stop (lunch, break, repair issue):
 ### Background Location
 
 The app tracks your location in the background:
+
 - Accuracy: Within 10-30 meters
 - Updates: Every 30 seconds
 - Battery: Minimal impact (disabled when driving not detected)
@@ -212,6 +225,7 @@ You can't disable location (it's required for dispatch to work), but you can dis
 ### Battery Saving
 
 If battery is low:
+
 - App location tracking continues but updates less frequently
 - Directions still work
 - You can still mark stops complete
@@ -229,9 +243,10 @@ If you prefer desktop or want a larger screen:
 2. Login with your credentials
 3. "My Route Today" opens automatically
 
-### Features
+### Web Features
 
 Same as mobile app, but:
+
 - Larger text and buttons
 - Works on tablet too
 - Better for photos/documents
@@ -245,6 +260,7 @@ Same as mobile app, but:
 **Cause:** Route not yet created/assigned
 
 **Solution:**
+
 - Check if dispatcher has assigned you jobs
 - Refresh the app (pull down to refresh)
 - Contact manager if nothing appears by 7:30am
@@ -254,6 +270,7 @@ Same as mobile app, but:
 **Cause:** No internet connection or GPS disabled
 
 **Solution:**
+
 - Check WiFi/LTE connection
 - Enable Location in phone settings
 - Try address lookup manually in Maps app
@@ -263,6 +280,7 @@ Same as mobile app, but:
 **Cause:** Internet connection lost during marking
 
 **Solution:**
+
 1. Retry "Mark Complete"
 2. If it fails again, try refreshing the app
 3. Mark it offline, it'll sync when connection returns
@@ -273,6 +291,7 @@ Same as mobile app, but:
 **Cause:** GPS signal weak (in buildings, tunnels, dense urban)
 
 **Solution:**
+
 - App uses last known good location
 - When you go outdoors, GPS will re-acquire
 - Call manager if location seems very wrong
@@ -282,6 +301,7 @@ Same as mobile app, but:
 **Cause:** Cache or memory issue
 
 **Solution:**
+
 1. Close the app completely
 2. Wait 10 seconds
 3. Reopen
@@ -293,6 +313,7 @@ Same as mobile app, but:
 ## Performance Tips
 
 ### Fastest Workflow
+
 1. Open route when starting shift
 2. Start route immediately (don't wait at office)
 3. Use "Directions" for every stop
@@ -302,6 +323,7 @@ Same as mobile app, but:
 7. Move to next stop
 
 ### Minimize Phone Use
+
 - Use physical directions notes if needed
 - Don't check messages during jobs
 - Minimize app time on customer calls
@@ -311,8 +333,9 @@ Same as mobile app, but:
 ## Support
 
 Can't find an answer?
+
 - **In-app help:** Tap ? icon
-- **Email:** techsupport@officehero.dev
+- **Email:** <techsupport@officehero.dev>
 - **Chat:** Message manager directly
 - **Phone:** Call your manager
 
@@ -322,11 +345,11 @@ Can't find an answer?
 
 ### Keyboard Shortcuts (Tech-Web)
 
-- `R` → Start/Stop route
-- `A` → Mark arrived on focused stop
-- `C` → Mark complete on focused stop
-- `S` → Skip stop
-- `N` → Next stop
+- `R` â†’ Start/Stop route
+- `A` â†’ Mark arrived on focused stop
+- `C` â†’ Mark complete on focused stop
+- `S` â†’ Skip stop
+- `N` â†’ Next stop
 
 ### Voice Commands (Tech-Mobile, Coming Soon)
 
@@ -341,5 +364,4 @@ Can't find an answer?
 
 **Questions?** Message your manager or contact support.
 
-**Happy dispatching!** 🚐
-
+**Happy dispatching!** ðŸš

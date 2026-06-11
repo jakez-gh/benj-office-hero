@@ -1,7 +1,7 @@
 # Office Hero - Slice 14 (Dispatch & Route Management)
 
-**Status:** ✅ Code Complete + Tested  
-**Last Updated:** June 2, 2026  
+**Status:** ✅ Code Complete + Tested
+**Last Updated:** June 2, 2026
 **Owner:** Mara (Claude Code + squadron + context forge)
 
 ---
@@ -23,6 +23,7 @@
 **Purpose:** Enable TenantAdmins to commit routing options into persistent routes and manage technician schedules
 
 **Core Features:**
+
 - ✅ Option-based dispatch (nearest, earliest, balanced)
 - ✅ Manual sequence dispatch (custom job ordering)
 - ✅ Route lifecycle (draft → committed → in_progress → complete)
@@ -38,6 +39,7 @@
 ## What's Implemented
 
 ### API Endpoints (8 total)
+
 ```
 POST   /jobs/{job_id}/dispatch                    - Commit dispatch
 GET    /routes                                    - List routes for date
@@ -50,12 +52,14 @@ POST   /routes/{id}/stops/{id}/skip               - Mark stop: pending/arrived �
 ```
 
 ### Data Models
+
 - **Route:** Vehicle + crew assignment, status, totals, audit metadata
 - **RouteStop:** Individual job stop, sequence, status, ETA, actual times
 - **DispatchCommitRequest:** Request validation with cross-field rules
 - **Response schemas:** Full ORM→JSON serialization with from_attributes=True
 
 ### Service Layer
+
 - **DispatchService:** 9 async methods
   - `commit_dispatch()` - 200+ lines, handles both modes
   - `start_route()`, `cancel_route()`
@@ -63,12 +67,14 @@ POST   /routes/{id}/stops/{id}/skip               - Mark stop: pending/arrived �
   - `get_route()`, `list_routes()`
 
 ### Exception Handling
+
 - RouteNotFoundError (404)
 - InvalidRouteTransitionError (422)
 - RouteCommitConflictError (409)
 - ManualSequenceInvalidError (422)
 
 ### Repositories
+
 - RouteRepository (CRUD + queries)
 - RouteStopRepository (bulk operations + lifecycle)
 - Both SQLAlchemy + in-memory implementations
@@ -78,19 +84,24 @@ POST   /routes/{id}/stops/{id}/skip               - Mark stop: pending/arrived �
 ## Test Harness
 
 ### Run API Tests (No DB Required)
+
 ```bash
 cd /home/jake/Documents/src/office-hero/benj-office-hero/main
 pytest tests/api/test_routes_api.py -xvs
 ```
+
 **Coverage:** 8 endpoints × 3+ cases = 24+ assertions
 
 ### Run Service Tests (No DB Required)
+
 ```bash
 pytest tests/services/test_dispatch_service.py -xvs
 ```
+
 **Coverage:** All public methods + error paths
 
 ### Run Integration Tests (Requires DB)
+
 ```bash
 # Prerequisites: database running, migrations applied, server on localhost:8000
 pytest tests/ -k "routes or dispatch" -v
@@ -101,6 +112,7 @@ pytest tests/ -k "routes or dispatch" -v
 ## Code Quality
 
 ### Issues Fixed
+
 - ❌ Response schemas missing `from_attributes=True` → ✅ Fixed
 - ❌ Lazy-load of route.stops causing greenlet errors → ✅ Fixed
 - ❌ Missing RBAC on GET /routes → ✅ Fixed
@@ -108,12 +120,14 @@ pytest tests/ -k "routes or dispatch" -v
 - ❌ Dead exception handlers → ✅ Removed
 
 ### Code Reviews
+
 - ✅ Squadron review: 5 findings, all fixed
 - ✅ Static analysis: Pydantic v2 compliance verified
 - ✅ RBAC: All endpoints protected
 - ✅ Transactions: All mutations wrapped
 
 ### Commits
+
 - 12 focused commits
 - 13 files modified
 - 1,732 insertions
@@ -124,14 +138,19 @@ pytest tests/ -k "routes or dispatch" -v
 ## What's Next
 
 ### Phase 1 (TODAY - Verify)
+
 Run tests to confirm implementation works:
+
 ```bash
 pytest tests/api/test_routes_api.py tests/services/test_dispatch_service.py -xvs
 ```
+
 Expected: All pass ✓
 
 ### Phase 2 (NEXT - Implement Slice 15)
+
 Vehicle Location Tracking:
+
 - PUT /vehicles/{id}/location endpoint
 - Time-series storage
 - Live GPS for routing
@@ -139,6 +158,7 @@ Vehicle Location Tracking:
 Effort: 2 hours
 
 ### Phase 3-4 (After - Document)
+
 - API documentation (Swagger + examples)
 - Feature guides
 - Deployment runbook
@@ -146,6 +166,7 @@ Effort: 2 hours
 Effort: 3.5 hours
 
 ### Phase 5-6 (Final - Deploy)
+
 - Staging deployment
 - Live validation
 - MVP ready
@@ -159,6 +180,7 @@ Effort: 5 hours
 ## Key Files
 
 ### Implementation
+
 - [src/office_hero/services/dispatch_service.py](src/office_hero/services/dispatch_service.py) - Core service (420 lines)
 - [src/office_hero/api/routes/routes.py](src/office_hero/api/routes/routes.py) - Endpoints (200 lines)
 - [src/office_hero/models/route.py](src/office_hero/models/route.py) - Data models
@@ -166,10 +188,12 @@ Effort: 5 hours
 - [alembic/versions/0009_routes.py](alembic/versions/0009_routes.py) - Schema migration
 
 ### Tests
+
 - [tests/api/test_routes_api.py](tests/api/test_routes_api.py) - API contract tests
 - [tests/services/test_dispatch_service.py](tests/services/test_dispatch_service.py) - Service tests
 
 ### Documentation
+
 - [PROJECT_COMPLETION_STRATEGY.md](PROJECT_COMPLETION_STRATEGY.md) - Full roadmap
 - [VERIFICATION_APPROACH.md](VERIFICATION_APPROACH.md) - Test strategy
 
@@ -199,6 +223,7 @@ All dependencies flow inward via protocols.
 ## RBAC
 
 All endpoints require:
+
 ```
 @require_permission("route:read")   # GET endpoints
 @require_permission("route:write")  # POST endpoints
@@ -231,6 +256,7 @@ Fine-grained permissions in JWT allow per-user overrides.
 ## Support
 
 For issues during implementation:
+
 1. Check PROJECT_COMPLETION_STRATEGY.md for phase definitions
 2. Check VERIFICATION_APPROACH.md for test strategy
 3. Check IMMEDIATE_NEXT_STEPS.md for quick reference
@@ -238,6 +264,5 @@ For issues during implementation:
 
 ---
 
-**Slice Status:** ✅ READY FOR VERIFICATION  
+**Slice Status:** ✅ READY FOR VERIFICATION
 **Next Session:** Run Phase 1 tests + implement Slice 15
-

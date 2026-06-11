@@ -11,11 +11,11 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, sta
 from office_hero.api.deps import require_permission
 from office_hero.api.limiter import limiter
 from office_hero.api.schemas.route import (
+    DispatchCommitRequest,
+    RouteCancelRequest,
     RouteListResponse,
     RouteRead,
-    RouteCancelRequest,
     StopSkipRequest,
-    DispatchCommitRequest,
 )
 from office_hero.core.exceptions import (
     InvalidRouteTransitionError,
@@ -46,7 +46,11 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
     """Construct the routes router with injected providers."""
     router = APIRouter(prefix="/routes", tags=["routes"])
 
-    @router.get("", response_model=RouteListResponse, dependencies=[Depends(require_permission("route:read"))])
+    @router.get(
+        "",
+        response_model=RouteListResponse,
+        dependencies=[Depends(require_permission("route:read"))],
+    )
     @limiter.limit("60/minute")
     async def list_routes(
         request: Request,
@@ -67,7 +71,11 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
 
         return RouteListResponse(items=routes, total=len(routes))
 
-    @router.get("/{route_id}", response_model=RouteRead, dependencies=[Depends(require_permission("route:read"))])
+    @router.get(
+        "/{route_id}",
+        response_model=RouteRead,
+        dependencies=[Depends(require_permission("route:read"))],
+    )
     @limiter.limit("60/minute")
     async def get_route(
         request: Request,
@@ -83,7 +91,9 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
 
         return route
 
-    @router.post("", response_model=RouteRead, dependencies=[Depends(require_permission("route:write"))])
+    @router.post(
+        "", response_model=RouteRead, dependencies=[Depends(require_permission("route:write"))]
+    )
     @limiter.limit("60/minute")
     async def commit_dispatch(
         request: Request,
@@ -91,8 +101,8 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
         body: DispatchCommitRequest,
     ) -> RouteRead:
         """Create a route by committing a dispatch (option or manual sequence)."""
-        from office_hero.services.dispatch_service import DispatchCommitPayload
         from office_hero.api.state import get_dispatch_service
+        from office_hero.services.dispatch_service import DispatchCommitPayload
 
         tenant_id = _tenant_id(request)
         user_id = _user_id(request)
@@ -122,7 +132,11 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
 
         return route
 
-    @router.post("/{route_id}/start", response_model=RouteRead, dependencies=[Depends(require_permission("route:write"))])
+    @router.post(
+        "/{route_id}/start",
+        response_model=RouteRead,
+        dependencies=[Depends(require_permission("route:write"))],
+    )
     @limiter.limit("60/minute")
     async def start_route(
         request: Request,
@@ -136,9 +150,7 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
         try:
             route = await service.start_route(tenant_id, user_id, route_id)
         except RouteNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
         except InvalidRouteTransitionError as exc:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
@@ -146,7 +158,11 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
 
         return route
 
-    @router.post("/{route_id}/cancel", response_model=RouteRead, dependencies=[Depends(require_permission("route:write"))])
+    @router.post(
+        "/{route_id}/cancel",
+        response_model=RouteRead,
+        dependencies=[Depends(require_permission("route:write"))],
+    )
     @limiter.limit("60/minute")
     async def cancel_route(
         request: Request,
@@ -159,13 +175,9 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
         service = service_provider()
 
         try:
-            route = await service.cancel_route(
-                tenant_id, user_id, route_id, reason=body.reason
-            )
+            route = await service.cancel_route(tenant_id, user_id, route_id, reason=body.reason)
         except RouteNotFoundError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
-            ) from exc
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
         except InvalidRouteTransitionError as exc:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
@@ -173,7 +185,11 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
 
         return route
 
-    @router.post("/{route_id}/stops/{stop_id}/arrived", response_model=RouteRead, dependencies=[Depends(require_permission("route:write"))])
+    @router.post(
+        "/{route_id}/stops/{stop_id}/arrived",
+        response_model=RouteRead,
+        dependencies=[Depends(require_permission("route:write"))],
+    )
     @limiter.limit("60/minute")
     async def mark_stop_arrived(
         request: Request,
@@ -189,12 +205,14 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
         await service.mark_stop_arrived(tenant_id, user_id, stop_id)
         route = await repo.get_by_id(route_id, tenant_id)
         if not route:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Route not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Route not found")
         return route
 
-    @router.post("/{route_id}/stops/{stop_id}/complete", response_model=RouteRead, dependencies=[Depends(require_permission("route:write"))])
+    @router.post(
+        "/{route_id}/stops/{stop_id}/complete",
+        response_model=RouteRead,
+        dependencies=[Depends(require_permission("route:write"))],
+    )
     @limiter.limit("60/minute")
     async def mark_stop_complete(
         request: Request,
@@ -210,12 +228,14 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
         await service.mark_stop_complete(tenant_id, user_id, stop_id)
         route = await repo.get_by_id(route_id, tenant_id)
         if not route:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Route not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Route not found")
         return route
 
-    @router.post("/{route_id}/stops/{stop_id}/skip", response_model=RouteRead, dependencies=[Depends(require_permission("route:write"))])
+    @router.post(
+        "/{route_id}/stops/{stop_id}/skip",
+        response_model=RouteRead,
+        dependencies=[Depends(require_permission("route:write"))],
+    )
     @limiter.limit("60/minute")
     async def skip_stop(
         request: Request,
@@ -232,9 +252,7 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
         await service.mark_stop_skipped(tenant_id, user_id, stop_id, body.reason)
         route = await repo.get_by_id(route_id, tenant_id)
         if not route:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="Route not found"
-            )
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Route not found")
         return route
 
     return router

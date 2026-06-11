@@ -55,9 +55,7 @@ class RouteStopRepository:
         self.session = session
 
     async def get_by_id(self, stop_id: UUID, tenant_id: UUID) -> RouteStop | None:
-        stmt = select(RouteStop).where(
-            RouteStop.id == stop_id, RouteStop.tenant_id == tenant_id
-        )
+        stmt = select(RouteStop).where(RouteStop.id == stop_id, RouteStop.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 

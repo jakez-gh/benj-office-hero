@@ -1,7 +1,7 @@
 # Office Hero MVP - Deployment Guide
 
-**Version:** 1.0  
-**Last Updated:** June 2, 2026  
+**Version:** 1.0
+**Last Updated:** June 2, 2026
 **Target:** Staging Environment
 
 ---
