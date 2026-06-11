@@ -1,9 +1,9 @@
-"""API contract tests for Slice 14 route management endpoints."""
+﻿"""API contract tests for Slice 14 route management endpoints."""
 
 import pytest
 from datetime import date, datetime
 from uuid import UUID, uuid4
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from office_hero.api.app import create_app
 from office_hero.repositories.route_repository import InMemoryRouteRepository
 from office_hero.repositories.route_stop_repository import InMemoryRouteStopRepository
@@ -25,6 +25,27 @@ from office_hero.services.vehicle_crew_service import VehicleCrewService
 from office_hero.repositories.customer_repository import InMemoryCustomerRepository
 from office_hero.repositories.location_repository import InMemoryLocationRepository
 from office_hero.core.job_status import JobStatus
+from fastapi import Request
+from starlette.middleware.base import BaseHTTPMiddleware
+
+
+class _RouteTestAuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        request.state.tenant_id = request.headers.get("X-Test-Tenant-Id")
+        request.state.user_id = request.headers.get("X-Test-User-Id")
+        request.state.role = request.headers.get("X-Test-Role", "dispatcher")
+        perms = request.headers.get("X-Test-Permissions", "route:read,route:write")
+        request.state.permissions = [p.strip() for p in perms.split(",") if p.strip()]
+        return await call_next(request)
+
+
+def _auth_headers() -> dict[str, str]:
+    return {
+        "X-Test-Tenant-Id": str(uuid4()),
+        "X-Test-User-Id": str(uuid4()),
+        "X-Test-Role": "dispatcher",
+        "X-Test-Permissions": "route:read,route:write",
+    }
 
 
 @pytest.fixture
@@ -90,6 +111,7 @@ async def app_with_routes():
         vehicle_crew_service=vc_svc,
         schedule_suggestion_service=schedule_svc,
     )
+    app.add_middleware(_RouteTestAuthMiddleware)
     return app, route_repo, stop_repo, dispatch_svc, job_repo, vehicle_repo, vc_repo
 
 
@@ -102,14 +124,12 @@ class _NoopUserRepo:
 async def test_list_routes_empty(app_with_routes):
     """GET /routes returns empty list on startup."""
     app, route_repo, _, _, _, _, _ = app_with_routes
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        # Mock auth context
-        with client:
-            response = await client.get(
-                "/routes",
-                params={"date": str(date.today())},
-                headers={"X-Tenant-ID": str(uuid4()), "X-User-ID": str(uuid4())},
-            )
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get(
+            "/routes",
+            params={"date": str(date.today())},
+            headers=_auth_headers(),
+        )
     assert response.status_code == 200
     assert response.json()["total"] == 0
     assert response.json()["items"] == []
@@ -119,10 +139,10 @@ async def test_list_routes_empty(app_with_routes):
 async def test_get_route_not_found(app_with_routes):
     """GET /routes/{id} returns 404 for missing route."""
     app, _, _, _, _, _, _ = app_with_routes
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get(
             f"/routes/{uuid4()}",
-            headers={"X-Tenant-ID": str(uuid4()), "X-User-ID": str(uuid4())},
+            headers=_auth_headers(),
         )
     assert response.status_code == 404
 
@@ -131,10 +151,10 @@ async def test_get_route_not_found(app_with_routes):
 async def test_start_route_not_found(app_with_routes):
     """POST /routes/{id}/start returns 404 for missing route."""
     app, _, _, _, _, _, _ = app_with_routes
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             f"/routes/{uuid4()}/start",
-            headers={"X-Tenant-ID": str(uuid4()), "X-User-ID": str(uuid4())},
+            headers=_auth_headers(),
         )
     assert response.status_code == 404
 
@@ -143,11 +163,11 @@ async def test_start_route_not_found(app_with_routes):
 async def test_cancel_route_not_found(app_with_routes):
     """POST /routes/{id}/cancel returns 404 for missing route."""
     app, _, _, _, _, _, _ = app_with_routes
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             f"/routes/{uuid4()}/cancel",
             json={"reason": "Test cancellation"},
-            headers={"X-Tenant-ID": str(uuid4()), "X-User-ID": str(uuid4())},
+            headers=_auth_headers(),
         )
     assert response.status_code == 404
 
@@ -156,10 +176,10 @@ async def test_cancel_route_not_found(app_with_routes):
 async def test_mark_stop_arrived_not_found(app_with_routes):
     """POST /routes/{id}/stops/{stop_id}/arrived returns 404 for missing stop."""
     app, _, _, _, _, _, _ = app_with_routes
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             f"/routes/{uuid4()}/stops/{uuid4()}/arrived",
-            headers={"X-Tenant-ID": str(uuid4()), "X-User-ID": str(uuid4())},
+            headers=_auth_headers(),
         )
     assert response.status_code == 404
 
@@ -168,10 +188,10 @@ async def test_mark_stop_arrived_not_found(app_with_routes):
 async def test_mark_stop_complete_not_found(app_with_routes):
     """POST /routes/{id}/stops/{stop_id}/complete returns 404 for missing stop."""
     app, _, _, _, _, _, _ = app_with_routes
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             f"/routes/{uuid4()}/stops/{uuid4()}/complete",
-            headers={"X-Tenant-ID": str(uuid4()), "X-User-ID": str(uuid4())},
+            headers=_auth_headers(),
         )
     assert response.status_code == 404
 
@@ -180,11 +200,11 @@ async def test_mark_stop_complete_not_found(app_with_routes):
 async def test_mark_stop_skip_not_found(app_with_routes):
     """POST /routes/{id}/stops/{stop_id}/skip returns 404 for missing stop."""
     app, _, _, _, _, _, _ = app_with_routes
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             f"/routes/{uuid4()}/stops/{uuid4()}/skip",
             json={"reason": "Not available"},
-            headers={"X-Tenant-ID": str(uuid4()), "X-User-ID": str(uuid4())},
+            headers=_auth_headers(),
         )
     assert response.status_code == 404
 
@@ -193,11 +213,11 @@ async def test_mark_stop_skip_not_found(app_with_routes):
 async def test_cancel_route_invalid_reason(app_with_routes):
     """POST /routes/{id}/cancel rejects reason < 3 chars."""
     app, _, _, _, _, _, _ = app_with_routes
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             f"/routes/{uuid4()}/cancel",
             json={"reason": "ab"},
-            headers={"X-Tenant-ID": str(uuid4()), "X-User-ID": str(uuid4())},
+            headers=_auth_headers(),
         )
     assert response.status_code == 422
 
@@ -206,11 +226,11 @@ async def test_cancel_route_invalid_reason(app_with_routes):
 async def test_skip_stop_invalid_reason(app_with_routes):
     """POST /routes/{id}/stops/{id}/skip rejects reason < 3 chars."""
     app, _, _, _, _, _, _ = app_with_routes
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             f"/routes/{uuid4()}/stops/{uuid4()}/skip",
             json={"reason": "ab"},
-            headers={"X-Tenant-ID": str(uuid4()), "X-User-ID": str(uuid4())},
+            headers=_auth_headers(),
         )
     assert response.status_code == 422
 
@@ -219,11 +239,11 @@ async def test_skip_stop_invalid_reason(app_with_routes):
 async def test_list_routes_with_date_filter(app_with_routes):
     """GET /routes respects date parameter."""
     app, _, _, _, _, _, _ = app_with_routes
-    async with AsyncClient(app=app, base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get(
             "/routes",
             params={"date": "2026-06-15"},
-            headers={"X-Tenant-ID": str(uuid4()), "X-User-ID": str(uuid4())},
+            headers=_auth_headers(),
         )
     assert response.status_code == 200
 

@@ -58,17 +58,38 @@ async def test_commit_dispatch_missing_crew(service):
     
     tenant_id = uuid4()
     user_id = uuid4()
-    job_id = uuid4()
-    vehicle_id = uuid4()
-    
+
     # Create job and vehicle but no crew
-    job = Job(id=job_id, tenant_id=tenant_id, customer_id=uuid4(), 
-              location_id=uuid4(), status=JobStatus.PENDING)
-    await job_repo.create(tenant_id, job)
-    
-    vehicle = Vehicle(id=vehicle_id, tenant_id=tenant_id, nickname="Van1", 
-                      license_plate="ABC123")
-    await vehicle_repo.create(tenant_id, vehicle)
+    job = await job_repo.create(
+        tenant_id,
+        customer_id=uuid4(),
+        location_id=uuid4(),
+        industry="generic",
+        title="No-crew job",
+        created_by_user_id=user_id,
+    )
+    job_id = job.id
+
+    # Attach a geocoded location so schedule options can be computed
+    # (mirrors the pattern in tests/unit/test_schedule_suggestion_service.py).
+    from decimal import Decimal
+    from types import SimpleNamespace
+
+    original_get_by_id = job_repo.get_by_id
+
+    async def get_by_id_with_location(jid, tid):
+        result = await original_get_by_id(jid, tid)
+        if result is not None:
+            result.location = SimpleNamespace(
+                lat=Decimal("41.8781"), lng=Decimal("-87.6298")
+            )
+        return result
+
+    job_repo.get_by_id = get_by_id_with_location
+
+    vehicle = await vehicle_repo.create(
+        tenant_id, nickname="Van1", license_plate="ABC123"
+    )
     
     payload = DispatchCommitPayload(
         date=date.today(),

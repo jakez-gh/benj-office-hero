@@ -108,6 +108,24 @@ def find_random_free_port(
 
 
 def _is_pid_alive(pid: int) -> bool:
+    if sys.platform == "win32":
+        import ctypes
+        from ctypes import wintypes
+
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        STILL_ACTIVE = 259
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if not handle:
+            return False
+        try:
+            exit_code = wintypes.DWORD()
+            if not kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                return False
+            return exit_code.value == STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
+
     stat_path = Path(f"/proc/{pid}/stat")
     if stat_path.exists():
         try:
@@ -130,8 +148,9 @@ def _is_pid_alive(pid: int) -> bool:
 def _wait_for_exit(pid: int, timeout_seconds: float) -> bool:
     deadline = time.time() + timeout_seconds
     while time.time() < deadline:
-        with contextlib.suppress(ChildProcessError, OSError):
-            os.waitpid(pid, os.WNOHANG)
+        if hasattr(os, "WNOHANG"):
+            with contextlib.suppress(ChildProcessError, OSError):
+                os.waitpid(pid, os.WNOHANG)
 
         if not _is_pid_alive(pid):
             return True
@@ -139,22 +158,33 @@ def _wait_for_exit(pid: int, timeout_seconds: float) -> bool:
     return not _is_pid_alive(pid)
 
 
+def _signal_group(pid: int, sig: int) -> None:
+    """Send *sig* to the process group on POSIX, or the process on Windows."""
+    if hasattr(os, "killpg"):
+        os.killpg(pid, sig)
+    else:
+        # Windows has no process groups in the POSIX sense; os.kill with
+        # SIGTERM calls TerminateProcess on the single process.
+        os.kill(pid, sig)
+
+
 def _terminate_process_group(pid: int, grace_seconds: float = 8.0) -> None:
     if not _is_pid_alive(pid):
         return
 
     try:
-        os.killpg(pid, signal.SIGTERM)
-    except ProcessLookupError:
+        _signal_group(pid, signal.SIGTERM)
+    except (ProcessLookupError, PermissionError, OSError):
         return
 
     if _wait_for_exit(pid, grace_seconds):
         return
 
     # Graceful shutdown failed — force kill.
+    force_sig = getattr(signal, "SIGKILL", signal.SIGTERM)
     try:
-        os.killpg(pid, signal.SIGKILL)
-    except ProcessLookupError:
+        _signal_group(pid, force_sig)
+    except (ProcessLookupError, PermissionError, OSError):
         return
 
     _wait_for_exit(pid, 2.0)

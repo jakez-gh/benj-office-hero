@@ -1,7 +1,7 @@
-"""Golden path smoke test for Office Hero MVP dispatch flow."""
+﻿"""Golden path smoke test for Office Hero MVP dispatch flow."""
 
 import asyncio
-from datetime import date, datetime, UTC
+from datetime import date, datetime, time, UTC
 from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
@@ -13,7 +13,11 @@ from office_hero.repositories.route_repository import InMemoryRouteRepository
 from office_hero.repositories.route_stop_repository import InMemoryRouteStopRepository
 from office_hero.repositories.customer_repository import InMemoryCustomerRepository
 from office_hero.repositories.location_repository import InMemoryLocationRepository
-from office_hero.repositories.vehicle_crew_repository import InMemoryVehicleCrewRepository
+from office_hero.repositories.vehicle_crew_repository import (
+    CrewMemberInput,
+    InMemoryVehicleCrewRepository,
+)
+from office_hero.core.crew_role import CrewRole
 from office_hero.repositories.mocks import InMemoryAuditService
 from office_hero.services.dispatch_service import DispatchService
 from office_hero.services.job_service import JobService
@@ -30,7 +34,7 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 
-class TestAuthMiddleware(BaseHTTPMiddleware):
+class _GoldenPathAuthMiddleware(BaseHTTPMiddleware):
     """Test auth middleware - sets request.state from headers."""
     async def dispatch(self, request: Request, call_next):
         request.state.tenant_id = request.headers.get("X-Test-Tenant-Id")
@@ -127,8 +131,9 @@ def setup():
         vehicle_service=vehicle_svc,
         vehicle_crew_service=vc_svc,
         schedule_suggestion_service=schedule_svc,
+        dispatch_service=dispatch_svc,
     )
-    app.add_middleware(TestAuthMiddleware)
+    app.add_middleware(_GoldenPathAuthMiddleware)
     
     with TestClient(app) as client:
         return {
@@ -143,11 +148,12 @@ def setup():
             "stop_repo": stop_repo,
             "cust_repo": cust_repo,
             "loc_repo": loc_repo,
+            "vc_repo": vc_repo,
         }
 
 
 def test_golden_path_dispatch_flow(setup):
-    """Execute the complete golden path: job → dispatch → route → stops."""
+    """Execute the complete golden path: job â†’ dispatch â†’ route â†’ stops."""
     client = setup["client"]
     tenant_id = setup["tenant_id"]
     user_id = setup["user_id"]
@@ -183,17 +189,17 @@ def test_golden_path_dispatch_flow(setup):
     cid, lid = _run(seed_data())
     customer_id = cid
     location_id = lid
-    print(f"✅ PASS: Seeded customer {customer_id} and location {location_id}")
+    print(f"âœ… PASS: Seeded customer {customer_id} and location {location_id}")
 
     print("\n=== Step 1: Health Check ===")
     resp = client.get("/health")
     assert resp.status_code == 200
     assert resp.json() == {"status": "ok"}
-    print("✅ PASS: Health check")
+    print("âœ… PASS: Health check")
 
-    print("\n=== Step 2: Create Vehicle ===")
+    print("\n=== Step 2: Create Vehicle (with crew for today) ===")
     async def create_vehicle():
-        return await vehicle_repo.create(
+        vehicle = await vehicle_repo.create(
             tenant_id,
             license_plate="ABC-123",
             nickname="Van #1",
@@ -201,9 +207,34 @@ def test_golden_path_dispatch_flow(setup):
             model="Transit",
             year=2022,
         )
+        # Dispatch requires a crew assigned to the vehicle for the work date.
+        await setup["vc_repo"].create(
+            tenant_id,
+            vehicle_id=vehicle.id,
+            work_date=date.today(),
+            shift_start=time(8, 0),
+            shift_end=time(17, 0),
+            notes=None,
+            created_by_user_id=user_id,
+            members=[CrewMemberInput(user_id=user_id, role_on_crew=CrewRole.LEAD)],
+        )
+        return vehicle
     vehicle = _run(create_vehicle())
     vehicle_id = vehicle.id
-    print(f"✅ PASS: Vehicle created {vehicle_id}")
+    print(f"âœ… PASS: Vehicle created {vehicle_id}")
+
+    # The in-memory job repository does not hydrate the ``job.location``
+    # relationship, but the scheduling engine reads job.location.lat/lng.
+    # Wrap get_by_id to attach the seeded (geocoded) location.
+    original_get_by_id = job_repo.get_by_id
+
+    async def get_by_id_with_location(jid, tid):
+        job = await original_get_by_id(jid, tid)
+        if job is not None:
+            job.location = await loc_repo.get_by_id(job.location_id, tid)
+        return job
+
+    job_repo.get_by_id = get_by_id_with_location
     
     print("\n=== Step 3: Create Job ===")
     resp = client.post(
@@ -222,7 +253,7 @@ def test_golden_path_dispatch_flow(setup):
     job_data = resp.json()
     job_id = job_data["id"]
     assert job_data["status"] == "pending"
-    print(f"✅ PASS: Job created {job_id} with status={job_data['status']}")
+    print(f"âœ… PASS: Job created {job_id} with status={job_data['status']}")
     
     print("\n=== Step 4: Dispatch Job to Create Route ===")
     test_date = date.today().isoformat()
@@ -237,7 +268,7 @@ def test_golden_path_dispatch_flow(setup):
     assert route_data["status"] == "committed"
     assert len(route_data["stops"]) > 0
     stop_id = route_data["stops"][0]["id"]
-    print(f"✅ PASS: Route created {route_id} with status={route_data['status']}")
+    print(f"âœ… PASS: Route created {route_id} with status={route_data['status']}")
     print(f"         First stop: {stop_id}")
     
     print("\n=== Step 5: List Routes ===")
@@ -249,7 +280,7 @@ def test_golden_path_dispatch_flow(setup):
     list_data = resp.json()
     assert list_data["total"] > 0
     assert any(r["id"] == route_id for r in list_data["items"])
-    print(f"✅ PASS: Routes listed, found {list_data['total']} routes")
+    print(f"âœ… PASS: Routes listed, found {list_data['total']} routes")
     
     print("\n=== Step 6: Get Route by ID ===")
     resp = client.get(
@@ -260,7 +291,7 @@ def test_golden_path_dispatch_flow(setup):
     route_data = resp.json()
     assert route_data["id"] == route_id
     assert route_data["status"] == "committed"
-    print(f"✅ PASS: Route retrieved: {route_id}")
+    print(f"âœ… PASS: Route retrieved: {route_id}")
     
     print("\n=== Step 7: Start Route ===")
     resp = client.post(
@@ -270,7 +301,7 @@ def test_golden_path_dispatch_flow(setup):
     assert resp.status_code == 200
     route_data = resp.json()
     assert route_data["status"] == "in_progress"
-    print(f"✅ PASS: Route started, status={route_data['status']}")
+    print(f"âœ… PASS: Route started, status={route_data['status']}")
     
     print("\n=== Step 8: Mark Stop Arrived ===")
     resp = client.post(
@@ -282,7 +313,7 @@ def test_golden_path_dispatch_flow(setup):
     found_stop = next((s for s in route_data["stops"] if s["id"] == stop_id), None)
     assert found_stop is not None
     assert found_stop["status"] == "arrived"
-    print(f"✅ PASS: Stop marked arrived")
+    print(f"âœ… PASS: Stop marked arrived")
     
     print("\n=== Step 9: Mark Stop Complete ===")
     resp = client.post(
@@ -299,11 +330,11 @@ def test_golden_path_dispatch_flow(setup):
     if len(route_data["stops"]) == 1:
         assert route_data["status"] == "complete", "Route should auto-complete when all stops terminal"
     
-    print(f"✅ PASS: Stop marked complete")
+    print(f"âœ… PASS: Stop marked complete")
     print(f"         Route status: {route_data['status']}")
     
     print("\n" + "="*60)
-    print("🎉 GOLDEN PATH COMPLETE - ALL 9 STEPS PASSED")
+    print("ðŸŽ‰ GOLDEN PATH COMPLETE - ALL 9 STEPS PASSED")
     print("="*60)
 
 
