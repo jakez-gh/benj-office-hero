@@ -39,4 +39,6 @@ Write-Host "  Health: http://localhost:8000/health" -ForegroundColor DarkGray
 Write-Host ""
 
 $env:PYTHONPATH = Join-Path $PSScriptRoot ".." "src"
+# Dev-only: allow X-Test-* header auth so demo scripts work without JWTs.
+$env:OFFICE_HERO_TEST_AUTH = "1"
 python -m uvicorn office_hero.main:app --reload --host 127.0.0.1 --port 8000

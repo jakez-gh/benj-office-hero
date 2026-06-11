@@ -1,132 +1,107 @@
-"""Repository for vehicle location tracking."""
+"""VehicleLocation repository — protocol, SQLAlchemy impl, and in-memory impl."""
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Protocol
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from sqlalchemy import and_, desc, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from office_hero.models.vehicle_location import VehicleLocation
 
 
 class VehicleLocationRepositoryProtocol(Protocol):
-    """Protocol for vehicle location data access."""
-
     async def create(
-        self, tenant_id: UUID, location: VehicleLocation
-    ) -> VehicleLocation:
-        """Create a new location record."""
-        ...
-
-    async def get_latest(
-        self, tenant_id: UUID, vehicle_id: UUID
-    ) -> VehicleLocation | None:
-        """Get the most recent location for a vehicle."""
-        ...
-
-    async def list_since(
         self,
         tenant_id: UUID,
         vehicle_id: UUID,
-        since: datetime,
-    ) -> list[VehicleLocation]:
-        """Get all locations since a timestamp (for analytics)."""
-        ...
+        *,
+        lat: Decimal,
+        lng: Decimal,
+        accuracy_m: Decimal | None,
+        recorded_at: datetime,
+    ) -> VehicleLocation: ...
+
+    async def get_latest(self, tenant_id: UUID, vehicle_id: UUID) -> VehicleLocation | None: ...
 
 
-class SQLAlchemyVehicleLocationRepository:
-    """SQLAlchemy implementation of vehicle location repository."""
+class VehicleLocationRepository:
+    """SQLAlchemy-backed concrete repository."""
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
     async def create(
-        self, tenant_id: UUID, location: VehicleLocation
+        self,
+        tenant_id: UUID,
+        vehicle_id: UUID,
+        *,
+        lat: Decimal,
+        lng: Decimal,
+        accuracy_m: Decimal | None,
+        recorded_at: datetime,
     ) -> VehicleLocation:
-        """Create a new location record."""
-        location.tenant_id = tenant_id
-        self.session.add(location)
+        row = VehicleLocation(
+            tenant_id=tenant_id,
+            vehicle_id=vehicle_id,
+            lat=lat,
+            lng=lng,
+            accuracy_m=accuracy_m,
+            recorded_at=recorded_at,
+        )
+        self.session.add(row)
         await self.session.flush()
-        return location
+        await self.session.refresh(row)
+        return row
 
-    async def get_latest(
-        self, tenant_id: UUID, vehicle_id: UUID
-    ) -> VehicleLocation | None:
-        """Get the most recent location for a vehicle."""
+    async def get_latest(self, tenant_id: UUID, vehicle_id: UUID) -> VehicleLocation | None:
         stmt = (
             select(VehicleLocation)
             .where(
-                and_(
-                    VehicleLocation.tenant_id == tenant_id,
-                    VehicleLocation.vehicle_id == vehicle_id,
-                )
+                VehicleLocation.tenant_id == tenant_id,
+                VehicleLocation.vehicle_id == vehicle_id,
             )
-            .order_by(desc(VehicleLocation.recorded_at))
+            .order_by(VehicleLocation.recorded_at.desc())
             .limit(1)
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_since(
-        self,
-        tenant_id: UUID,
-        vehicle_id: UUID,
-        since: datetime,
-    ) -> list[VehicleLocation]:
-        """Get all locations since a timestamp."""
-        stmt = (
-            select(VehicleLocation)
-            .where(
-                and_(
-                    VehicleLocation.tenant_id == tenant_id,
-                    VehicleLocation.vehicle_id == vehicle_id,
-                    VehicleLocation.recorded_at >= since,
-                )
-            )
-            .order_by(VehicleLocation.recorded_at)
-        )
-        result = await self.session.execute(stmt)
-        return result.scalars().all()
-
 
 class InMemoryVehicleLocationRepository:
-    """In-memory implementation for testing."""
+    """In-memory implementation for tests."""
 
-    def __init__(self):
-        self._locations: dict[tuple[UUID, UUID], list[VehicleLocation]] = {}
+    def __init__(self) -> None:
+        self._rows: list[VehicleLocation] = []
 
     async def create(
-        self, tenant_id: UUID, location: VehicleLocation
-    ) -> VehicleLocation:
-        """Create a new location record."""
-        location.tenant_id = tenant_id
-        key = (tenant_id, location.vehicle_id)
-        if key not in self._locations:
-            self._locations[key] = []
-        self._locations[key].append(location)
-        self._locations[key].sort(key=lambda l: l.recorded_at, reverse=True)
-        return location
-
-    async def get_latest(
-        self, tenant_id: UUID, vehicle_id: UUID
-    ) -> VehicleLocation | None:
-        """Get the most recent location for a vehicle."""
-        key = (tenant_id, vehicle_id)
-        if key not in self._locations or not self._locations[key]:
-            return None
-        return self._locations[key][0]
-
-    async def list_since(
         self,
         tenant_id: UUID,
         vehicle_id: UUID,
-        since: datetime,
-    ) -> list[VehicleLocation]:
-        """Get all locations since a timestamp."""
-        key = (tenant_id, vehicle_id)
-        if key not in self._locations:
-            return []
-        return [l for l in self._locations[key] if l.recorded_at >= since]
+        *,
+        lat: Decimal,
+        lng: Decimal,
+        accuracy_m: Decimal | None,
+        recorded_at: datetime,
+    ) -> VehicleLocation:
+        row = VehicleLocation(
+            id=uuid4(),
+            tenant_id=tenant_id,
+            vehicle_id=vehicle_id,
+            lat=lat,
+            lng=lng,
+            accuracy_m=accuracy_m,
+            recorded_at=recorded_at,
+            created_at=datetime.now(UTC),
+        )
+        self._rows.append(row)
+        return row
+
+    async def get_latest(self, tenant_id: UUID, vehicle_id: UUID) -> VehicleLocation | None:
+        matches = [r for r in self._rows if r.tenant_id == tenant_id and r.vehicle_id == vehicle_id]
+        if not matches:
+            return None
+        return max(matches, key=lambda r: r.recorded_at)

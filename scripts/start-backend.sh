@@ -93,6 +93,8 @@ echo "   Docs:   http://127.0.0.1:${BACKEND_PORT}/docs"
 echo "   Health: http://127.0.0.1:${BACKEND_PORT}/health"
 echo ""
 
+# Dev-only: allow X-Test-* header auth so demo scripts work without JWTs.
+export OFFICE_HERO_TEST_AUTH=1
 poetry run uvicorn office_hero.main:app --reload --host 127.0.0.1 --port "$BACKEND_PORT" &
 BACKEND_PID=$!
 

@@ -49,8 +49,8 @@ def require_permission(permission: str):
     async def _require_permission(request: Request):
         permissions = getattr(request.state, "permissions", [])
 
-        # Check for permission or deny-permission prefix
-        has_permission = permission in permissions
+        # Check for permission (or the "*" admin wildcard) or deny-permission prefix
+        has_permission = permission in permissions or "*" in permissions
         denied_permission = f"!{permission}" in permissions
 
         if not has_permission or denied_permission:

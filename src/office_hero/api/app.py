@@ -19,8 +19,9 @@ from office_hero.api.exception_handlers import register_exception_handlers
 from office_hero.api.limiter import limiter
 from office_hero.api.middleware.logging import LoggingMiddleware
 from office_hero.api.middleware.security_headers import SecurityHeadersMiddleware
-from office_hero.api.middleware.test_auth import TestAuthMiddleware
-from office_hero.api.routes import health
+from office_hero.api.middleware.auth import JWTAuthMiddleware
+from office_hero.api.middleware.test_auth import TestAuthMiddleware, test_auth_enabled
+from office_hero.api.routes import auth, health
 from office_hero.api.routes.admin import audit_router, create_admin_router
 from office_hero.api.routes.customers import create_customer_router
 from office_hero.api.routes.dispatch import create_dispatch_router
@@ -34,6 +35,7 @@ from office_hero.api.routes.vehicle_crews import create_vehicle_crew_router
 from office_hero.api.routes.vehicle_location import create_vehicle_location_router
 from office_hero.api.routes.vehicles import create_vehicle_router
 from office_hero.api.state import (
+    get_route_repository,
     set_auth_service,
     set_customer_service,
     set_dispatch_service,
@@ -141,6 +143,7 @@ def create_app(
     schedule_suggestion_service: ScheduleSuggestionService | None = None,
     job_dispatch_service: JobDispatchService | None = None,
     vehicle_location_service: VehicleLocationService | None = None,
+    dispatch_service: DispatchService | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application.
 
@@ -236,6 +239,7 @@ def create_app(
         _default_location_repo = InMemoryVehicleLocationRepository()
         vehicle_location_service = VehicleLocationService(
             location_repo=_default_location_repo,
+            vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
         )
 
     # Slice-13: schedule suggestion service (uses live GPS positions when available)
@@ -259,19 +263,20 @@ def create_app(
     set_job_dispatch_service(job_dispatch_service)
 
     # Slice-14 (dispatch route management): route repositories and dispatch service
-    route_repo = InMemoryRouteRepository()
-    route_stop_repo = InMemoryRouteStopRepository()
-    dispatch_service = DispatchService(
-        route_repo=route_repo,
-        stop_repo=route_stop_repo,
-        job_repo=_default_job_repo or InMemoryJobRepository(),
-        vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
-        vehicle_crew_repo=vc_repo or InMemoryVehicleCrewRepository(),
-        schedule_service=schedule_suggestion_service,
-        audit=audit,
-    )
-    set_route_repository(route_repo)
-    set_route_stop_repository(route_stop_repo)
+    if dispatch_service is None:
+        route_repo = InMemoryRouteRepository()
+        route_stop_repo = InMemoryRouteStopRepository()
+        dispatch_service = DispatchService(
+            route_repo=route_repo,
+            stop_repo=route_stop_repo,
+            job_repo=_default_job_repo or InMemoryJobRepository(),
+            vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
+            vehicle_crew_repo=vc_repo or InMemoryVehicleCrewRepository(),
+            schedule_service=schedule_suggestion_service,
+            audit=audit,
+        )
+        set_route_repository(route_repo)
+        set_route_stop_repository(route_stop_repo)
     set_dispatch_service(dispatch_service)
 
     application = FastAPI(
@@ -281,9 +286,13 @@ def create_app(
         lifespan=lifespan,
     )
 
-    # --- Middleware (outermost -> innermost) ---
-    # Test auth middleware (for demos/testing without real JWT)
-    application.add_middleware(TestAuthMiddleware)
+    # --- Middleware (added first = innermost) ---
+    # JWT auth: validates Bearer tokens; passes through when no token present.
+    application.add_middleware(JWTAuthMiddleware)
+    # Test auth (X-Test-* header bypass) is opt-in via OFFICE_HERO_TEST_AUTH=1.
+    # NEVER enable in production — it bypasses JWT auth entirely.
+    if test_auth_enabled():
+        application.add_middleware(TestAuthMiddleware)
     application.add_middleware(SecurityHeadersMiddleware)
     application.add_middleware(LoggingMiddleware)
 
@@ -295,6 +304,7 @@ def create_app(
 
     # --- Routers ---
     application.include_router(health.router, tags=["health"])
+    application.include_router(auth.router, tags=["auth"])
 
     saga_router = create_saga_router(saga_service=saga_service)
     application.include_router(saga_router, prefix="/sagas", tags=["sagas"])
@@ -345,13 +355,15 @@ def create_app(
     application.include_router(dispatch_router, tags=["dispatch"])
 
     vehicle_location_router = create_vehicle_location_router(
-        repo_provider=lambda: _default_location_repo,
+        service_provider=lambda: vehicle_location_service,
     )
     application.include_router(vehicle_location_router, tags=["vehicle-location"])
 
+    # repo_provider reads module state so injected dispatch services (whose
+    # repos were registered via set_route_repository) resolve correctly.
     routes_router = create_routes_router(
         service_provider=lambda: dispatch_service,
-        repo_provider=lambda: route_repo,
+        repo_provider=get_route_repository,
     )
     application.include_router(routes_router, tags=["routes"])
 

@@ -92,8 +92,15 @@ class TestAuthMiddleware(BaseHTTPMiddleware):
     """Extracts X-Test-* headers for development/testing"""
     - X-Test-Tenant-Id: Tenant isolation
     - X-Test-User-Id: User identity
-    - X-Test-Permissions: RBAC roles
+    - X-Test-Role: RBAC role
+    - X-Test-Permissions: RBAC permissions
 ```
+
+> **Security note (June 2026):** this middleware is now opt-in. The backend
+> must be started with `OFFICE_HERO_TEST_AUTH=1` for X-Test-* headers to be
+> honored (the dev `scripts/start-backend.*` scripts set it automatically).
+> In production the flag must never be set; requests authenticate with JWTs
+> via `/auth/login`.
 
 ### ✅ API Response Structure
 - All responses follow JSON schema

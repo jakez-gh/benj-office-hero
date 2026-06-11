@@ -1,6 +1,11 @@
 #!/bin/bash
 # Runnable demo script for Office Hero MVP
 # Executes full dispatch workflow and generates output
+#
+# NOTE: this script authenticates with X-Test-* headers, which the backend
+# only honors when started with OFFICE_HERO_TEST_AUTH=1, e.g.:
+#   OFFICE_HERO_TEST_AUTH=1 uvicorn office_hero.main:app
+# Never enable that flag in production.
 
 set -e
 
@@ -187,12 +192,12 @@ demo_step "Step 9: Record Vehicle Location (GPS)"
 LOCATION_RECORD=$(curl -s -X PUT "$BACKEND_URL/vehicles/$VEHICLE_ID/location" \
   -H "X-Test-Tenant-Id: $TENANT_ID" \
   -H "X-Test-User-Id: $TECHNICIAN_ID" \
-  -H "X-Test-Permissions: location:write" \
+  -H "X-Test-Permissions: vehicle:write" \
   -H "Content-Type: application/json" \
   -d '{
-    "latitude": 34.0522,
-    "longitude": -118.2437,
-    "accuracy_meters": 8,
+    "lat": 34.0522,
+    "lng": -118.2437,
+    "accuracy_m": 8,
     "recorded_at": "'$WORK_DATE'T10:15:00Z"
   }')
 
@@ -205,7 +210,7 @@ demo_step "Step 10: Query Latest Vehicle Location"
 LOCATION_QUERY=$(curl -s "$BACKEND_URL/vehicles/$VEHICLE_ID/location" \
   -H "X-Test-Tenant-Id: $TENANT_ID" \
   -H "X-Test-User-Id: $TECHNICIAN_ID" \
-  -H "X-Test-Permissions: location:read")
+  -H "X-Test-Permissions: vehicle:read")
 
 echo "Latest Location:"
 echo "$LOCATION_QUERY" | jq . | tee -a "$DEMO_DIR/10-location-query.json"
