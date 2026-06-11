@@ -379,7 +379,7 @@ export async function postLocation(token: string, vehicleId: string, lat: number
   const resp = await fetch(BASE_URL + `/vehicles/${vehicleId}/location`, {
     method: 'PUT',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ latitude: lat, longitude: lng }),
+    body: JSON.stringify({ lat, lng, recorded_at: new Date().toISOString() }),
   });
   await assertOk(resp, 'postLocation');
 }

@@ -65,4 +65,33 @@ def create_vehicle_location_router(*, service_provider) -> APIRouter:
             recorded_at=fix.recorded_at,
         )
 
+    @router.get(
+        "/vehicles/{vehicle_id}/location",
+        response_model=VehicleLocationResponse,
+        dependencies=[Depends(require_permission("vehicle:read"))],
+    )
+    @limiter.limit("120/minute")
+    async def get_latest_location(
+        request: Request,
+        vehicle_id: Annotated[UUID, Path()],
+    ) -> VehicleLocationResponse:
+        """Return the most recent GPS fix for a vehicle (404 when none recorded)."""
+        tenant_id = _tenant_id(request)
+        svc = service_provider()
+        fix = await svc.get_latest(tenant_id, vehicle_id)
+        if fix is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No location recorded for this vehicle",
+            )
+
+        return VehicleLocationResponse(
+            id=fix.id,
+            vehicle_id=fix.vehicle_id,
+            lat=fix.lat,
+            lng=fix.lng,
+            accuracy_m=fix.accuracy_m,
+            recorded_at=fix.recorded_at,
+        )
+
     return router
