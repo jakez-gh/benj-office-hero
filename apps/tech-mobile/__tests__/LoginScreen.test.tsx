@@ -6,7 +6,18 @@ import LoginScreen from '../LoginScreen';
 import * as api from '@office-hero/api-client';
 import { RateLimitError } from '@office-hero/api-client';
 
-jest.mock('@office-hero/api-client');
+// Partial mock: stub the network functions but keep RateLimitError real so
+// `instanceof RateLimitError` and `.retryAfter` behave like production.
+// (Pick exports individually — spreading the module evaluates every lazy
+// getter, which breaks on browser-only initialisation code.)
+jest.mock('@office-hero/api-client', () => {
+  const actual = jest.requireActual('@office-hero/api-client') as Record<string, unknown>;
+  return {
+    __esModule: true,
+    RateLimitError: actual.RateLimitError,
+    mobileLogin: jest.fn(),
+  };
+});
 
 describe('LoginScreen', () => {
   it('renders username and password inputs and a login button', () => {

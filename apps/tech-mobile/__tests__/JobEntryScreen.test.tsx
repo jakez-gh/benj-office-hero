@@ -4,7 +4,17 @@ import { jest } from '@jest/globals';
 import JobEntryScreen from '../JobEntryScreen';
 import * as api from '@office-hero/api-client';
 
-jest.mock('@office-hero/api-client');
+// Partial mock: stub the network functions but keep error classes real.
+// (Pick exports individually — spreading the module evaluates every lazy
+// getter, which breaks on browser-only initialisation code.)
+jest.mock('@office-hero/api-client', () => {
+  const actual = jest.requireActual('@office-hero/api-client') as Record<string, unknown>;
+  return {
+    __esModule: true,
+    RateLimitError: actual.RateLimitError,
+    createJob: jest.fn(),
+  };
+});
 
 describe('JobEntryScreen', () => {
   it('renders inputs and create button', () => {

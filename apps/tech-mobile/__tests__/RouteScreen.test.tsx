@@ -5,7 +5,19 @@ import RouteScreen from '../RouteScreen';
 import * as api from '@office-hero/api-client';
 import type { Route } from '@office-hero/types';
 
-jest.mock('@office-hero/api-client');
+// Partial mock: stub the network functions but keep RateLimitError real so
+// `instanceof RateLimitError` and `.retryAfter` behave like production.
+// (Pick exports individually — spreading the module evaluates every lazy
+// getter, which breaks on browser-only initialisation code.)
+jest.mock('@office-hero/api-client', () => {
+  const actual = jest.requireActual('@office-hero/api-client') as Record<string, unknown>;
+  return {
+    __esModule: true,
+    RateLimitError: actual.RateLimitError,
+    getDailyRoute: jest.fn(),
+    acknowledgeStop: jest.fn(),
+  };
+});
 jest.mock('../LocationService', () => ({
   startLocationTracking: jest.fn(),
 }));
