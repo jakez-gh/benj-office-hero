@@ -102,3 +102,9 @@ start_backend() {
 # Always kill + restart after a merge to pick up code changes
 kill_existing
 start_backend || echo -e "${YELLOW}⚠️  Backend auto-start skipped (missing .env?)${NC}"
+
+# ── git-lfs ───────────────────────────────────────────────────────────────────
+# core.hooksPath bypasses .git/hooks, so chain LFS explicitly (smudges *.png).
+if command -v git-lfs > /dev/null 2>&1; then
+    git lfs post-merge "$@" || true
+fi

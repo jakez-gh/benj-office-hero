@@ -23,6 +23,7 @@ import {
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { Modal } from '../components/ui/Modal';
 import { Skeleton } from '../components/ui/Skeleton';
 import {
   Table,
@@ -155,9 +156,7 @@ function CreateContractModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="mb-4 text-lg font-semibold text-neutral-900">New Contract</h2>
+    <Modal title="New Contract" onClose={onClose} busy={submitting}>
         {error && (
           <Alert variant="destructive" className="mb-4">
             {error}
@@ -316,8 +315,7 @@ function CreateContractModal({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -349,12 +347,13 @@ function EndContractModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="mb-1 text-lg font-semibold text-neutral-900">End contract</h2>
-        <p className="mb-4 text-sm text-neutral-500">
-          “{contract.title}” will stop generating jobs. This cannot be undone.
-        </p>
+    <Modal
+      title="End contract"
+      subtitle={`“${contract.title}” will stop generating jobs. This cannot be undone.`}
+      onClose={onClose}
+      busy={submitting}
+      maxWidth="max-w-md"
+    >
         {error && (
           <Alert variant="destructive" className="mb-4">
             {error}
@@ -383,8 +382,7 @@ function EndContractModal({
             {submitting ? 'Ending…' : 'End contract'}
           </Button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

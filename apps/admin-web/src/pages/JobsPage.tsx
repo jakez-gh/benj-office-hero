@@ -23,6 +23,7 @@ import {
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { Modal } from '../components/ui/Modal';
 import { Skeleton } from '../components/ui/Skeleton';
 import {
   Table,
@@ -142,9 +143,7 @@ function CreateJobModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="mb-4 text-lg font-semibold text-neutral-900">New Job</h2>
+    <Modal title="New Job" onClose={onClose} busy={submitting}>
         {error && (
           <Alert variant="destructive" className="mb-4">
             {error}
@@ -245,8 +244,7 @@ function CreateJobModal({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -360,23 +358,13 @@ function ScheduleModal({
   const canConfirm = manualMode ? Boolean(manualVehicleId && manualTime) : Boolean(selectedOption);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl">
-        <div className="mb-4 flex items-start justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-neutral-900">Schedule job</h2>
-            <p className="mt-0.5 text-sm text-neutral-500">{job.title}</p>
-          </div>
-          <button
-            type="button"
-            className="rounded p-1 text-neutral-400 hover:text-neutral-600 disabled:opacity-40"
-            onClick={onClose}
-            disabled={dispatching}
-          >
-            ✕
-          </button>
-        </div>
-
+    <Modal
+      title="Schedule job"
+      subtitle={job.title}
+      onClose={onClose}
+      busy={dispatching}
+      maxWidth="max-w-2xl"
+    >
         <div className="mb-4 grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1 block text-sm font-medium text-neutral-700">
@@ -537,8 +525,7 @@ function ScheduleModal({
             {dispatching ? 'Booking…' : 'Confirm booking'}
           </Button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -591,6 +578,26 @@ export const JobsPage: React.FC = () => {
     setShowCreate(false);
     setJobs((prev) => [job, ...prev]);
     setTotal((t) => t + 1);
+  };
+
+  const [loadingMore, setLoadingMore] = useState(false);
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const data = await listJobsApi({
+        search: debouncedSearch || undefined,
+        status: statusFilter || undefined,
+        limit: 50,
+        offset: jobs.length,
+      });
+      setJobs((prev) => [...prev, ...data.items]);
+      setTotal(data.total);
+    } catch (err) {
+      const apiErr = err as ApiError;
+      setError(apiErr?.detail ?? (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   return (
@@ -686,6 +693,14 @@ export const JobsPage: React.FC = () => {
             ))}
           </TableBody>
         </Table>
+      )}
+
+      {!loading && jobs.length < total && (
+        <div className="mt-4 text-center">
+          <Button variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
+            {loadingMore ? 'Loading…' : `Load more (showing ${jobs.length} of ${total})`}
+          </Button>
+        </div>
       )}
 
       {showCreate && (

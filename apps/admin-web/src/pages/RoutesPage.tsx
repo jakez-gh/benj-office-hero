@@ -14,6 +14,7 @@ import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
+import { Modal } from '../components/ui/Modal';
 import { Skeleton } from '../components/ui/Skeleton';
 
 const ROUTE_STATUS_COLORS: Record<RouteStatus, string> = {
@@ -98,12 +99,13 @@ function CancelRouteModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="mb-1 text-lg font-semibold text-neutral-900">Cancel route</h2>
-        <p className="mb-4 text-sm text-neutral-500">
-          All remaining stops will be skipped and their jobs returned to pending.
-        </p>
+    <Modal
+      title="Cancel route"
+      subtitle="All remaining stops will be skipped and their jobs returned to pending."
+      onClose={onClose}
+      busy={submitting}
+      maxWidth="max-w-md"
+    >
         {error && (
           <Alert variant="destructive" className="mb-4">
             {error}
@@ -132,8 +134,7 @@ function CancelRouteModal({
             {submitting ? 'Cancelling…' : 'Cancel route'}
           </Button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

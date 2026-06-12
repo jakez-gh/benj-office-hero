@@ -30,3 +30,9 @@ fi
 if [ -f "package.json" ] && [ ! -d "node_modules" ]; then
     echo -e "${YELLOW}⚠️  Run 'pnpm install' to restore dependencies${NC}"
 fi
+
+# ── git-lfs ───────────────────────────────────────────────────────────────────
+# core.hooksPath bypasses .git/hooks, so chain LFS explicitly (smudges *.png).
+if command -v git-lfs > /dev/null 2>&1; then
+    git lfs post-checkout "$@" || true
+fi

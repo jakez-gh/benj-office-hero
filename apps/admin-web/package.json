@@ -10,6 +10,7 @@
     "test": "jest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "screenshots": "playwright test src/e2e/screenshots.spec.ts --project=chromium --reporter=line",
     "test:e2e:record": "RECORD_VIDEO=on playwright test --project=chromium",
     "demo": "ts-node --esm --transpile-only demo-recording.ts",
     "demo:report": "playwright show-report"
