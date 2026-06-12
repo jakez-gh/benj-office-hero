@@ -76,7 +76,7 @@
 - Troubleshooting common issues
 - Quick reference guide
 
-**README_SLICE_14.md**
+**README_SLICE_14.md** (docs/archive/)
 
 - Quick start reference
 - Overview of Slice 14
@@ -233,13 +233,13 @@ c075035 feat(slice-14): Route management API endpoints
 - ✅ Data models (in code)
 - ✅ Service layer (in code)
 - ✅ Database migration (0010_vehicle_location.py)
-- ✅ Project completion strategy (PROJECT_COMPLETION_STRATEGY.md)
+- ✅ Project completion strategy (PROJECT_COMPLETION_STRATEGY.md in docs/archive/)
 
 ### User-Facing
 
 - ✅ Administrator guide (ADMIN_GUIDE.md)
 - ✅ Technician guide (TECHNICIAN_GUIDE.md)
-- ✅ Quick start (README_SLICE_14.md)
+- ✅ Quick start (README_SLICE_14.md in docs/archive/)
 - ✅ Troubleshooting (in both guides)
 
 ### Operational
