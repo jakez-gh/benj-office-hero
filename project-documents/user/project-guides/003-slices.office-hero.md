@@ -201,10 +201,14 @@ Each integration is a separate slice. All implement the `BackOfficeAdapter` prot
 > - Integration test simulating failure at each Saga step
 > - Dead-letter handling via `GET /admin/dead-letters` (Operator-only)
 
-24. [ ] **BackOfficeAdapter protocol** — Define the full protocol ABC; refactor all
+24. [x] **BackOfficeAdapter protocol** — Define the full protocol ABC; refactor all
     existing code to call the NativeAdapter through it (NativeAdapter is already
     the default; this slice makes the seam explicit and tested). Includes `health_check()`
     method and Saga base class.
+    **Status:** Complete — NativeAdapter implemented (tenant-scoped, local repos),
+    adapter registry, SQL-backed outbox/saga repositories, tenants.back_office_adapter
+    column, contract-create → outbox → adapter sync loop with dead-lettering
+    (design: 024-slice.backoffice-adapter.md).
     Dependencies: Slices 10–12. Risk: Medium. Effort: 2/5
 
 25. [ ] **ServiceTitan integration** — Adapter implementing BackOfficeAdapter against

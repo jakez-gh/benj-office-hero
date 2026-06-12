@@ -82,14 +82,22 @@ class ContractService:
         job_repo: JobRepositoryProtocol,
         audit: AuditPublisher,
         template_registry: Any,
+        outbox: Any = None,
     ) -> None:
-        """Inject the repository, cross-aggregate repos, audit publisher, and template registry."""
+        """Inject the repository, cross-aggregate repos, audit publisher, and template registry.
+
+        ``outbox`` (an :class:`~office_hero.repositories.protocols.OutboxRepository`)
+        enables the back-office sync seam: contract creation enqueues a
+        ``backoffice.contract.created`` event (ADR 056 transactional outbox).
+        None disables enqueueing (unit-test configuration).
+        """
         self.repo = repo
         self.customer_repo = customer_repo
         self.location_repo = location_repo
         self.job_repo = job_repo
         self.audit = audit
         self.template_registry = template_registry
+        self.outbox = outbox
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -186,6 +194,24 @@ class ContractService:
             tenant_id=tenant_id,
             user_id=user_id,
         )
+
+        # Back-office sync seam (ADR 056): enqueue in the same unit of work so
+        # the tenant's CRM adapter picks this up on the next outbox run.
+        if self.outbox is not None:
+            await self.outbox.create(
+                tenant_id,
+                event_type="backoffice.contract.created",
+                payload={
+                    "contract_id": str(contract.id),
+                    "customer_id": str(customer_id),
+                    "location_id": str(location_id),
+                    "title": title,
+                    "frequency": frequency,
+                    "start_date": start_date.isoformat(),
+                    "idem_key": str(contract.id),
+                },
+                idem_key=contract.id,
+            )
         return contract
 
     async def get(self, tenant_id: UUID, contract_id: UUID) -> Contract:

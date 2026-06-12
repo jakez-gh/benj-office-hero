@@ -40,16 +40,24 @@ class DummyAdapter:
         pass
 
 
+def _native_adapter() -> NativeAdapter:
+    """NativeAdapter is tenant-scoped since slice 24 (see test_native_adapter.py)."""
+    from office_hero.repositories.customer_repository import InMemoryCustomerRepository
+    from office_hero.repositories.job_repository import InMemoryJobRepository
+
+    return NativeAdapter(uuid4(), InMemoryCustomerRepository(), InMemoryJobRepository())
+
+
 @pytest.mark.asyncio
 async def test_protocol_runtime_checkable():
     """The protocol should be checkable at runtime and accept conforming objects."""
     assert isinstance(DummyAdapter(), BackOfficeAdapter)
-    assert isinstance(NativeAdapter(), BackOfficeAdapter)
+    assert isinstance(_native_adapter(), BackOfficeAdapter)
 
 
 @pytest.mark.asyncio
 async def test_health_check_default():
-    adapter = NativeAdapter()
+    adapter = _native_adapter()
     assert await adapter.health_check() is True
 
 

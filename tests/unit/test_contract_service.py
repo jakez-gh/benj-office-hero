@@ -122,6 +122,34 @@ async def test_create_contract_sets_next_due_to_start_date_and_audits(
     assert any(e.event_type == "contract.created" for e in audit.events)
 
 
+async def test_create_contract_enqueues_back_office_outbox_event(
+    contract_repo, cust_repo, loc_repo, job_repo, audit
+):
+    """The transactional-outbox seam (slice 24): create -> sync event enqueued."""
+    from office_hero.repositories.mocks import MockOutboxRepository
+
+    outbox = MockOutboxRepository()
+    svc_with_outbox = ContractService(
+        repo=contract_repo,
+        customer_repo=cust_repo,
+        location_repo=loc_repo,
+        job_repo=job_repo,
+        audit=audit,
+        template_registry=template_registry,
+        outbox=outbox,
+    )
+    cust, loc = await _seed_customer_and_location(cust_repo, loc_repo)
+    contract = await _create_contract(svc_with_outbox, cust, loc)
+
+    events = list(outbox.events.values())
+    assert len(events) == 1
+    event = events[0]
+    assert event["event_type"] == "backoffice.contract.created"
+    assert event["idem_key"] == contract.id
+    assert event["payload"]["contract_id"] == str(contract.id)
+    assert event["status"] == "pending"
+
+
 async def test_create_contract_unknown_customer_raises_not_found(svc, cust_repo, loc_repo):
     cust, loc = await _seed_customer_and_location(cust_repo, loc_repo)
     with pytest.raises(CustomerNotFoundError):

@@ -159,6 +159,9 @@ class MockOutboxRepository:
     async def mark_processing(self, event_id: UUID) -> None:
         self.events[event_id]["status"] = "processing"
 
+    async def mark_pending(self, event_id: UUID) -> None:
+        self.events[event_id]["status"] = "pending"
+
     async def mark_done(self, event_id: UUID) -> None:
         now = datetime.now(UTC).isoformat()
         self.events[event_id]["status"] = "done"
