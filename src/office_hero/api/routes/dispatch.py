@@ -14,6 +14,7 @@ from office_hero.api.schemas.dispatch import JobDispatchRequest, JobDispatchResp
 from office_hero.core.exceptions import (
     InvalidJobTransitionError,
     JobNotFoundError,
+    RouteCommitConflictError,
     VehicleAlreadyBookedError,
     VehicleNotFoundError,
 )
@@ -29,6 +30,13 @@ def _tenant_id(request: Request) -> UUID:
     raw = getattr(request.state, "tenant_id", None)
     if not raw:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    return raw if isinstance(raw, UUID) else UUID(str(raw))
+
+
+def _user_id(request: Request) -> UUID | None:
+    raw = getattr(request.state, "user_id", None)
+    if not raw:
+        return None
     return raw if isinstance(raw, UUID) else UUID(str(raw))
 
 
@@ -53,11 +61,14 @@ def create_dispatch_router(*, service_provider) -> APIRouter:
         service = service_provider()
 
         try:
-            job = await service.dispatch(
+            job, route_id = await service.dispatch(
                 tenant_id,
                 job_id,
                 vehicle_id=body.vehicle_id,
                 scheduled_for=body.scheduled_for,
+                user_id=_user_id(request),
+                travel_seconds=body.travel_seconds,
+                distance_meters=body.distance_meters,
             )
         except JobNotFoundError as exc:
             raise HTTPException(
@@ -79,6 +90,11 @@ def create_dispatch_router(*, service_provider) -> APIRouter:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=exc.message,
             ) from exc
+        except RouteCommitConflictError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=exc.message,
+            ) from exc
 
         return JobDispatchResponse(
             id=job.id,
@@ -88,6 +104,7 @@ def create_dispatch_router(*, service_provider) -> APIRouter:
             title=job.title,
             customer_id=job.customer_id,
             location_id=job.location_id,
+            route_id=route_id,
         )
 
     return router

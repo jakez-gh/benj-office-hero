@@ -37,6 +37,7 @@ from office_hero.api.routes.vehicle_location import create_vehicle_location_rout
 from office_hero.api.routes.vehicles import create_vehicle_router
 from office_hero.api.state import (
     get_route_repository,
+    get_route_stop_repository,
     set_auth_service,
     set_contract_service,
     set_customer_service,
@@ -273,29 +274,49 @@ def create_app(
         )
     set_schedule_suggestion_service(schedule_suggestion_service)
 
+    # Slice-14: shared route repositories — both the job dispatch service
+    # (suggested-slot booking) and the dispatch service (manual commit /
+    # resequence) must write the same Route/RouteStop store or the Routes
+    # view would only see half the dispatches.
+    _route_repo = None
+    _route_stop_repo = None
+    if dispatch_service is None:
+        _route_repo = InMemoryRouteRepository()
+        _route_stop_repo = InMemoryRouteStopRepository()
+        set_route_repository(_route_repo)
+        set_route_stop_repository(_route_stop_repo)
+    else:
+        # Injected dispatch service: reuse the route repos the caller
+        # registered (tests call set_route_repository before create_app) so
+        # a default JobDispatchService writes the same store.
+        try:
+            _route_repo = get_route_repository()
+            _route_stop_repo = get_route_stop_repository()
+        except RuntimeError:
+            pass
+
     # Slice-14: job dispatch service
     if job_dispatch_service is None:
         job_dispatch_service = JobDispatchService(
             job_repo=_default_job_repo or InMemoryJobRepository(),
             vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
+            route_repo=_route_repo,
+            stop_repo=_route_stop_repo,
+            crew_repo=vc_repo or InMemoryVehicleCrewRepository(),
         )
     set_job_dispatch_service(job_dispatch_service)
 
-    # Slice-14 (dispatch route management): route repositories and dispatch service
+    # Slice-14 (dispatch route management): dispatch service
     if dispatch_service is None:
-        route_repo = InMemoryRouteRepository()
-        route_stop_repo = InMemoryRouteStopRepository()
         dispatch_service = DispatchService(
-            route_repo=route_repo,
-            stop_repo=route_stop_repo,
+            route_repo=_route_repo,
+            stop_repo=_route_stop_repo,
             job_repo=_default_job_repo or InMemoryJobRepository(),
             vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
             vehicle_crew_repo=vc_repo or InMemoryVehicleCrewRepository(),
             schedule_service=schedule_suggestion_service,
             audit=audit,
         )
-        set_route_repository(route_repo)
-        set_route_stop_repository(route_stop_repo)
     set_dispatch_service(dispatch_service)
 
     application = FastAPI(

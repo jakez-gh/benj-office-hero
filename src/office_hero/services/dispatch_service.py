@@ -284,6 +284,73 @@ class DispatchService:
         await self._maybe_finalise_route(tenant_id, stop.route_id)
         return stop
 
+    async def resequence_route(
+        self, tenant_id: UUID, user_id: UUID, route_id: UUID, *, job_ids: list[UUID]
+    ) -> Route:
+        """Reorder the stops of a committed route — the manual override.
+
+        ``job_ids`` must be a permutation of the route's current stop jobs.
+        Only ``committed`` routes can be resequenced (day-of reordering of an
+        in-progress route is Slice 16 dynamic re-routing territory).
+        Per-stop planned metrics travel with their job; they are estimates
+        keyed to the old order, so totals are left unchanged.
+        """
+        route = await self._route_repo.get_by_id(route_id, tenant_id)
+        if route is None:
+            raise RouteNotFoundError(f"Route {route_id} not found")
+        if RouteStatus(route.status) != RouteStatus.COMMITTED:
+            raise InvalidRouteTransitionError(route.status, "resequenced")
+
+        stops = await self._stop_repo.get_for_route(tenant_id, route_id)
+        current_ids = {s.job_id for s in stops}
+        requested_ids = set(job_ids)
+        errors: list[str] = []
+        if len(job_ids) != len(requested_ids):
+            errors.append("job_ids contains duplicates")
+        if requested_ids != current_ids:
+            missing = current_ids - requested_ids
+            unknown = requested_ids - current_ids
+            if missing:
+                errors.append(f"missing jobs: {sorted(str(j) for j in missing)}")
+            if unknown:
+                errors.append(f"unknown jobs: {sorted(str(j) for j in unknown)}")
+        if errors:
+            raise ManualSequenceInvalidError(
+                "Resequence must be a permutation of the route's stops", errors=errors
+            )
+
+        by_job = {s.job_id: s for s in stops}
+        stop_rows = [
+            StopRow(
+                job_id=jid,
+                sequence_index=i,
+                planned_eta=by_job[jid].planned_eta,
+                planned_distance_from_prev_m=by_job[jid].planned_distance_from_prev_m,
+                planned_duration_from_prev_s=by_job[jid].planned_duration_from_prev_s,
+            )
+            for i, jid in enumerate(job_ids)
+        ]
+        new_stops = await self._stop_repo.replace_all(tenant_id, route_id, stop_rows)
+        route.stops = new_stops
+
+        if self._audit is not None:
+            await self._audit.log_event(
+                event_type="route.resequenced",
+                details={
+                    "route_id": str(route_id),
+                    "sequence": [str(j) for j in job_ids],
+                },
+                tenant_id=tenant_id,
+                user_id=user_id,
+            )
+        log.info(
+            "route.resequenced",
+            route_id=str(route_id),
+            stop_count=len(job_ids),
+            tenant_id=str(tenant_id),
+        )
+        return route
+
     # ------------------------------------------------------------------
     # Read helpers
     # ------------------------------------------------------------------
