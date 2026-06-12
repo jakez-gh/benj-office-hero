@@ -47,9 +47,7 @@ def _add_months(d: date, months: int, anchor_day: int) -> date:
     return date(year, month, day)
 
 
-def advance_date(
-    d: date, frequency: ContractFrequency, *, anchor_day: int | None = None
-) -> date:
+def advance_date(d: date, frequency: ContractFrequency, *, anchor_day: int | None = None) -> date:
     """Return the next occurrence of ``d`` advanced by one ``frequency`` period.
 
     ``anchor_day`` is the contract's original day-of-month anchor (normally

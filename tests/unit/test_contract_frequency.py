@@ -63,9 +63,9 @@ class TestAdvanceDate:
         assert apr == date(2026, 4, 30)
 
     def test_anchor_day_defaults_to_current_day(self):
-        assert advance_date(
-            date(2026, 6, 15), ContractFrequency.MONTHLY
-        ) == advance_date(date(2026, 6, 15), ContractFrequency.MONTHLY, anchor_day=15)
+        assert advance_date(date(2026, 6, 15), ContractFrequency.MONTHLY) == advance_date(
+            date(2026, 6, 15), ContractFrequency.MONTHLY, anchor_day=15
+        )
 
 
 class TestContractStatusMachine:

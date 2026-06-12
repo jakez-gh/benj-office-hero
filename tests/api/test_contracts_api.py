@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import date
 from uuid import uuid4
 
 import pytest
@@ -323,9 +322,7 @@ async def test_patch_contract_status_field_rejected(client, repos, tenant_a, use
     headers = _auth_headers(tenant_a, user_a)
     created = client.post("/contracts", json=_contract_body(cust, loc), headers=headers).json()
 
-    resp = client.patch(
-        f"/contracts/{created['id']}", json={"status": "ended"}, headers=headers
-    )
+    resp = client.patch(f"/contracts/{created['id']}", json={"status": "ended"}, headers=headers)
     assert resp.status_code == 422
 
 
@@ -337,9 +334,7 @@ async def test_patch_contract_explicit_null_rejected_422(client, repos, tenant_a
     headers = _auth_headers(tenant_a, user_a)
     created = client.post("/contracts", json=_contract_body(cust, loc), headers=headers).json()
 
-    resp = client.patch(
-        f"/contracts/{created['id']}", json={"next_due": None}, headers=headers
-    )
+    resp = client.patch(f"/contracts/{created['id']}", json={"next_due": None}, headers=headers)
     assert resp.status_code == 422
 
     # The contract list must still be readable (no poisoned row).
@@ -411,9 +406,7 @@ async def test_generate_jobs_far_future_as_of_422(client, repos, tenant_a, user_
     headers = _auth_headers(tenant_a, user_a)
     client.post("/contracts", json=_contract_body(cust, loc), headers=headers)
 
-    resp = client.post(
-        "/contracts/generate-jobs", json={"as_of": "2030-01-01"}, headers=headers
-    )
+    resp = client.post("/contracts/generate-jobs", json={"as_of": "2030-01-01"}, headers=headers)
     assert resp.status_code == 422
 
     # Contract untouched — next generation at a sane date still works.

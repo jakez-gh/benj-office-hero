@@ -72,10 +72,10 @@ from office_hero.repositories.route_stop_repository import InMemoryRouteStopRepo
 from office_hero.repositories.vehicle_crew_repository import InMemoryVehicleCrewRepository
 from office_hero.repositories.vehicle_location_repository import InMemoryVehicleLocationRepository
 from office_hero.repositories.vehicle_repository import InMemoryVehicleRepository
+from office_hero.services.contract_service import ContractService
 from office_hero.services.custom_field_templates import (
     registry as _template_registry_module,
 )  # noqa: F401
-from office_hero.services.contract_service import ContractService
 from office_hero.services.customer_service import CustomerService
 from office_hero.services.dispatch_service import DispatchService
 from office_hero.services.job_dispatch_service import JobDispatchService
