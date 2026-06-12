@@ -5,6 +5,50 @@ Format: `## YYYYMMDD` date header followed by brief session notes.
 
 ---
 
+## 20260612 (session 6 — customer-ready: Contracts, dispatch override, CRM seam, screenshot pipeline)
+
+Four PRs merged (#109–#112), closing the first-prompt feature bar:
+
+- **Slice 11 — Contract management (#109):** Contract aggregate
+  (active/paused/ended machine, anchor-preserving recurrence math), idempotent
+  due-job generation with catch-up + end_date auto-end, `/contracts` API with
+  RBAC (Sales can enter contracts), admin-web Contracts page, migration 0011
+  (RLS), `jobs.contract_id` provenance. Adversarial review pre-merge found and
+  fixed 5 majors (month-end drift, resume dropping pre-pause visits, PATCH-null
+  state poisoning, unbounded generate as_of, non-string error detail crashing
+  the SPA).
+- **Dispatch override (#110):** `POST /jobs/{id}/dispatch` now materialises
+  Route + RouteStops (creates route with crew, appends stops; 409s before job
+  mutation); `POST /routes/{id}/resequence` for permutation-validated manual
+  reorder; ScheduleModal "Assign manually instead" (the concept's fourth
+  option); new Routes page (per-day board, move-up/down + save, start/cancel).
+  Plus: Windows server-manager fix (pnpm.cmd via shutil.which) and a dependency
+  CVE sweep (starlette 1.3 / fastapi 0.136 + 11 more) clearing pip-audit.
+- **Slice 24 — Back-office adapter seam (#111):** NativeAdapter implemented
+  (tenant-scoped reads, idempotent write acks), adapter registry keyed by new
+  `tenants.back_office_adapter` column (migration 0012 + RLS/indexes on
+  outbox/saga tables), SQL-backed outbox/saga repositories,
+  contract-create → outbox → adapter sync loop with dead-lettering,
+  `POST /admin/outbox/process` (cron-ready). ServiceTitan/PestPac/Jobber
+  (slices 25–27) plug into this seam.
+- **Screenshot git-hook pipeline + UX pass (#112):** `.githooks/pre-push`
+  regenerates `docs/screenshots/admin-web` (8 routes × desktop/mobile) when a
+  push touches the frontend; deterministic captures (fetch/xhr aborted, CSS
+  animation frozen, version label hidden) + pixelmatch perceptual gate;
+  git-lfs chained into .githooks (core.hooksPath had silently disabled LFS);
+  ui-screenshots.yml no longer commits on main (local hook is committer of
+  record). Screenshot review caught + fixed: mobile nav overflow at 375px,
+  modal a11y (shared Modal: Esc/backdrop/ARIA/focus), Jobs pagination.
+- **Process:** activated `.githooks` in this clone (`git config core.hooksPath
+  .githooks` — was unset, so the repo's own automation never ran), generated
+  local `.env` RS256 keys for the managed test servers, fixed pre-push stdin
+  handling so pre-commit and git-lfs both receive ref lines.
+- Suites at session end: 483 backend passed, 37 admin-web passed, lint/bandit/
+  pip-audit green via the pre-push gate; `cf check` clean.
+- Slice plan: 11 and 24 marked complete; 21 annotated (Routes board shipped;
+  drag-drop + live positions remain). New design docs:
+  023-slice.contract-management.md, 024-slice.backoffice-adapter.md.
+
 ## 20260310 (session 5 — Slice 4 Implementation: Production Hardening)
 
 - **Slice 4 (Observability & Rate Limiting) fully implemented — TDD, SOLID:**

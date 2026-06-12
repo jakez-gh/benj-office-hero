@@ -79,7 +79,11 @@ start_backend() {
     fi
 
     echo -e "${YELLOW}ℹ️  Starting backend (random port)…${NC}"
-    bash "$SCRIPT" &
+    # Detach stdio: the child inherits the hook's stdout/stderr, and when git
+    # is invoked through a pipe (scripts, CI, editors) the pipe stays open —
+    # and `git pull` blocks — until the backend process exits.
+    mkdir -p "$PROJECT_ROOT/.runtime"
+    bash "$SCRIPT" > "$PROJECT_ROOT/.runtime/backend-autostart.log" 2>&1 < /dev/null &
     disown
 
     # Wait for PID file to appear, then health-check
