@@ -38,17 +38,27 @@ _MONTH_DELTAS: dict[ContractFrequency, int] = {
 }
 
 
-def _add_months(d: date, months: int) -> date:
-    """Add ``months`` to ``d``, clamping the day to the target month length."""
+def _add_months(d: date, months: int, anchor_day: int) -> date:
+    """Add ``months`` to ``d``, clamping ``anchor_day`` to the target month length."""
     total = d.year * 12 + (d.month - 1) + months
     year, month0 = divmod(total, 12)
     month = month0 + 1
-    day = min(d.day, calendar.monthrange(year, month)[1])
+    day = min(anchor_day, calendar.monthrange(year, month)[1])
     return date(year, month, day)
 
 
-def advance_date(d: date, frequency: ContractFrequency) -> date:
-    """Return the next occurrence of ``d`` advanced by one ``frequency`` period."""
+def advance_date(
+    d: date, frequency: ContractFrequency, *, anchor_day: int | None = None
+) -> date:
+    """Return the next occurrence of ``d`` advanced by one ``frequency`` period.
+
+    ``anchor_day`` is the contract's original day-of-month anchor (normally
+    ``start_date.day``).  Without it, iterative advancing loses the anchor
+    permanently after one short month (Jan 31 -> Feb 28 -> Mar 28 -> ...);
+    with it, the cadence recovers (Jan 31 -> Feb 28 -> Mar 31 -> Apr 30).
+    Week-based frequencies are unaffected — day-of-week is preserved by
+    construction.
+    """
     if frequency in _WEEK_DELTAS:
         return d + timedelta(days=_WEEK_DELTAS[frequency])
-    return _add_months(d, _MONTH_DELTAS[frequency])
+    return _add_months(d, _MONTH_DELTAS[frequency], anchor_day or d.day)

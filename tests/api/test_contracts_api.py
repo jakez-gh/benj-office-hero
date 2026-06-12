@@ -330,6 +330,25 @@ async def test_patch_contract_status_field_rejected(client, repos, tenant_a, use
 
 
 @pytest.mark.asyncio
+async def test_patch_contract_explicit_null_rejected_422(client, repos, tenant_a, user_a):
+    """Explicit JSON null on a NOT NULL field must 422 and leave state intact."""
+    cust_repo, loc_repo, *_ = repos
+    cust, loc = await _seed(cust_repo, loc_repo, tenant_a)
+    headers = _auth_headers(tenant_a, user_a)
+    created = client.post("/contracts", json=_contract_body(cust, loc), headers=headers).json()
+
+    resp = client.patch(
+        f"/contracts/{created['id']}", json={"next_due": None}, headers=headers
+    )
+    assert resp.status_code == 422
+
+    # The contract list must still be readable (no poisoned row).
+    listing = client.get("/contracts", headers=headers)
+    assert listing.status_code == 200
+    assert listing.json()["items"][0]["next_due"] == "2026-06-01"
+
+
+@pytest.mark.asyncio
 async def test_patch_contract_next_due(client, repos, tenant_a, user_a):
     cust_repo, loc_repo, *_ = repos
     cust, loc = await _seed(cust_repo, loc_repo, tenant_a)
@@ -382,6 +401,24 @@ async def test_generate_jobs_creates_jobs_and_is_idempotent(client, repos, tenan
 
     second = client.post("/contracts/generate-jobs", json={"as_of": "2026-06-01"}, headers=headers)
     assert second.json()["count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_generate_jobs_far_future_as_of_422(client, repos, tenant_a, user_a):
+    """as_of beyond the 31-day horizon is rejected before any state changes."""
+    cust_repo, loc_repo, *_ = repos
+    cust, loc = await _seed(cust_repo, loc_repo, tenant_a)
+    headers = _auth_headers(tenant_a, user_a)
+    client.post("/contracts", json=_contract_body(cust, loc), headers=headers)
+
+    resp = client.post(
+        "/contracts/generate-jobs", json={"as_of": "2030-01-01"}, headers=headers
+    )
+    assert resp.status_code == 422
+
+    # Contract untouched — next generation at a sane date still works.
+    listing = client.get("/contracts", headers=headers)
+    assert listing.json()["items"][0]["next_due"] == "2026-06-01"
 
 
 @pytest.mark.asyncio

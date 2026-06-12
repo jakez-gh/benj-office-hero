@@ -45,6 +45,18 @@ _IMMUTABLE_FIELDS = frozenset(
     {"status", "tenant_id", "customer_id", "industry", "created_by_user_id", "frequency"}
 )
 
+# PATCH may not null these out — the columns are NOT NULL and a null would
+# 500 (SQLAlchemy IntegrityError) or poison reads (in-memory binding).
+# Only description / service_type / end_date are legitimately clearable.
+_NON_NULLABLE_PATCH_FIELDS = frozenset(
+    {"location_id", "title", "priority", "estimated_duration_min", "next_due", "custom_fields"}
+)
+
+# generate_due_jobs refuses as_of beyond this horizon: a typo'd year would
+# otherwise mass-create jobs, skip every real visit, and irreversibly end
+# contracts whose advanced next_due passes end_date.
+_MAX_AS_OF_HORIZON_DAYS = 31
+
 
 class AuditPublisher(Protocol):
     """Minimal audit-publisher contract the service depends on (ADR 063)."""
@@ -223,6 +235,12 @@ class ContractService:
         if forbidden:
             raise ValueError(f"Fields {sorted(forbidden)} cannot be updated via patch")
 
+        nulled = sorted(
+            k for k, v in patch.items() if v is None and k in _NON_NULLABLE_PATCH_FIELDS
+        )
+        if nulled:
+            raise ValueError(f"Fields {nulled} cannot be set to null")
+
         existing = await self.get(tenant_id, contract_id)
 
         if "location_id" in patch and patch["location_id"] != existing.location_id:
@@ -287,20 +305,25 @@ class ContractService:
     async def resume(self, tenant_id: UUID, user_id: UUID, contract_id: UUID) -> Contract:
         """Transition ``paused → active``; emit ``contract.resumed``.
 
-        ``next_due`` dates that fell while paused are NOT back-filled: if
-        ``next_due`` is in the past it is rolled forward to the first due date
-        on/after today so resuming doesn't dump a backlog of stale visits.
+        Visits whose due date fell on/after the pause began are NOT back-filled:
+        those dates roll forward to the first due date on/after today so
+        resuming doesn't dump a backlog of visits the tenant deliberately
+        skipped.  A ``next_due`` that was already overdue BEFORE the pause is
+        left untouched — that visit was pending regardless of the pause and the
+        next generation run should still materialise it.
         """
         contract = await self.get(tenant_id, contract_id)
         self._transition(contract, ContractStatus.ACTIVE)
+        pause_started = contract.paused_at.date() if contract.paused_at else None
+        anchor_day = contract.start_date.day
         contract = await self.repo.update_status(contract_id, tenant_id, ContractStatus.ACTIVE)
 
         today = datetime.now(UTC).date()
         next_due = contract.next_due
         frequency = ContractFrequency(contract.frequency)
         rolled = False
-        while next_due < today:
-            next_due = advance_date(next_due, frequency)
+        while next_due < today and (pause_started is None or next_due >= pause_started):
+            next_due = advance_date(next_due, frequency, anchor_day=anchor_day)
             rolled = True
         if rolled:
             contract = await self.repo.update_fields(contract_id, tenant_id, next_due=next_due)
@@ -356,13 +379,23 @@ class ContractService:
         ``contract.jobs_generated`` audit event summarising the run.
         Contracts whose advanced ``next_due`` passes ``end_date`` are
         auto-ended.
+
+        ``as_of`` is capped at today + 31 days: beyond that a single
+        authorized call (e.g. a script with bad date math) would mass-create
+        jobs, skip every real visit, and irreversibly end contracts.
         """
-        run_date = as_of or datetime.now(UTC).date()
+        today = datetime.now(UTC).date()
+        if as_of is not None and as_of > today + timedelta(days=_MAX_AS_OF_HORIZON_DAYS):
+            raise ValueError(
+                f"as_of cannot be more than {_MAX_AS_OF_HORIZON_DAYS} days in the future"
+            )
+        run_date = as_of or today
         created: list[Job] = []
         contract_ids: set[str] = set()
 
         for contract in await self.repo.list_due(tenant_id, run_date):
             frequency = ContractFrequency(contract.frequency)
+            anchor_day = contract.start_date.day
             next_due = contract.next_due
 
             for _ in range(_MAX_JOBS_PER_CONTRACT_PER_RUN):
@@ -393,7 +426,7 @@ class ContractService:
                 created.append(job)
                 contract_ids.add(str(contract.id))
 
-                next_due = advance_date(next_due, frequency)
+                next_due = advance_date(next_due, frequency, anchor_day=anchor_day)
                 # Advance in the same unit of work as job creation so a re-run
                 # with the same as_of generates nothing (idempotency).
                 await self.repo.update_fields(contract.id, tenant_id, next_due=next_due)

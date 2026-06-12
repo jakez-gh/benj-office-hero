@@ -171,6 +171,7 @@ function CreateContractModal({
             <Input
               id="contract-title"
               value={form.title}
+              maxLength={255}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder="e.g. Quarterly pest control plan"
               required
@@ -255,6 +256,7 @@ function CreateContractModal({
               <Input
                 id="contract-service-type"
                 value={form.service_type ?? ''}
+                maxLength={120}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, service_type: e.target.value || null }))
                 }
@@ -364,6 +366,7 @@ function EndContractModal({
         <Input
           id="end-reason"
           value={reason}
+          maxLength={512}
           onChange={(e) => setReason(e.target.value)}
           placeholder="e.g. Customer moved away"
         />

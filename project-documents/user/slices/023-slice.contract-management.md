@@ -36,8 +36,10 @@ Encoded in `core/contract_status.py` (`ContractStatus` enum + `can_transition()`
 
 * `core/contract_frequency.py` — `ContractFrequency` enum:
   `WEEKLY, BIWEEKLY, MONTHLY, QUARTERLY, SEMIANNUAL, ANNUAL` and a pure helper
-  `advance_date(d: date, freq) -> date` (calendar-safe month arithmetic: day-of-month
-  clamped to target month length, e.g. Jan 31 + monthly → Feb 28/29).
+  `advance_date(d: date, freq, *, anchor_day) -> date` (calendar-safe month
+  arithmetic: the day-of-month **anchor** — `start_date.day` — is clamped per
+  occurrence, e.g. Jan 31 + monthly → Feb 28/29 → Mar 31, so the cadence recovers
+  after short months instead of drifting permanently).
 * `ContractService.generate_due_jobs(tenant_id, user_id, *, as_of: date) -> list[Job]`:
   * For each `active` contract with `next_due <= as_of`:
     * Create a Job (title = `"{contract.title} — {next_due:%b %d, %Y}"`,
@@ -51,6 +53,11 @@ Encoded in `core/contract_status.py` (`ContractStatus` enum + `can_transition()`
     job creation, so a re-run with the same `as_of` generates nothing. Concurrent
     double-runs are out of scope for v1 (single app instance; documented risk).
   * Emits audit `contract.jobs_generated` with `{contract_ids, job_ids, as_of}`.
+* `as_of` is capped at today + 31 days (422 beyond): a typo'd year would otherwise
+  mass-create jobs, skip every real visit, and irreversibly auto-end contracts.
+* Resume semantics: visits whose due date fell **on/after the pause began** roll
+  forward (the tenant deliberately skipped them); a `next_due` already overdue
+  *before* the pause is left untouched for the next generation run to back-fill.
 * Trigger points: `POST /contracts/generate-jobs` (admin/cron) and `tools/cli.py
   generate-jobs` for operator cron use.
 
@@ -121,7 +128,7 @@ Migration `alembic/versions/0011_contracts.py`: contracts table + RLS policy
   immutability, generation: single due, catch-up multiple periods, paused/ended
   skipped, end_date auto-end, idempotent re-run, audit events.
 * `tests/api/test_contracts_api.py` — 401/403/404 RBAC + cross-tenant, CRUD, filters
-  + pagination, Sales role can create, generate endpoint requires both permissions.
+  and pagination, Sales role can create, generate endpoint requires both permissions.
 * admin-web: Jest test for ContractsPage rendering + create flow (mocked api).
 
 ## Dependencies

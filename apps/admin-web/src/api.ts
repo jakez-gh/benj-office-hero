@@ -40,6 +40,33 @@ export interface ApiError {
   detail: string;
 }
 
+/**
+ * FastAPI returns `detail` as a string for domain errors but as an ARRAY OF
+ * OBJECTS ({type, loc, msg, input}) for Pydantic body-validation failures.
+ * Pages render `detail` as a React child, so anything non-string must be
+ * flattened here or the whole SPA crashes ("Objects are not valid as a
+ * React child" — and there is no error boundary).
+ */
+function normalizeDetail(detail: unknown, fallback: string): string {
+  if (typeof detail === 'string' && detail) return detail;
+  if (Array.isArray(detail)) {
+    const msgs = detail
+      .map((d) => {
+        if (typeof d === 'string') return d;
+        const item = d as { msg?: string; loc?: unknown[] };
+        if (item?.msg) {
+          const field = Array.isArray(item.loc) ? item.loc.slice(1).join('.') : '';
+          return field ? `${field}: ${item.msg}` : item.msg;
+        }
+        return JSON.stringify(d);
+      })
+      .filter(Boolean);
+    if (msgs.length) return msgs.join('; ');
+  }
+  if (detail != null) return JSON.stringify(detail);
+  return fallback;
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -56,7 +83,7 @@ async function request<T>(
     const body = await response.json().catch(() => ({ detail: response.statusText }));
     const error: ApiError = {
       status: response.status,
-      detail: body.detail || response.statusText,
+      detail: normalizeDetail(body.detail, response.statusText),
     };
     throw error;
   }

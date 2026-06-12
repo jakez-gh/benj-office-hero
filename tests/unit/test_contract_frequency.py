@@ -49,6 +49,24 @@ class TestAdvanceDate:
         """Aug 31 + semiannual -> Feb 28 (clamped)."""
         assert advance_date(date(2026, 8, 31), ContractFrequency.SEMIANNUAL) == date(2027, 2, 28)
 
+    def test_anchor_day_recovers_after_short_month(self):
+        """With anchor_day, the cadence recovers after a clamped month.
+
+        Without it, iterative advancing drifts permanently (Jan 31 -> Feb 28
+        -> Mar 28 -> ...). The service layer always passes start_date.day.
+        """
+        feb = advance_date(date(2026, 1, 31), ContractFrequency.MONTHLY, anchor_day=31)
+        assert feb == date(2026, 2, 28)
+        mar = advance_date(feb, ContractFrequency.MONTHLY, anchor_day=31)
+        assert mar == date(2026, 3, 31)
+        apr = advance_date(mar, ContractFrequency.MONTHLY, anchor_day=31)
+        assert apr == date(2026, 4, 30)
+
+    def test_anchor_day_defaults_to_current_day(self):
+        assert advance_date(
+            date(2026, 6, 15), ContractFrequency.MONTHLY
+        ) == advance_date(date(2026, 6, 15), ContractFrequency.MONTHLY, anchor_day=15)
+
 
 class TestContractStatusMachine:
     """The 3x3 transition grid — only the documented edges are allowed."""

@@ -279,9 +279,14 @@ def create_contract_router(*, service_provider) -> APIRouter:
         svc = service_provider()
         tenant_id = _tenant_id(request)
         user_id = _user_id(request)
-        jobs = await svc.generate_due_jobs(
-            tenant_id, user_id, as_of=body.as_of if body else None
-        )
+        try:
+            jobs = await svc.generate_due_jobs(
+                tenant_id, user_id, as_of=body.as_of if body else None
+            )
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+            ) from exc
         return GenerateJobsResponse(
             generated=[JobSummary.model_validate(j) for j in jobs],
             count=len(jobs),
