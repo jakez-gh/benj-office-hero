@@ -1,7 +1,21 @@
+"""Back-office adapter seam (ADR 056, Slice 24).
+
+``BackOfficeAdapter`` is the protocol every external-system integration
+implements; :class:`NativeAdapter` is the default binding where Office Hero
+itself is the system of record.  Concrete CRM adapters (ServiceTitan,
+PestPac, Jobber — slices 25-27) register in
+:mod:`office_hero.adapters.back_office.registry`.
+
+Delivery is at-least-once (the outbox re-delivers after a crash between
+dispatch and mark_done), so every adapter method MUST be idempotent — the
+outbox event's ``idem_key`` is available in each payload for deduplication
+against the external API.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 from uuid import UUID
 
 
@@ -50,42 +64,58 @@ class BackOfficeAdapter(Protocol):
 
 
 class NativeAdapter:
-    """Default back-office adapter using Office Hero as the system of record.
+    """Default back-office adapter: Office Hero is the system of record.
 
-    In the initial implementation the methods raise ``NotImplementedError``.
-    Later slices will refactor service/repository code to provide a concrete
-    implementation using the application's own database.
+    Reads delegate to the local repositories (tenant-scoped, defence-in-depth
+    per ADR 053).  Writes are acknowledgement no-ops: the domain services
+    already persisted the row before the outbox event fired, so "syncing to
+    the back office" is, natively, already done.  This keeps the seam's
+    calling convention identical to the external adapters in slices 25-27.
     """
 
+    name = "native"
+
+    def __init__(self, tenant_id: UUID, customer_repo: Any, job_repo: Any) -> None:
+        self._tenant_id = tenant_id
+        self._customer_repo = customer_repo
+        self._job_repo = job_repo
+
     async def health_check(self) -> bool:
-        # local DB should always be reachable when the application is running.
-        # external adapters may override to perform network calls.
+        """Local DB is reachable whenever the app is — always healthy."""
         return True
 
-    # The following are stubs; real behaviour will be added when the
-    # repository interfaces are available.  They exist primarily so the class
-    # satisfies the ``BackOfficeAdapter`` protocol.
+    # -- Customer operations -------------------------------------------------
 
     async def get_customer(self, id: UUID) -> Customer | None:
-        raise NotImplementedError
+        row = await self._customer_repo.get_by_id(id, self._tenant_id)
+        if row is None:
+            return None
+        return Customer(id=row.id, name=row.name)
 
     async def create_customer(self, customer: Customer) -> Customer:
-        raise NotImplementedError
+        # Row already exists locally (transactional outbox fires after the
+        # domain write) — acknowledge idempotently.
+        return customer
 
     async def update_customer(self, customer: Customer) -> Customer:
-        raise NotImplementedError
+        return customer
 
     async def delete_customer(self, id: UUID) -> None:
-        raise NotImplementedError
+        return None
+
+    # -- Job operations -------------------------------------------------------
 
     async def get_job(self, id: UUID) -> Job | None:
-        raise NotImplementedError
+        row = await self._job_repo.get_by_id(id, self._tenant_id)
+        if row is None:
+            return None
+        return Job(id=row.id, customer_id=row.customer_id)
 
     async def create_job(self, job: Job) -> Job:
-        raise NotImplementedError
+        return job
 
     async def update_job(self, job: Job) -> Job:
-        raise NotImplementedError
+        return job
 
     async def delete_job(self, id: UUID) -> None:
-        raise NotImplementedError
+        return None

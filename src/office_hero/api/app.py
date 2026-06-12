@@ -73,6 +73,7 @@ from office_hero.repositories.route_stop_repository import InMemoryRouteStopRepo
 from office_hero.repositories.vehicle_crew_repository import InMemoryVehicleCrewRepository
 from office_hero.repositories.vehicle_location_repository import InMemoryVehicleLocationRepository
 from office_hero.repositories.vehicle_repository import InMemoryVehicleRepository
+from office_hero.services.back_office_sync_service import BackOfficeSyncService
 from office_hero.services.contract_service import ContractService
 from office_hero.services.custom_field_templates import (
     registry as _template_registry_module,
@@ -211,7 +212,7 @@ def create_app(
 
     # Slice-11 default: in-memory contract repository sharing the job/customer/
     # location repos above so generated jobs land in the same store the /jobs
-    # routes read from.
+    # routes read from. The outbox wires the back-office sync seam (slice 24).
     if contract_service is None:
         contract_service = ContractService(
             repo=InMemoryContractRepository(),
@@ -220,8 +221,17 @@ def create_app(
             job_repo=_default_job_repo or InMemoryJobRepository(),
             audit=audit,
             template_registry=_template_registry_module,
+            outbox=outbox_repo,
         )
     set_contract_service(contract_service)
+
+    # Slice-24: back-office sync service draining the outbox through the
+    # tenant's adapter (native by default — see adapters/back_office/registry).
+    back_office_sync_service = BackOfficeSyncService(
+        outbox=outbox_repo,
+        customer_repo=cust_repo,
+        job_repo=_default_job_repo or InMemoryJobRepository(),
+    )
 
     # Slice-12 defaults: in-memory vehicle repos
     _default_v_repo: InMemoryVehicleRepository | None = None
@@ -352,6 +362,7 @@ def create_app(
     admin_router = create_admin_router(
         saga_service=saga_service,
         outbox_repo=outbox_repo,
+        sync_service_provider=lambda: back_office_sync_service,
     )
     application.include_router(admin_router, prefix="/admin", tags=["admin"])
     application.include_router(audit_router, prefix="/admin", tags=["admin"])

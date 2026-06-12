@@ -88,6 +88,15 @@ class OutboxRepository(Protocol):
         """Mark an event as 'processing' to prevent concurrent handling."""
         ...
 
+    async def mark_pending(self, event_id: UUID) -> None:
+        """Return a failed event to 'pending' WITHOUT resetting attempt_count.
+
+        Used by the sync service to requeue an event for the next run while
+        preserving the exhaustion counter (contrast: retry_dead_letter resets
+        attempts because an operator explicitly intervened).
+        """
+        ...
+
     async def mark_done(self, event_id: UUID) -> None:
         """Mark an event as 'done' (status='done')."""
         ...

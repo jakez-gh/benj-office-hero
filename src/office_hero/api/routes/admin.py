@@ -70,6 +70,14 @@ class DeadLetterRetryResponse(BaseModel):
     message: str
 
 
+class OutboxProcessResponse(BaseModel):
+    """Counters from one outbox processing run."""
+
+    processed: int
+    failed: int
+    dead_lettered: int
+
+
 class SagaLogResponse(BaseModel):
     """Saga execution log response."""
 
@@ -134,6 +142,7 @@ def create_admin_router(
     *,
     saga_service: SagaService,
     outbox_repo: OutboxRepository,
+    sync_service_provider=None,
 ) -> APIRouter:
     """Factory that creates admin routes with injected dependencies (DI).
 
@@ -211,13 +220,11 @@ def create_admin_router(
         """
         tenant_id = getattr(request.state, "tenant_id", None)
 
-        event = outbox_repo.events.get(event_id)
+        # Protocol-friendly lookup (works for both the in-memory mock and the
+        # SQL repository — never reach into a private ``.events`` dict).
+        candidates = await outbox_repo.list_events(tenant_id=tenant_id)
+        event = next((e for e in candidates if str(e["id"]) == str(event_id)), None)
         if event is None:
-            raise HTTPException(status_code=404, detail=f"Event {event_id} not found")
-
-        # Tenant isolation: when a tenant_id is present on the request,
-        # the event must belong to that tenant.
-        if tenant_id is not None and str(event.get("tenant_id")) != str(tenant_id):
             raise HTTPException(status_code=404, detail=f"Event {event_id} not found")
 
         if event.get("status") != "dead":
@@ -241,6 +248,38 @@ def create_admin_router(
             status="pending",
             message="Event reset to pending for reprocessing",
         )
+
+    @router.post(
+        "/outbox/process",
+        response_model=OutboxProcessResponse,
+        summary="Process pending outbox events",
+        description=(
+            "Drain pending back-office sync events for the authenticated tenant "
+            "through its configured adapter (Operator only). Designed for cron."
+        ),
+        dependencies=[Depends(require_operator)],
+    )
+    async def process_outbox(
+        request: Request,
+        limit: int = Query(50, ge=1, le=500, description="Max events per run"),
+    ) -> OutboxProcessResponse:
+        """Run one back-office sync pass for the caller's tenant."""
+        if sync_service_provider is None:
+            raise HTTPException(status_code=503, detail="Back-office sync service not configured")
+        tenant_id = getattr(request.state, "tenant_id", None)
+        if tenant_id is None:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+
+        service = sync_service_provider()
+        counters = await service.process_pending(
+            tenant_id if isinstance(tenant_id, UUID) else UUID(str(tenant_id)),
+            limit=limit,
+        )
+        logger.info(
+            "admin.outbox_processed",
+            extra={"tenant_id": str(tenant_id), **counters},
+        )
+        return OutboxProcessResponse(**counters)
 
     @router.get(
         "/sagas/{saga_id}/logs",
