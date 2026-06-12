@@ -28,6 +28,7 @@ const ROUTES: ReadonlyArray<{ name: string; path: string; auth: boolean }> = [
   { name: '05-users', path: '/users', auth: true },
   { name: '06-customers', path: '/customers', auth: true },
   { name: '07-contracts', path: '/contracts', auth: true },
+  { name: '08-routes', path: '/routes', auth: true },
 ];
 
 const SCREENSHOT_DIR = process.env.SCREENSHOT_DIR ?? 'screenshots';

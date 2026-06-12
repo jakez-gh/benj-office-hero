@@ -18,11 +18,15 @@ repos:
         args: [--line-length=100]
 
   # CVE scanning on push only (slow; skip with SKIP=pip-audit)
+  # Ignores (no upstream fix available — re-check periodically):
+  #   CVE-2024-23342  ecdsa Minerva timing side-channel; maintainers consider
+  #                   side channels out of scope, no planned fix. Transitive
+  #                   via python-jose; we only verify signatures server-side.
   - repo: local
     hooks:
       - id: pip-audit
         name: pip-audit dependency scan
-        entry: bash -c 'poetry run pip-audit --desc'
+        entry: bash -c 'poetry run pip-audit --desc --ignore-vuln CVE-2024-23342'
         language: system
         pass_filenames: false
         always_run: true

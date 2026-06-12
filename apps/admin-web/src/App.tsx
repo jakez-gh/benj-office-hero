@@ -5,6 +5,7 @@ import { LoginPage } from './components/LoginPage';
 import { NavShell } from './components/NavShell';
 import { JobsPage } from './pages/JobsPage';
 import { ContractsPage } from './pages/ContractsPage';
+import { RoutesPage } from './pages/RoutesPage';
 import { DispatchPage } from './pages/DispatchPage';
 import { VehiclesPage } from './pages/VehiclesPage';
 import { UsersPage } from './pages/UsersPage';
@@ -34,6 +35,7 @@ const AppContent: React.FC = () => {
           <Route path="/" element={<JobsPage />} />
           <Route path="/jobs" element={<JobsPage />} />
           <Route path="/contracts" element={<ContractsPage />} />
+          <Route path="/routes" element={<RoutesPage />} />
           <Route path="/dispatch" element={<DispatchPage />} />
           <Route path="/vehicles" element={<VehiclesPage />} />
           <Route path="/users" element={<UsersPage />} />

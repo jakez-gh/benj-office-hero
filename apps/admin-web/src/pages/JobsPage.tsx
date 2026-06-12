@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   listCustomers,
   listLocations,
+  listVehicles,
+  type AdminVehicle,
   type CustomerSummary,
   type LocationRead,
 } from '@office-hero/api-client';
@@ -288,6 +290,26 @@ function ScheduleModal({
   const windowInvalid = windowEnd <= windowStart;
   const [dispatching, setDispatching] = useState(false);
   const [dispatchError, setDispatchError] = useState<string | null>(null);
+  // Manual override — the "fourth option": any vehicle, any time.
+  const [manualMode, setManualMode] = useState(false);
+  const [vehicles, setVehicles] = useState<AdminVehicle[]>([]);
+  const [manualVehicleId, setManualVehicleId] = useState('');
+  const [manualTime, setManualTime] = useState(() => tomorrowWindow().start);
+
+  useEffect(() => {
+    if (!manualMode || vehicles.length > 0) return;
+    let cancelled = false;
+    listVehicles()
+      .then((v) => {
+        if (!cancelled) setVehicles(v);
+      })
+      .catch(() => {
+        // Selection list is a convenience; dispatch validates server-side.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [manualMode, vehicles.length]);
 
   const fetchOptions = async () => {
     setLoadingOptions(true);
@@ -310,14 +332,22 @@ function ScheduleModal({
   };
 
   const handleDispatch = async () => {
-    if (!selectedOption) return;
+    const payload = manualMode
+      ? manualVehicleId && manualTime
+        ? { vehicle_id: manualVehicleId, scheduled_for: new Date(manualTime).toISOString() }
+        : null
+      : selectedOption
+        ? {
+            vehicle_id: selectedOption.vehicle_id,
+            scheduled_for: selectedOption.suggested_start,
+            travel_seconds: selectedOption.travel_seconds,
+          }
+        : null;
+    if (!payload) return;
     setDispatching(true);
     setDispatchError(null);
     try {
-      const result = await dispatchJobApi(job.id, {
-        vehicle_id: selectedOption.vehicle_id,
-        scheduled_for: selectedOption.suggested_start,
-      });
+      const result = await dispatchJobApi(job.id, payload);
       onDispatched(result);
     } catch (err) {
       const apiErr = err as ApiError;
@@ -326,6 +356,8 @@ function ScheduleModal({
       setDispatching(false);
     }
   };
+
+  const canConfirm = manualMode ? Boolean(manualVehicleId && manualTime) : Boolean(selectedOption);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -436,6 +468,57 @@ function ScheduleModal({
           </>
         )}
 
+        <div className="mb-4 border-t border-neutral-200 pt-3">
+          <label className="flex items-center gap-2 text-sm font-medium text-neutral-700">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
+              checked={manualMode}
+              onChange={(e) => setManualMode(e.target.checked)}
+            />
+            Assign manually instead (override suggestions)
+          </label>
+          {manualMode && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div>
+                <label
+                  htmlFor="manual-vehicle"
+                  className="mb-1 block text-sm font-medium text-neutral-700"
+                >
+                  Vehicle
+                </label>
+                <select
+                  id="manual-vehicle"
+                  className="block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  value={manualVehicleId}
+                  onChange={(e) => setManualVehicleId(e.target.value)}
+                >
+                  <option value="">Select a vehicle…</option>
+                  {vehicles.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name || v.license_plate || v.id.slice(0, 8)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="manual-time"
+                  className="mb-1 block text-sm font-medium text-neutral-700"
+                >
+                  Start time
+                </label>
+                <Input
+                  id="manual-time"
+                  type="datetime-local"
+                  value={manualTime}
+                  onChange={(e) => setManualTime(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
         {dispatchError && (
           <Alert variant="destructive" className="mb-4">
             {dispatchError}
@@ -448,7 +531,7 @@ function ScheduleModal({
           </Button>
           <Button
             type="button"
-            disabled={!selectedOption || dispatching}
+            disabled={!canConfirm || dispatching}
             onClick={() => void handleDispatch()}
           >
             {dispatching ? 'Booking…' : 'Confirm booking'}
@@ -530,6 +613,7 @@ export const JobsPage: React.FC = () => {
           onChange={(e) => setSearch(e.target.value)}
         />
         <select
+          aria-label="Filter by status"
           className="rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as JobStatus | '')}

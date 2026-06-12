@@ -111,6 +111,23 @@ class DispatchCommitRequest(BaseModel):
         return self
 
 
+class RouteResequenceRequest(BaseModel):
+    """Request to reorder a committed route's stops (manual override)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    job_ids: list[UUID]
+
+    @field_validator("job_ids")
+    @classmethod
+    def validate_job_ids(cls, v: list[UUID]) -> list[UUID]:
+        if not v:
+            raise ValueError("job_ids must not be empty")
+        if len(v) > 200:
+            raise ValueError("job_ids must contain at most 200 entries")
+        return v
+
+
 class RouteCancelRequest(BaseModel):
     """Request to cancel a route."""
 

@@ -15,6 +15,7 @@ from office_hero.api.schemas.route import (
     RouteCancelRequest,
     RouteListResponse,
     RouteRead,
+    RouteResequenceRequest,
     StopSkipRequest,
 )
 from office_hero.core.exceptions import (
@@ -128,6 +129,39 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=str(exc),
+            ) from exc
+
+        return route
+
+    @router.post(
+        "/{route_id}/resequence",
+        response_model=RouteRead,
+        dependencies=[Depends(require_permission("route:write"))],
+    )
+    @limiter.limit("60/minute")
+    async def resequence_route(
+        request: Request,
+        route_id: Annotated[UUID, Path()],
+        body: RouteResequenceRequest,
+    ) -> RouteRead:
+        """Reorder a committed route's stops — the manual sequence override."""
+        tenant_id = _tenant_id(request)
+        user_id = _user_id(request)
+        service = service_provider()
+
+        try:
+            route = await service.resequence_route(
+                tenant_id, user_id, route_id, job_ids=body.job_ids
+            )
+        except RouteNotFoundError as exc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        except InvalidRouteTransitionError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+            ) from exc
+        except ManualSequenceInvalidError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
             ) from exc
 
         return route
