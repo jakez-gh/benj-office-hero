@@ -138,9 +138,7 @@ class JobDispatchService:
                     raise RouteCommitConflictError(
                         "Crew repository not configured", reason="no_crew_repo"
                     )
-                crew = await self._crew_repo.get_for_vehicle_date(
-                    tenant_id, vehicle_id, work_date
-                )
+                crew = await self._crew_repo.get_for_vehicle_date(tenant_id, vehicle_id, work_date)
                 if crew is None:
                     raise RouteCommitConflictError(
                         f"Vehicle {vehicle_id} has no crew assigned for {work_date}",
