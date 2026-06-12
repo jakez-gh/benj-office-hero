@@ -6,15 +6,23 @@ import LoginScreen from '../LoginScreen';
 import * as api from '@office-hero/api-client';
 import { RateLimitError } from '@office-hero/api-client';
 
-// Partial mock: stub the network functions but keep RateLimitError real so
-// `instanceof RateLimitError` and `.retryAfter` behave like production.
-// (Pick exports individually — spreading the module evaluates every lazy
-// getter, which breaks on browser-only initialisation code.)
+// Full manual mock. `jest.requireActual` is NOT usable here: the api-client
+// module runs base-URL detection at module scope which crashes in the RN
+// jest environment. Defining RateLimitError inside the factory keeps
+// `instanceof` semantics intact — LoginScreen and this test both import the
+// same mocked class.
 jest.mock('@office-hero/api-client', () => {
-  const actual = jest.requireActual('@office-hero/api-client') as Record<string, unknown>;
+  class RateLimitError extends Error {
+    retryAfter: number;
+    constructor(retryAfter: number, message?: string) {
+      super(message ?? `Rate limited. Retry after ${retryAfter}s.`);
+      this.name = 'RateLimitError';
+      this.retryAfter = retryAfter;
+    }
+  }
   return {
     __esModule: true,
-    RateLimitError: actual.RateLimitError,
+    RateLimitError,
     mobileLogin: jest.fn(),
   };
 });

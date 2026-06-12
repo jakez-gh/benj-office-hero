@@ -4,14 +4,22 @@ import { jest } from '@jest/globals';
 import JobEntryScreen from '../JobEntryScreen';
 import * as api from '@office-hero/api-client';
 
-// Partial mock: stub the network functions but keep error classes real.
-// (Pick exports individually — spreading the module evaluates every lazy
-// getter, which breaks on browser-only initialisation code.)
+// Full manual mock — `requireActual` evaluates the api-client's module-scope
+// base-URL detection, which crashes in the RN jest environment. The mocked
+// RateLimitError preserves `instanceof` semantics (component and test share
+// this class via the mocked module).
 jest.mock('@office-hero/api-client', () => {
-  const actual = jest.requireActual('@office-hero/api-client') as Record<string, unknown>;
+  class RateLimitError extends Error {
+    retryAfter: number;
+    constructor(retryAfter: number, message?: string) {
+      super(message ?? `Rate limited. Retry after ${retryAfter}s.`);
+      this.name = 'RateLimitError';
+      this.retryAfter = retryAfter;
+    }
+  }
   return {
     __esModule: true,
-    RateLimitError: actual.RateLimitError,
+    RateLimitError,
     createJob: jest.fn(),
   };
 });
