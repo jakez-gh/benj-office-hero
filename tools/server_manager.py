@@ -318,6 +318,11 @@ def _spawn_process(name: str, command: list[str], env: dict[str, str]) -> subpro
     _runtime_mkdir()
     log_file = RUNTIME_DIR / f"{name}.log"
     log_handle = log_file.open("w", encoding="utf-8")
+    # On Windows, npm-family launchers are .cmd shims (pnpm.cmd) which
+    # CreateProcess cannot exec by bare name — resolve via PATH lookup.
+    resolved = shutil.which(command[0])
+    if resolved:
+        command = [resolved, *command[1:]]
     try:
         proc = subprocess.Popen(
             command,
