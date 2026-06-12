@@ -80,6 +80,11 @@ class Job(Base):
     # Back-office integration identifier (ADR 056).
     external_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
+    # Slice 11: provenance link for jobs generated from a recurring Contract.
+    contract_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("contracts.id"), nullable=True
+    )
+
     # Slice 13: vehicle assigned by the routing / scheduling engine.
     assigned_vehicle_id: Mapped[UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("vehicles.id"), nullable=True

@@ -23,6 +23,7 @@ from office_hero.api.middleware.security_headers import SecurityHeadersMiddlewar
 from office_hero.api.middleware.test_auth import TestAuthMiddleware, test_auth_enabled
 from office_hero.api.routes import auth, health
 from office_hero.api.routes.admin import audit_router, create_admin_router
+from office_hero.api.routes.contracts import create_contract_router
 from office_hero.api.routes.customers import create_customer_router
 from office_hero.api.routes.dispatch import create_dispatch_router
 from office_hero.api.routes.jobs import create_job_router
@@ -37,6 +38,7 @@ from office_hero.api.routes.vehicles import create_vehicle_router
 from office_hero.api.state import (
     get_route_repository,
     set_auth_service,
+    set_contract_service,
     set_customer_service,
     set_dispatch_service,
     set_engine,
@@ -51,6 +53,7 @@ from office_hero.api.state import (
     set_vehicle_service,
 )
 from office_hero.core.logging import get_logger
+from office_hero.repositories.contract_repository import InMemoryContractRepository
 from office_hero.repositories.customer_repository import (
     InMemoryCustomerRepository,
 )
@@ -72,6 +75,7 @@ from office_hero.repositories.vehicle_repository import InMemoryVehicleRepositor
 from office_hero.services.custom_field_templates import (
     registry as _template_registry_module,
 )  # noqa: F401
+from office_hero.services.contract_service import ContractService
 from office_hero.services.customer_service import CustomerService
 from office_hero.services.dispatch_service import DispatchService
 from office_hero.services.job_dispatch_service import JobDispatchService
@@ -138,6 +142,7 @@ def create_app(
     customer_service: CustomerService | None = None,
     location_service: LocationService | None = None,
     job_service: JobService | None = None,
+    contract_service: ContractService | None = None,
     vehicle_service: VehicleService | None = None,
     vehicle_crew_service: VehicleCrewService | None = None,
     schedule_suggestion_service: ScheduleSuggestionService | None = None,
@@ -202,6 +207,20 @@ def create_app(
     set_customer_service(customer_service)
     set_location_service(location_service)
     set_job_service(job_service)
+
+    # Slice-11 default: in-memory contract repository sharing the job/customer/
+    # location repos above so generated jobs land in the same store the /jobs
+    # routes read from.
+    if contract_service is None:
+        contract_service = ContractService(
+            repo=InMemoryContractRepository(),
+            customer_repo=cust_repo,
+            location_repo=loc_repo,
+            job_repo=_default_job_repo or InMemoryJobRepository(),
+            audit=audit,
+            template_registry=_template_registry_module,
+        )
+    set_contract_service(contract_service)
 
     # Slice-12 defaults: in-memory vehicle repos
     _default_v_repo: InMemoryVehicleRepository | None = None
@@ -327,6 +346,9 @@ def create_app(
 
     job_router = create_job_router(service_provider=lambda: job_service)
     application.include_router(job_router, prefix="/jobs", tags=["jobs"])
+
+    contract_router = create_contract_router(service_provider=lambda: contract_service)
+    application.include_router(contract_router, prefix="/contracts", tags=["contracts"])
 
     # Tech router must be registered before the vehicles router so that
     # /vehicles/my-crew-today is matched before /{vehicle_id} catches it.

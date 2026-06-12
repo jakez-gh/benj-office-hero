@@ -41,6 +41,7 @@ class JobRepositoryProtocol(Protocol):
         estimated_duration_min: int,
         custom_fields: dict,
         created_by_user_id: UUID,
+        contract_id: UUID | None = None,
     ) -> Job: ...
 
     async def get_by_id(self, job_id: UUID, tenant_id: UUID) -> Job | None: ...
@@ -107,6 +108,7 @@ class JobRepository:
         estimated_duration_min: int = 60,
         custom_fields: dict | None = None,
         created_by_user_id: UUID,
+        contract_id: UUID | None = None,
     ) -> Job:
         """Insert and flush a new :class:`Job`."""
         job = Job(
@@ -124,6 +126,7 @@ class JobRepository:
             estimated_duration_min=estimated_duration_min,
             custom_fields=custom_fields or {},
             created_by_user_id=created_by_user_id,
+            contract_id=contract_id,
         )
         self.session.add(job)
         await self.session.flush()
@@ -286,6 +289,7 @@ class InMemoryJobRepository:
             cancel_reason=row.get("cancel_reason"),
             custom_fields=deepcopy(row.get("custom_fields", {})),
             external_id=row.get("external_id"),
+            contract_id=row.get("contract_id"),
             assigned_vehicle_id=row.get("assigned_vehicle_id"),
             created_by_user_id=row["created_by_user_id"],
         )
@@ -309,6 +313,7 @@ class InMemoryJobRepository:
         estimated_duration_min: int = 60,
         custom_fields: dict | None = None,
         created_by_user_id: UUID,
+        contract_id: UUID | None = None,
     ) -> Job:
         """Insert and return a freshly minted :class:`Job`."""
         jid = uuid4()
@@ -334,6 +339,7 @@ class InMemoryJobRepository:
             "cancel_reason": None,
             "custom_fields": deepcopy(custom_fields or {}),
             "external_id": None,
+            "contract_id": contract_id,
             "assigned_vehicle_id": None,
             "created_by_user_id": created_by_user_id,
             "created_at": now,
