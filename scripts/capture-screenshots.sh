@@ -29,10 +29,9 @@ echo "📸 Capturing admin-web screenshots (Playwright/chromium)…"
 )
 
 mkdir -p "$OUT_DIR"
-# Mirror (rsync is not guaranteed in git-bash on Windows).
-rm -rf "$OUT_DIR"
-mkdir -p "$OUT_DIR"
-cp -r apps/admin-web/screenshots/. "$OUT_DIR/"
+# Perceptual sync: only replace PNGs that meaningfully differ, so headless
+# rendering flicker doesn't churn the committed screenshots every run.
+node apps/admin-web/scripts/compare-screenshots.mjs apps/admin-web/screenshots "$OUT_DIR"
 
 if [ -n "$(git status --porcelain "$OUT_DIR")" ]; then
     git add "$OUT_DIR"

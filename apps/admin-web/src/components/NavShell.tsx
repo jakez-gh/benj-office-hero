@@ -48,7 +48,9 @@ export const NavShell: React.FC<{ children?: React.ReactNode }> = ({ children })
 
           {/* Version + logout */}
           <div className="flex shrink-0 items-center gap-3">
-            <span className="hidden text-xs text-neutral-400 sm:inline">v{__APP_VERSION__}</span>
+            <span data-testid="app-version" className="hidden text-xs text-neutral-400 sm:inline">
+              v{__APP_VERSION__}
+            </span>
             <Button variant="ghost" size="sm" onClick={logout}>
               Sign out
             </Button>
