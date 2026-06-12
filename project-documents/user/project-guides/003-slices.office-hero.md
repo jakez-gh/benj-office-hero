@@ -165,6 +165,9 @@ Ordered by dependency and value. Each slice is independently demonstrable.
 21. [ ] **Tenant Admin web — Dispatch dashboard** — Route board view (all Vehicles + their
     Routes for the day), drag-and-drop resequencing, live Vehicle positions (polling),
     day-of exception handling UI. Dependencies: Slices 12–16, 20. Risk: High. Effort: 4/5
+    **Status:** Routes page shipped (per-day route board, manual stop resequencing via
+    move up/down + save, start/cancel route). Drag-and-drop, live vehicle positions,
+    and day-of exception flows remain.
 
 22. [x] **Technician web view** — Lighter React view: own Route for the day, Job details,
     basic Job entry. Separate from Technician Android app; useful for desktop/laptop use.

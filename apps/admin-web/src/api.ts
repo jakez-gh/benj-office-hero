@@ -274,6 +274,8 @@ export function getScheduleOptionsApi(
 export interface DispatchRequest {
   vehicle_id: string;
   scheduled_for: string;
+  travel_seconds?: number;
+  distance_meters?: number;
 }
 
 export interface DispatchResponse {
@@ -284,6 +286,7 @@ export interface DispatchResponse {
   title: string;
   customer_id: string;
   location_id: string;
+  route_id: string | null;
 }
 
 export function dispatchJobApi(
@@ -293,6 +296,79 @@ export function dispatchJobApi(
   return request<DispatchResponse>(`/jobs/${jobId}/dispatch`, {
     method: 'POST',
     body: JSON.stringify(body),
+  });
+}
+
+// --- Route types (Slice 14) ---
+
+export type RouteStatus = 'draft' | 'committed' | 'in_progress' | 'complete' | 'cancelled';
+export type RouteStopStatus = 'pending' | 'arrived' | 'complete' | 'skipped';
+
+export interface RouteStopRead {
+  id: string;
+  route_id: string;
+  job_id: string;
+  sequence_index: number;
+  status: RouteStopStatus;
+  planned_eta: string | null;
+  actual_arrived_at: string | null;
+  actual_completed_at: string | null;
+  planned_distance_from_prev_m: number;
+  planned_duration_from_prev_s: number;
+}
+
+export interface RouteRead {
+  id: string;
+  tenant_id: string;
+  vehicle_id: string;
+  vehicle_crew_id: string;
+  work_date: string;
+  status: RouteStatus;
+  committed_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  cancelled_at: string | null;
+  cancel_reason: string | null;
+  total_distance_m: number;
+  total_duration_s: number;
+  option_kind_applied: string | null;
+  notes: string | null;
+  stops: RouteStopRead[];
+}
+
+export interface RouteListResponse {
+  items: RouteRead[];
+  total: number;
+}
+
+// --- Route API functions ---
+
+export function listRoutesApi(date: string): Promise<RouteListResponse> {
+  return request<RouteListResponse>(`/routes?date=${encodeURIComponent(date)}`);
+}
+
+export function getRouteApi(routeId: string): Promise<RouteRead> {
+  return request<RouteRead>(`/routes/${routeId}`);
+}
+
+export function resequenceRouteApi(
+  routeId: string,
+  jobIds: string[],
+): Promise<RouteRead> {
+  return request<RouteRead>(`/routes/${routeId}/resequence`, {
+    method: 'POST',
+    body: JSON.stringify({ job_ids: jobIds }),
+  });
+}
+
+export function startRouteApi(routeId: string): Promise<RouteRead> {
+  return request<RouteRead>(`/routes/${routeId}/start`, { method: 'POST' });
+}
+
+export function cancelRouteApi(routeId: string, reason: string): Promise<RouteRead> {
+  return request<RouteRead>(`/routes/${routeId}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
   });
 }
 
