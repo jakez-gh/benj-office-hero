@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from office_hero.repositories.vehicle_location_repository import (
         VehicleLocationRepositoryProtocol,
     )
+    from office_hero.services.contract_service import ContractService
     from office_hero.services.customer_service import CustomerService
     from office_hero.services.dispatch_service import DispatchService
     from office_hero.services.job_dispatch_service import JobDispatchService
@@ -41,6 +42,7 @@ _route_stop_repository: RouteStopRepositoryProtocol | None = None
 _dispatch_service: DispatchService | None = None
 _vehicle_location_repository: VehicleLocationRepositoryProtocol | None = None
 _vehicle_location_service: VehicleLocationService | None = None
+_contract_service: ContractService | None = None
 
 
 def get_engine() -> AsyncEngine:
@@ -273,6 +275,24 @@ def get_vehicle_location_repository() -> VehicleLocationRepositoryProtocol:
             "VehicleLocationRepository not initialized. Ensure app has been created with create_app()."
         )
     return _vehicle_location_repository
+
+
+# --- Slice 11: Contract service ---
+
+
+def set_contract_service(service: ContractService) -> None:
+    """Register the contract service used by the route factory."""
+    global _contract_service
+    _contract_service = service
+
+
+def get_contract_service() -> ContractService:
+    """Retrieve the registered contract service."""
+    if _contract_service is None:
+        raise RuntimeError(
+            "ContractService not initialized. Ensure app has been created with create_app()."
+        )
+    return _contract_service
 
 
 def set_vehicle_location_service(service: VehicleLocationService) -> None:

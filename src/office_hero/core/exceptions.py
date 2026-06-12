@@ -126,6 +126,38 @@ class CustomFieldValidationError(Exception):
         super().__init__(self.message)
 
 
+class ContractNotFoundError(Exception):
+    """Raised when a contract cannot be located in the caller's tenant scope."""
+
+    def __init__(self, message: str = "Contract not found", request_id: str | None = None):
+        self.message = message
+        self.request_id = request_id
+        super().__init__(message)
+
+
+class InvalidContractTransitionError(Exception):
+    """Raised when an illegal contract status transition is attempted.
+
+    Carries the source and target statuses so the HTTP exception handler
+    can surface them in a structured 422 response body.
+    """
+
+    def __init__(
+        self,
+        from_status,
+        to_status,
+        message: str | None = None,
+        request_id: str | None = None,
+    ):
+        self.from_status = from_status
+        self.to_status = to_status
+        self.message = message or (
+            f"Invalid contract status transition: {from_status} -> {to_status}"
+        )
+        self.request_id = request_id
+        super().__init__(self.message)
+
+
 class VehicleNotFoundError(Exception):
     """Raised when a vehicle cannot be located in the caller's tenant scope."""
 
