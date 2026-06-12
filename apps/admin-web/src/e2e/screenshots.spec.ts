@@ -51,11 +51,40 @@ for (const [viewport, size] of Object.entries(VIEWPORTS)) {
     for (const route of ROUTES) {
       test(`${route.name} (${route.path})`, async ({ page }) => {
         if (route.auth) await seedAuth(page);
+        // Determinism: no backend runs during capture, but a slow connection
+        // refusal can land before OR after the screenshot, racing skeleton vs
+        // error states. Abort ALL fetch/xhr (any origin — direct :8000 calls
+        // and same-origin axios paths alike) so every page settles to the
+        // same state every run; documents/scripts/styles still load.
+        await page.route('**/*', (r) => {
+          const type = r.request().resourceType();
+          if (type === 'fetch' || type === 'xhr') {
+            void r.abort('connectionrefused');
+          } else {
+            void r.continue();
+          }
+        });
         await page.goto(route.path, { waitUntil: 'networkidle' });
-        await page.waitForTimeout(250);
+        // Determinism: freeze CSS animation (skeleton pulse) and hide the
+        // per-commit version label, or back-to-back captures differ and the
+        // pre-push hook would refresh screenshots on every single push.
+        await page.addStyleTag({
+          content: `
+            *, *::before, *::after {
+              animation: none !important;
+              transition: none !important;
+              caret-color: transparent !important;
+            }
+            [data-testid="app-version"] { visibility: hidden !important; }
+          `,
+        });
+        // Outlast the pages' 300ms search debounce so the post-debounce
+        // re-render can't race the capture.
+        await page.waitForTimeout(600);
         await page.screenshot({
           path: path.join(SCREENSHOT_DIR, viewport, `${route.name}.png`),
           fullPage: true,
+          animations: 'disabled',
         });
       });
     }

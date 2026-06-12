@@ -1,6 +1,17 @@
 # Screenshots
 
-This directory holds rendered UI screenshots, refreshed automatically by the [`ui-screenshots`](../../.github/workflows/ui-screenshots.yml) workflow whenever the admin-web (or its packages) changes on `main`.
+This directory holds rendered UI screenshots. They refresh through **two**
+automated paths so the committed PNGs always match the rendered app:
+
+1. **Git-hook build pipeline (local):** `.githooks/pre-push` runs
+   [`scripts/capture-screenshots.sh`](../../scripts/capture-screenshots.sh)
+   whenever a push touches `apps/admin-web/` or the shared packages. Fresh
+   PNGs are written here and staged; if anything changed the push aborts so
+   the refreshed screenshots ride the next commit. Skip with
+   `OFFICE_HERO_SKIP_SCREENSHOTS=1 git push`.
+2. **CI backstop:** the [`ui-screenshots`](../../.github/workflows/ui-screenshots.yml)
+   workflow re-captures on PRs (artifact + sticky comment) and on pushes to
+   `main` (commits refreshed PNGs back with `[skip ci]`).
 
 ## Layout
 
@@ -12,32 +23,22 @@ docs/screenshots/
     │   ├── 02-jobs.png
     │   ├── 03-dispatch.png
     │   ├── 04-vehicles.png
-    │   └── 05-users.png
-    └── mobile/    # 375 × 812
-        ├── 01-login.png
-        ├── 02-jobs.png
-        ├── 03-dispatch.png
-        ├── 04-vehicles.png
-        └── 05-users.png
+    │   ├── 05-users.png
+    │   ├── 06-customers.png
+    │   ├── 07-contracts.png
+    │   └── 08-routes.png
+    └── mobile/    # 375 × 812 (same eight routes)
 ```
-
-## When these update
-
-- **On PR:** the [`UI Screenshots`](../../.github/workflows/ui-screenshots.yml) workflow runs against the PR branch, uploads a fresh set as a workflow artifact, and posts a sticky comment with the artifact link. The files in `docs/screenshots/` itself are *not* updated until merge.
-- **On push to `main`:** the same workflow re-runs and commits the refreshed PNGs back to `docs/screenshots/admin-web/` with `[skip ci]` so the workflow doesn't loop.
 
 ## Generating locally
 
 ```bash
-cd apps/admin-web
-pnpm dev                                                # in one shell
-SCREENSHOT_DIR=screenshots npx playwright test \
-    src/e2e/screenshots.spec.ts --project=chromium       # in another
+bash scripts/capture-screenshots.sh        # boots vite itself, writes here
+# or, route-by-route iteration:
+cd apps/admin-web && pnpm screenshots      # writes apps/admin-web/screenshots/
 ```
 
-Output: `apps/admin-web/screenshots/{desktop,mobile}/*.png`.
-
-To preview a doc-style refresh (without committing): copy those into `docs/screenshots/admin-web/` and diff.
+One-time prerequisite: `npx playwright install chromium`.
 
 ## Bypassed auth
 

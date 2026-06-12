@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# post-commit hook — managed by repository
+# core.hooksPath bypasses .git/hooks, so chain git-lfs explicitly.
+set -euo pipefail
+if command -v git-lfs > /dev/null 2>&1; then
+    git lfs post-commit "$@" || true
+fi
