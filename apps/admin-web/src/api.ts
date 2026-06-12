@@ -268,3 +268,119 @@ export function dispatchJobApi(
     body: JSON.stringify(body),
   });
 }
+
+// --- Contract types (Slice 11) ---
+
+export type ContractStatus = 'active' | 'paused' | 'ended';
+
+export type ContractFrequency =
+  | 'weekly'
+  | 'biweekly'
+  | 'monthly'
+  | 'quarterly'
+  | 'semiannual'
+  | 'annual';
+
+export interface ContractSummary {
+  id: string;
+  title: string;
+  status: ContractStatus;
+  frequency: ContractFrequency;
+  next_due: string;
+  end_date: string | null;
+  customer_id: string;
+  location_id: string;
+  industry: string;
+  service_type: string | null;
+  priority: number;
+}
+
+export interface ContractRead extends ContractSummary {
+  tenant_id: string;
+  description: string | null;
+  estimated_duration_min: number;
+  start_date: string;
+  paused_at: string | null;
+  ended_at: string | null;
+  end_reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContractListResponse {
+  items: ContractSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface ContractCreate {
+  customer_id: string;
+  location_id: string;
+  title: string;
+  description?: string | null;
+  service_type?: string | null;
+  priority?: number;
+  estimated_duration_min?: number;
+  frequency: ContractFrequency;
+  start_date: string;
+  end_date?: string | null;
+}
+
+export interface GenerateJobsResponse {
+  generated: JobSummary[];
+  count: number;
+}
+
+// --- Contract API functions ---
+
+export interface ContractListParams {
+  status?: ContractStatus;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export function listContractsApi(
+  params: ContractListParams = {},
+): Promise<ContractListResponse> {
+  const qs = new URLSearchParams();
+  if (params.status) qs.set('status', params.status);
+  if (params.search) qs.set('search', params.search);
+  if (params.limit != null) qs.set('limit', String(params.limit));
+  if (params.offset != null) qs.set('offset', String(params.offset));
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  return request<ContractListResponse>(`/contracts${query}`);
+}
+
+export function createContractApi(body: ContractCreate): Promise<ContractRead> {
+  return request<ContractRead>('/contracts', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+export function pauseContractApi(contractId: string): Promise<ContractRead> {
+  return request<ContractRead>(`/contracts/${contractId}/pause`, { method: 'POST' });
+}
+
+export function resumeContractApi(contractId: string): Promise<ContractRead> {
+  return request<ContractRead>(`/contracts/${contractId}/resume`, { method: 'POST' });
+}
+
+export function endContractApi(
+  contractId: string,
+  reason?: string,
+): Promise<ContractRead> {
+  return request<ContractRead>(`/contracts/${contractId}/end`, {
+    method: 'POST',
+    body: JSON.stringify(reason ? { reason } : {}),
+  });
+}
+
+export function generateContractJobsApi(asOf?: string): Promise<GenerateJobsResponse> {
+  return request<GenerateJobsResponse>('/contracts/generate-jobs', {
+    method: 'POST',
+    body: JSON.stringify(asOf ? { as_of: asOf } : {}),
+  });
+}

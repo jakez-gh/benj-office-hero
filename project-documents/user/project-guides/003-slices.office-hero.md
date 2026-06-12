@@ -109,8 +109,10 @@ Ordered by dependency and value. Each slice is independently demonstrable.
     scheduled → in\_progress → complete / cancelled). **GUI:** Job list + create/edit
     forms. Dependencies: Slices 3, 7, 9. Risk: Low. Effort: 3/5
 
-11. [ ] **Contract management** — Recurring service agreements; scheduled Job generation
+11. [x] **Contract management** — Recurring service agreements; scheduled Job generation
     (cron-style); links to Customer + service type + frequency.
+    **Status:** Complete — /contracts API + admin-web Contracts page; idempotent
+    due-job generation (design: 023-slice.contract-management.md).
     Dependencies: Slice 10. Risk: Medium. Effort: 3/5
 
 12. [x] **Vehicle & VehicleCrew management** — CRUD for Vehicles; daily crew assignment
