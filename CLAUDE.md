@@ -22,7 +22,7 @@ cf next
 Use sq to review PRs before merging:
 
 ```bash
-sq review code --diff origin/main --cwd /home/jake/Documents/src/office-hero/benj-office-hero/main
+sq review code --diff origin/main --cwd c:/Users/jake/Documents/src/github/apps/benj-office-hero
 ```
 
 Or scope to specific files:
