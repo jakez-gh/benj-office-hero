@@ -23,7 +23,7 @@ bash scripts/setup-dev.sh        # Linux / macOS / Git Bash
 - Create development environment files
 - Verify your setup with pre-commit
 
-**For detailed rehydration instructions**, see [SETUP.md](SETUP.md) (highly recommended).
+**For detailed rehydration instructions**, see [SETUP.md](docs/archive/llm/SETUP.md) (highly recommended).
 
 ## Frontend Definition of Done (DoD)
 
@@ -116,6 +116,6 @@ pre-commit run --all-files       # any platform
 
 ## Documentation
 
-- [SETUP.md](SETUP.md) — Detailed setup & rehydration guide (⭐ **read this first!**)
-- [BACKEND_INTEGRATION_GUIDE.md](BACKEND_INTEGRATION_GUIDE.md) — Backend API details
-- [REAL_DEVICE_TESTING_2026-03-09.md](REAL_DEVICE_TESTING_2026-03-09.md) — Real device testing results
+- [SETUP.md](docs/archive/llm/SETUP.md) — Detailed setup & rehydration guide (⭐ **read this first!**)
+- [BACKEND_INTEGRATION_GUIDE.md](docs/archive/llm/BACKEND_INTEGRATION_GUIDE.md) — Backend API details
+- [REAL_DEVICE_TESTING_2026-03-09.md](docs/archive/llm/REAL_DEVICE_TESTING_2026-03-09.md) — Real device testing results

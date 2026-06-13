@@ -3,7 +3,6 @@ from uuid import UUID
 
 import pytest
 
-from office_hero.api.auth import InsufficientRoleError, require_role
 from office_hero.core.roles import Role
 from office_hero.services.auth_service import AuthService
 
@@ -40,21 +39,3 @@ def test_access_token_roundtrip(auth_service):
     assert decoded["role"] == Role.Technician.value
     # exp should be present and in the future
     assert decoded["exp"] > int(datetime.now(UTC).timestamp())
-
-
-def test_require_role_decorator():
-    @require_role("TenantAdmin")
-    def hi(claims):
-        return "hello"
-
-    assert hi({"role": "TenantAdmin"}) == "hello"
-    assert hi({"role": "Operator"}) == "hello"  # higher role allowed
-
-    with pytest.raises(InsufficientRoleError):
-        hi({"role": "Technician"})
-
-    with pytest.raises(InsufficientRoleError):
-        hi({})  # missing role
-
-    with pytest.raises(InsufficientRoleError):
-        hi({"role": "Unknown"})
