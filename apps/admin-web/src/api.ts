@@ -109,33 +109,6 @@ export interface CreateSagaRequest {
   context: Record<string, unknown>;
 }
 
-// --- Dead-letter types ---
-
-export interface DeadLetterItem {
-  id: string;
-  tenant_id: string;
-  event_type: string;
-  payload: Record<string, unknown>;
-  status: string;
-  attempt_count: number;
-  created_at: string | null;
-  processed_at: string | null;
-  dead_letter_reason: string | null;
-}
-
-export interface DeadLetterListResponse {
-  items: DeadLetterItem[];
-  total: number;
-  limit: number;
-  offset: number;
-}
-
-export interface DeadLetterRetryResponse {
-  id: string;
-  status: string;
-  message: string;
-}
-
 // --- API functions ---
 
 /** POST /sagas — dispatch a new saga */
@@ -149,34 +122,6 @@ export function createSaga(body: CreateSagaRequest): Promise<SagaState> {
 /** GET /sagas/{sagaId}/state — get saga status */
 export function getSagaState(sagaId: string): Promise<SagaState> {
   return request<SagaState>(`/sagas/${sagaId}/state`);
-}
-
-/** GET /admin/dead-letters — list dead-letter events */
-export function listDeadLetters(
-  limit = 50,
-  offset = 0,
-): Promise<DeadLetterListResponse> {
-  return request<DeadLetterListResponse>(
-    `/admin/dead-letters?limit=${limit}&offset=${offset}`,
-  );
-}
-
-/** POST /admin/dead-letters/{eventId}/retry — retry a dead-letter */
-export function retryDeadLetter(eventId: string): Promise<DeadLetterRetryResponse> {
-  return request<DeadLetterRetryResponse>(
-    `/admin/dead-letters/${eventId}/retry`,
-    { method: 'POST' },
-  );
-}
-
-/** GET /admin/sagas/{sagaId}/logs — get saga execution log */
-export function getSagaLogs(sagaId: string): Promise<SagaState> {
-  return request<SagaState>(`/admin/sagas/${sagaId}/logs`);
-}
-
-/** GET /health — health check */
-export function healthCheck(): Promise<{ status: string }> {
-  return request<{ status: string }>('/health');
 }
 
 // --- Job types (Slice 10) ---
