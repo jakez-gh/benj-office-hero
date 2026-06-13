@@ -10,8 +10,8 @@
 
 | Document | Purpose | Status |
 |----------|---------|--------|
-| [PROJECT_COMPLETION_STRATEGY.md](PROJECT_COMPLETION_STRATEGY.md) | Full roadmap to MVP shipping | ✅ Complete |
-| [VERIFICATION_APPROACH.md](VERIFICATION_APPROACH.md) | 6-phase test strategy | ✅ Complete |
+| [PROJECT_COMPLETION_STRATEGY.md](docs/archive/PROJECT_COMPLETION_STRATEGY.md) | Full roadmap to MVP shipping | ✅ Complete |
+| [VERIFICATION_APPROACH.md](docs/archive/VERIFICATION_APPROACH.md) | 6-phase test strategy | ✅ Complete |
 | [IMMEDIATE_NEXT_STEPS.md](/tmp/IMMEDIATE_NEXT_STEPS.md) | What to do right now | ✅ Ready |
 | API Tests | [tests/api/test_routes_api.py](tests/api/test_routes_api.py) | ✅ 232 lines |
 | Service Tests | [tests/services/test_dispatch_service.py](tests/services/test_dispatch_service.py) | ✅ 129 lines |
@@ -194,8 +194,8 @@ Effort: 5 hours
 
 ### Documentation
 
-- [PROJECT_COMPLETION_STRATEGY.md](PROJECT_COMPLETION_STRATEGY.md) - Full roadmap
-- [VERIFICATION_APPROACH.md](VERIFICATION_APPROACH.md) - Test strategy
+- [PROJECT_COMPLETION_STRATEGY.md](docs/archive/PROJECT_COMPLETION_STRATEGY.md) - Full roadmap
+- [VERIFICATION_APPROACH.md](docs/archive/VERIFICATION_APPROACH.md) - Test strategy
 
 ---
 
@@ -257,8 +257,8 @@ Fine-grained permissions in JWT allow per-user overrides.
 
 For issues during implementation:
 
-1. Check PROJECT_COMPLETION_STRATEGY.md for phase definitions
-2. Check VERIFICATION_APPROACH.md for test strategy
+1. Check docs/archive/PROJECT_COMPLETION_STRATEGY.md for phase definitions
+2. Check docs/archive/VERIFICATION_APPROACH.md for test strategy
 3. Check IMMEDIATE_NEXT_STEPS.md for quick reference
 4. Review commits in git history for context
 

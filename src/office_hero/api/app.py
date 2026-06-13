@@ -242,9 +242,22 @@ def create_app(
         vc_repo = InMemoryVehicleCrewRepository()
         _default_v_repo._crew_repo = vc_repo  # cross-reference for list_active_for_date
 
-        class _NoopUserRepo:
+        class _DevTrustUserRepo:
+            """Dev default: accept any crew-member id as an active Technician.
+
+            In the in-memory configuration identity comes from auth headers and
+            there is no users store to validate against — a None-returning repo
+            would make POST /vehicle-crews unusable (every member rejected as
+            not_in_tenant). Production wiring injects the SQL-backed user
+            repository, which keeps the strict active/role validation.
+            """
+
             async def get_by_id(self, user_id, tenant_id):
-                return None
+                from types import SimpleNamespace
+
+                return SimpleNamespace(
+                    id=user_id, tenant_id=tenant_id, role="technician", active=True
+                )
 
         if vehicle_service is None:
             vehicle_service = VehicleService(repo=_default_v_repo, audit=v_audit, crew_repo=vc_repo)
@@ -252,7 +265,7 @@ def create_app(
             vehicle_crew_service = VehicleCrewService(
                 crew_repo=vc_repo,
                 vehicle_repo=_default_v_repo,
-                user_repo=_NoopUserRepo(),
+                user_repo=_DevTrustUserRepo(),
                 audit=v_audit,
             )
 

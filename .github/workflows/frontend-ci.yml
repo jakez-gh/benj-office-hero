@@ -93,18 +93,34 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers
+      - name: Install Playwright browsers (chromium only for PR speed)
+        if: github.event_name == 'pull_request'
+        working-directory: apps/admin-web
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright browsers (all for main coverage)
+        if: github.event_name != 'pull_request'
         working-directory: apps/admin-web
         run: npx playwright install --with-deps
 
-      - name: Run E2E tests
+      - name: Run E2E tests (chromium only for PR speed)
+        if: github.event_name == 'pull_request'
         id: e2e
+        working-directory: apps/admin-web
+        run: npx playwright test --project=chromium
+        continue-on-error: true
+
+      - name: Run E2E tests (all browsers for main coverage)
+        if: github.event_name != 'pull_request'
+        id: e2e-main
         working-directory: apps/admin-web
         run: npx playwright test
         continue-on-error: true
 
       - name: Warn on E2E failure
-        if: steps.e2e.outcome == 'failure'
+        if: |
+          (github.event_name == 'pull_request' && steps.e2e.outcome == 'failure') ||
+          (github.event_name != 'pull_request' && steps.e2e-main.outcome == 'failure')
         run: echo "::warning::E2E tests failed — check the Playwright report artifact"
 
       - name: Upload Playwright report

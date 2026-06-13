@@ -29,7 +29,7 @@
 
 ### Documentation ✅
 
-- **MVP_COMPLETION_SUMMARY.md**: Full feature inventory and deployment status
+- **MVP_COMPLETION_SUMMARY.md** (docs/archive/): Full feature inventory and deployment status
 - **SMOKE_TEST_PLAN.md**: 30+ test cases covering all phases
 - **ROUTES_API.md**: Complete endpoint reference with examples
 - **DEPLOYMENT.md**: Step-by-step staging/production deployment

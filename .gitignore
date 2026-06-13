@@ -57,3 +57,7 @@ yarn-error.log*
 playwright-report/
 test-results/
 test-login.json
+
+# Demo run artifacts and managed dev-server state
+demos/
+.runtime/
