@@ -317,6 +317,25 @@ export function cancelRouteApi(routeId: string, reason: string): Promise<RouteRe
   });
 }
 
+// --- Dynamic re-routing (Slice 16) ---
+
+export interface RouteReassignResponse {
+  source_route: RouteRead;
+  target_route: RouteRead;
+  moved_count: number;
+}
+
+/** POST /routes/{id}/reassign — move a route's pending stops to another vehicle. */
+export function reassignRouteApi(
+  routeId: string,
+  targetVehicleId: string,
+): Promise<RouteReassignResponse> {
+  return request<RouteReassignResponse>(`/routes/${routeId}/reassign`, {
+    method: 'POST',
+    body: JSON.stringify({ target_vehicle_id: targetVehicleId }),
+  });
+}
+
 // --- Contract types (Slice 11) ---
 
 export type ContractStatus = 'active' | 'paused' | 'ended';

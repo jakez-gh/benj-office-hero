@@ -7,6 +7,7 @@ import {
   type RouteStopStatus,
   cancelRouteApi,
   listRoutesApi,
+  reassignRouteApi,
   resequenceRouteApi,
   startRouteApi,
 } from '../api';
@@ -138,14 +139,92 @@ function CancelRouteModal({
   );
 }
 
+function ReassignRouteModal({
+  route,
+  vehicles,
+  onClose,
+  onReassigned,
+}: {
+  route: RouteRead;
+  vehicles: AdminVehicle[];
+  onClose: () => void;
+  onReassigned: (source: RouteRead, target: RouteRead) => void;
+}) {
+  const [targetVehicleId, setTargetVehicleId] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const choices = vehicles.filter((v) => v.id !== route.vehicle_id);
+
+  const handleReassign = async () => {
+    if (!targetVehicleId) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const result = await reassignRouteApi(route.id, targetVehicleId);
+      onReassigned(result.source_route, result.target_route);
+    } catch (err) {
+      const apiErr = err as ApiError;
+      setError(apiErr?.detail ?? (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      title="Reassign route"
+      subtitle="Move this route's pending stops to another vehicle (e.g. the technician is out)."
+      onClose={onClose}
+      busy={submitting}
+      maxWidth="max-w-md"
+    >
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          {error}
+        </Alert>
+      )}
+      <label htmlFor="reassign-vehicle" className="mb-1 block text-sm font-medium text-neutral-700">
+        Move pending stops to *
+      </label>
+      <select
+        id="reassign-vehicle"
+        className="block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        value={targetVehicleId}
+        onChange={(e) => setTargetVehicleId(e.target.value)}
+      >
+        <option value="">Select a vehicle…</option>
+        {choices.map((v) => (
+          <option key={v.id} value={v.id}>
+            {v.name || v.license_plate || v.id.slice(0, 8)}
+          </option>
+        ))}
+      </select>
+      <div className="mt-4 flex justify-end gap-2">
+        <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          onClick={() => void handleReassign()}
+          disabled={submitting || !targetVehicleId}
+        >
+          {submitting ? 'Reassigning…' : 'Reassign route'}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 function RouteCard({
   route,
   vehicleName,
+  vehicles,
   onUpdated,
   onError,
 }: {
   route: RouteRead;
   vehicleName: string;
+  vehicles: AdminVehicle[];
   onUpdated: (route: RouteRead) => void;
   onError: (message: string) => void;
 }) {
@@ -154,6 +233,7 @@ function RouteCard({
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
+  const [showReassign, setShowReassign] = useState(false);
 
   const stops = [...route.stops].sort((a, b) => a.sequence_index - b.sequence_index);
   const displayedJobIds = order ?? stops.map((s) => s.job_id);
@@ -214,19 +294,24 @@ function RouteCard({
         </div>
         <div className="flex gap-2">
           {route.status === 'committed' && (
+            <Button size="sm" onClick={() => void start()} disabled={starting || dirty}>
+              {starting ? 'Starting…' : 'Start route'}
+            </Button>
+          )}
+          {(route.status === 'committed' || route.status === 'in_progress') && (
             <>
-              <Button size="sm" onClick={() => void start()} disabled={starting || dirty}>
-                {starting ? 'Starting…' : 'Start route'}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowReassign(true)}
+                disabled={dirty}
+              >
+                Reassign
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setShowCancel(true)}>
                 Cancel
               </Button>
             </>
-          )}
-          {route.status === 'in_progress' && (
-            <Button size="sm" variant="ghost" onClick={() => setShowCancel(true)}>
-              Cancel
-            </Button>
           )}
         </div>
       </CardHeader>
@@ -313,6 +398,19 @@ function RouteCard({
           }}
         />
       )}
+      {showReassign && (
+        <ReassignRouteModal
+          route={route}
+          vehicles={vehicles}
+          onClose={() => setShowReassign(false)}
+          onReassigned={(source, target) => {
+            setShowReassign(false);
+            // Both routes changed — update source in place and surface the target.
+            onUpdated(source);
+            onUpdated(target);
+          }}
+        />
+      )}
     </Card>
   );
 }
@@ -362,7 +460,12 @@ export const RoutesPage: React.FC = () => {
   };
 
   const replaceRoute = (updated: RouteRead) => {
-    setRoutes((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+    // Upsert: reassign can return a freshly-created target route not yet in the list.
+    setRoutes((prev) =>
+      prev.some((r) => r.id === updated.id)
+        ? prev.map((r) => (r.id === updated.id ? updated : r))
+        : [...prev, updated],
+    );
   };
 
   return (
@@ -419,6 +522,7 @@ export const RoutesPage: React.FC = () => {
               key={route.id}
               route={route}
               vehicleName={vehicleName(route.vehicle_id)}
+              vehicles={vehicles}
               onUpdated={replaceRoute}
               onError={setError}
             />

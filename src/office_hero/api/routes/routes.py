@@ -15,6 +15,8 @@ from office_hero.api.schemas.route import (
     RouteCancelRequest,
     RouteListResponse,
     RouteRead,
+    RouteReassignRequest,
+    RouteReassignResponse,
     RouteResequenceRequest,
     StopSkipRequest,
 )
@@ -23,6 +25,7 @@ from office_hero.core.exceptions import (
     ManualSequenceInvalidError,
     RouteCommitConflictError,
     RouteNotFoundError,
+    VehicleNotFoundError,
 )
 from office_hero.core.logging import get_logger
 
@@ -165,6 +168,41 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
             ) from exc
 
         return route
+
+    @router.post(
+        "/{route_id}/reassign",
+        response_model=RouteReassignResponse,
+        dependencies=[Depends(require_permission("route:write"))],
+    )
+    @limiter.limit("60/minute")
+    async def reassign_route(
+        request: Request,
+        route_id: Annotated[UUID, Path()],
+        body: RouteReassignRequest,
+    ) -> RouteReassignResponse:
+        """Reassign a route's pending stops to another vehicle (day-of, e.g. tech sick)."""
+        from office_hero.api.state import get_dynamic_dispatch_service
+
+        tenant_id = _tenant_id(request)
+        user_id = _user_id(request)
+        service = get_dynamic_dispatch_service()
+
+        try:
+            result = await service.reassign_route(
+                tenant_id, user_id, route_id, target_vehicle_id=body.target_vehicle_id
+            )
+        except RouteNotFoundError as exc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        except VehicleNotFoundError as exc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        except RouteCommitConflictError as exc:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+        return RouteReassignResponse(
+            source_route=result["source_route"],
+            target_route=result["target_route"],
+            moved_count=result["moved_count"],
+        )
 
     @router.post(
         "/{route_id}/start",

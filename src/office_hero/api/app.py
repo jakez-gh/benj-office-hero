@@ -42,6 +42,7 @@ from office_hero.api.state import (
     set_contract_service,
     set_customer_service,
     set_dispatch_service,
+    set_dynamic_dispatch_service,
     set_engine,
     set_geocoding_adapter,
     set_job_dispatch_service,
@@ -80,6 +81,7 @@ from office_hero.services.custom_field_templates import (
 )  # noqa: F401
 from office_hero.services.customer_service import CustomerService
 from office_hero.services.dispatch_service import DispatchService
+from office_hero.services.dynamic_dispatch_service import DynamicDispatchService
 from office_hero.services.job_dispatch_service import JobDispatchService
 from office_hero.services.job_service import JobService
 from office_hero.services.location_service import LocationService
@@ -151,6 +153,7 @@ def create_app(
     job_dispatch_service: JobDispatchService | None = None,
     vehicle_location_service: VehicleLocationService | None = None,
     dispatch_service: DispatchService | None = None,
+    dynamic_dispatch_service: DynamicDispatchService | None = None,
 ) -> FastAPI:
     """Create and configure the FastAPI application.
 
@@ -341,6 +344,22 @@ def create_app(
             audit=audit,
         )
     set_dispatch_service(dispatch_service)
+
+    # Slice-16: dynamic dispatch (day-of re-routing) — shares the same route/stop/
+    # job/vehicle/crew repos and schedule service as the Slice-14 dispatch services.
+    # Injectable so tests can wire it onto their shared repos (the default below
+    # only matches the other services when create_app builds all of them itself).
+    if dynamic_dispatch_service is None:
+        dynamic_dispatch_service = DynamicDispatchService(
+            route_repo=_route_repo or InMemoryRouteRepository(),
+            stop_repo=_route_stop_repo or InMemoryRouteStopRepository(),
+            job_repo=_default_job_repo or InMemoryJobRepository(),
+            vehicle_repo=_default_v_repo or InMemoryVehicleRepository(),
+            vehicle_crew_repo=vc_repo or InMemoryVehicleCrewRepository(),
+            schedule_service=schedule_suggestion_service,
+            audit=audit,
+        )
+    set_dynamic_dispatch_service(dynamic_dispatch_service)
 
     application = FastAPI(
         title="Office Hero",

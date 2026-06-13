@@ -5,6 +5,7 @@ const mockListRoutesApi = jest.fn();
 const mockResequenceRouteApi = jest.fn();
 const mockStartRouteApi = jest.fn();
 const mockCancelRouteApi = jest.fn();
+const mockReassignRouteApi = jest.fn();
 const mockListVehicles = jest.fn();
 
 jest.mock('../api', () => ({
@@ -12,6 +13,7 @@ jest.mock('../api', () => ({
   resequenceRouteApi: (...args: unknown[]) => mockResequenceRouteApi(...args),
   startRouteApi: (...args: unknown[]) => mockStartRouteApi(...args),
   cancelRouteApi: (...args: unknown[]) => mockCancelRouteApi(...args),
+  reassignRouteApi: (...args: unknown[]) => mockReassignRouteApi(...args),
 }));
 
 jest.mock('@office-hero/api-client', () => ({
@@ -62,6 +64,7 @@ describe('RoutesPage', () => {
     jest.resetAllMocks();
     mockListVehicles.mockResolvedValue([
       { id: 'veh-1', name: 'Van #1', license_plate: 'ABC-123' },
+      { id: 'veh-2', name: 'Van #2', license_plate: 'XYZ-789' },
     ]);
   });
 
@@ -141,6 +144,34 @@ describe('RoutesPage', () => {
     await waitFor(() => {
       expect(mockCancelRouteApi).toHaveBeenCalledWith('route-1', 'Tech sick');
       expect(screen.getByText('Cancelled')).toBeInTheDocument();
+    });
+  });
+
+  it('reassigns a route to another vehicle (tech sick)', async () => {
+    mockListRoutesApi.mockResolvedValue({ items: [buildRoute()], total: 1 });
+    mockReassignRouteApi.mockResolvedValue({
+      source_route: buildRoute({ status: 'cancelled', stops: [] }),
+      target_route: buildRoute({ id: 'route-2', vehicle_id: 'veh-2' }),
+      moved_count: 2,
+    });
+
+    render(<RoutesPage />);
+    await waitFor(() => screen.getByTestId('route-card'));
+
+    fireEvent.click(screen.getByRole('button', { name: /^Reassign$/i }));
+    // Only the other vehicle (veh-2) should be offered, not the route's own veh-1.
+    fireEvent.change(screen.getByLabelText(/Move pending stops to/i), {
+      target: { value: 'veh-2' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Reassign route/i }));
+
+    await waitFor(() => {
+      expect(mockReassignRouteApi).toHaveBeenCalledWith('route-1', 'veh-2');
+    });
+    // Source becomes cancelled; the new target route for Van #2 appears.
+    await waitFor(() => {
+      expect(screen.getByText('Cancelled')).toBeInTheDocument();
+      expect(screen.getByText('Van #2')).toBeInTheDocument();
     });
   });
 
