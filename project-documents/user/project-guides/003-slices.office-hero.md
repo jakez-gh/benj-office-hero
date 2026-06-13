@@ -137,9 +137,14 @@ Ordered by dependency and value. Each slice is independently demonstrable.
     **Status:** Complete with GPS recording and O(1) latest-position queries.
     Dependencies: Slices 2, 12. Risk: Low. Effort: 2/5
 
-16. [ ] **Dynamic re-routing** — Day-of event handling (Technician sick → reassign
+16. [x] **Dynamic re-routing** — Day-of event handling (Technician sick → reassign
     Route; Job cancelled → update Route; emergency Job added → re-route); presents new
-    options via routing engine. Dependencies: Slices 13–15. Risk: High. Effort: 4/5
+    options via routing engine.
+    **Status:** Complete — reassign_route (sick/vehicle-down) + add_emergency_job
+    (urgent jobs jump the queue) via DynamicDispatchService; POST /routes/{id}/reassign,
+    POST /jobs/{id}/emergency-dispatch; admin-web Reassign action. Routed-job-cancellation
+    cleanup deferred (design: 025-slice.dynamic-rerouting.md).
+    Dependencies: Slices 13–15. Risk: High. Effort: 4/5
 
 ### Mobile & Technician App
 
