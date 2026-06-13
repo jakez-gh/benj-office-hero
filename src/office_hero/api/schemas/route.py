@@ -128,6 +128,50 @@ class RouteResequenceRequest(BaseModel):
         return v
 
 
+class RouteReassignRequest(BaseModel):
+    """Request to reassign a route's pending stops to another vehicle (Slice 16)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    target_vehicle_id: UUID
+
+
+class RouteReassignResponse(BaseModel):
+    """Result of a reassignment — the two affected routes and how much moved."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    source_route: RouteRead
+    target_route: RouteRead
+    moved_count: int
+
+
+class EmergencyDispatchRequest(BaseModel):
+    """Request to emergency-dispatch a job (Slice 16).
+
+    ``window_start``/``window_end`` bound the day's schedule search when no
+    ``target_vehicle_id`` is given; they default to today 08:00–17:00 UTC.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    target_vehicle_id: UUID | None = None
+    window_start: AwareDatetime | None = None
+    window_end: AwareDatetime | None = None
+
+    @model_validator(mode="after")
+    def validate_window(self) -> EmergencyDispatchRequest:
+        if (self.window_start is None) != (self.window_end is None):
+            raise ValueError("window_start and window_end must be provided together")
+        if (
+            self.window_start is not None
+            and self.window_end is not None
+            and self.window_end <= self.window_start
+        ):
+            raise ValueError("window_end must be after window_start")
+        return self
+
+
 class RouteCancelRequest(BaseModel):
     """Request to cancel a route."""
 

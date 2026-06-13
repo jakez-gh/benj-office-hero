@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from office_hero.services.contract_service import ContractService
     from office_hero.services.customer_service import CustomerService
     from office_hero.services.dispatch_service import DispatchService
+    from office_hero.services.dynamic_dispatch_service import DynamicDispatchService
     from office_hero.services.job_dispatch_service import JobDispatchService
     from office_hero.services.job_service import JobService
     from office_hero.services.location_service import LocationService
@@ -43,6 +44,7 @@ _dispatch_service: DispatchService | None = None
 _vehicle_location_repository: VehicleLocationRepositoryProtocol | None = None
 _vehicle_location_service: VehicleLocationService | None = None
 _contract_service: ContractService | None = None
+_dynamic_dispatch_service: DynamicDispatchService | None = None
 
 
 def get_engine() -> AsyncEngine:
@@ -293,6 +295,25 @@ def get_contract_service() -> ContractService:
             "ContractService not initialized. Ensure app has been created with create_app()."
         )
     return _contract_service
+
+
+# --- Slice 16: Dynamic dispatch (day-of re-routing) service ---
+
+
+def set_dynamic_dispatch_service(service: DynamicDispatchService) -> None:
+    """Register the dynamic dispatch service."""
+    global _dynamic_dispatch_service
+    _dynamic_dispatch_service = service
+
+
+def get_dynamic_dispatch_service() -> DynamicDispatchService:
+    """Retrieve the registered dynamic dispatch service."""
+    if _dynamic_dispatch_service is None:
+        raise RuntimeError(
+            "DynamicDispatchService not initialized. "
+            "Ensure app has been created with create_app()."
+        )
+    return _dynamic_dispatch_service
 
 
 def set_vehicle_location_service(service: VehicleLocationService) -> None:
