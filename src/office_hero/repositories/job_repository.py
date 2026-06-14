@@ -46,6 +46,8 @@ class JobRepositoryProtocol(Protocol):
 
     async def get_by_id(self, job_id: UUID, tenant_id: UUID) -> Job | None: ...
 
+    async def bulk_get_by_ids(self, job_ids: list[UUID], tenant_id: UUID) -> list[Job]: ...
+
     async def list(
         self,
         tenant_id: UUID,
@@ -137,6 +139,14 @@ class JobRepository:
         stmt = select(Job).where(Job.id == job_id, Job.tenant_id == tenant_id)
         result = await self.session.execute(stmt)
         return result.scalars().first()
+
+    async def bulk_get_by_ids(self, job_ids: list[UUID], tenant_id: UUID) -> list[Job]:
+        """Fetch many jobs by id within ``tenant_id`` in a single query."""
+        if not job_ids:
+            return []
+        stmt = select(Job).where(Job.id.in_(job_ids), Job.tenant_id == tenant_id)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
 
     async def list(
         self,
@@ -353,6 +363,15 @@ class InMemoryJobRepository:
         if row is None or row["tenant_id"] != tenant_id:
             return None
         return self._row_to_job(row)
+
+    async def bulk_get_by_ids(self, job_ids: list[UUID], tenant_id: UUID) -> list[Job]:
+        """Return all jobs in this tenant whose id is in ``job_ids``."""
+        wanted = set(job_ids)
+        return [
+            self._row_to_job(r)
+            for r in self._rows.values()
+            if r["tenant_id"] == tenant_id and r["id"] in wanted
+        ]
 
     async def list(
         self,
