@@ -26,25 +26,30 @@ export const NavShell: React.FC<{ children?: React.ReactNode }> = ({ children })
           </span>
 
           {/* Nav links — scroll horizontally on narrow screens instead of
-              overflowing the page (7 items don't fit at 375px). */}
-          <nav className="flex flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none]">
-            {navItems.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  [
-                    'shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900',
-                  ].join(' ')
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
-          </nav>
+              overflowing the page (7 items don't fit at 375px). The gradient
+              mask on the right edge signals that more items are scrollable. */}
+          <div className="relative flex min-w-0 flex-1">
+            <nav className="flex flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none]">
+              {navItems.map(({ to, label }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    [
+                      'shrink-0 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900',
+                    ].join(' ')
+                  }
+                >
+                  {label}
+                </NavLink>
+              ))}
+            </nav>
+            {/* Right-edge fade — pointer-events:none so it doesn't block clicks */}
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent" />
+          </div>
 
           {/* Version + logout */}
           <div className="flex shrink-0 items-center gap-3">

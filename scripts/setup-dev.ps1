@@ -107,6 +107,23 @@ if ($hookPath -eq ".githooks") {
     exit 1
 }
 
+# 9. Install Playwright browsers (required for screenshot pipeline and E2E)
+Write-Host ""
+Write-Host "9️⃣  Installing Playwright browsers..." -ForegroundColor Cyan
+if (Get-Command npx -ErrorAction SilentlyContinue) {
+    Push-Location apps/admin-web
+    try {
+        npx playwright install chromium
+        Write-Success "Playwright chromium browser installed"
+    } catch {
+        Write-Warn "Playwright browser install failed — run manually: cd apps/admin-web && npx playwright install chromium"
+    } finally {
+        Pop-Location
+    }
+} else {
+    Write-Warn "npx not found — skipping Playwright browser install"
+}
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 Write-Header "✅ Setup Complete!"
 Write-Host ""

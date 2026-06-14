@@ -63,7 +63,7 @@ export const DispatchPage: React.FC = () => {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-neutral-900">Dispatch</h1>
         <p className="mt-0.5 text-sm text-neutral-500">
-          Dispatch a job through the backoffice saga orchestrator.
+          Assign a pending job to a vehicle and track the orchestration live.
         </p>
       </div>
 
@@ -72,7 +72,7 @@ export const DispatchPage: React.FC = () => {
           <CardHeader className="pb-4">
             <CardTitle>Job details</CardTitle>
             <CardDescription>
-              Assign a job to a technician and track the orchestration live.
+              Enter the job and technician UUIDs to dispatch via the saga orchestrator.
             </CardDescription>
           </CardHeader>
           <CardContent>

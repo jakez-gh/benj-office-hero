@@ -18,6 +18,7 @@ import {
 } from '../components/ui/Table';
 import { Skeleton } from '../components/ui/Skeleton';
 import { Alert, AlertDescription } from '../components/ui/Alert';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
 
 function AddCustomerModal({
   onClose,
@@ -166,11 +167,7 @@ export function CustomersPage() {
         className="max-w-sm"
       />
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      {error && <ErrorBanner error={error} />}
 
       {loading ? (
         <div className="space-y-2">

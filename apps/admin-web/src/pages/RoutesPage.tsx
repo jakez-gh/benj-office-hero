@@ -11,6 +11,7 @@ import {
   startRouteApi,
 } from '../api';
 import { Alert } from '../components/ui/Alert';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
@@ -471,11 +472,7 @@ export const RoutesPage: React.FC = () => {
         </div>
       </div>
 
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          {error}
-        </Alert>
-      )}
+      {error && <ErrorBanner error={error} />}
 
       {loading ? (
         <div className="space-y-3">

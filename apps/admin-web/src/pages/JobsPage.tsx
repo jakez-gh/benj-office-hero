@@ -21,6 +21,7 @@ import {
   listJobsApi,
 } from '../api';
 import { Alert } from '../components/ui/Alert';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
@@ -608,11 +609,7 @@ export const JobsPage: React.FC = () => {
         </select>
       </div>
 
-      {error && (
-        <Alert variant="destructive" className="mb-4" role="alert">
-          {error}
-        </Alert>
-      )}
+      {error && <ErrorBanner error={error} />}
 
       {loading ? (
         <div className="space-y-2">

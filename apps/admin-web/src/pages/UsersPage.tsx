@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { listUsers } from '@office-hero/api-client';
 import type { AdminUser } from '@office-hero/api-client';
-import { Alert } from '../components/ui/Alert';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { Skeleton } from '../components/ui/Skeleton';
 import {
   Table,
@@ -85,27 +85,24 @@ export const UsersPage: React.FC = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div>
-        <h1 className="mb-6 text-2xl font-semibold text-neutral-900">Users</h1>
-        <Alert variant="destructive" role="alert">{error}</Alert>
-      </div>
-    );
-  }
-
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-neutral-900">Users</h1>
-        <p className="mt-0.5 text-sm text-neutral-500">Live users: {users.length}</p>
+        {!loading && !error && (
+          <p className="mt-0.5 text-sm text-neutral-500">Live users: {users.length}</p>
+        )}
       </div>
 
-      {users.length === 0 ? (
+      {error && <ErrorBanner error={error} />}
+
+      {!error && users.length === 0 && (
         <div className="rounded-lg border border-dashed border-neutral-300 py-12 text-center">
           <p className="text-neutral-500">No users found.</p>
         </div>
-      ) : (
+      )}
+
+      {!error && users.length > 0 && (
         <Table>
           <TableHeader>
             <TableRow>

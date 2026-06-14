@@ -4,71 +4,57 @@ Three runnable demo scripts walk through Office Hero's capabilities across slice
 
 ## Prereqs
 
-All scripts require:
-
-- **Backend:** running with `OFFICE_HERO_TEST_AUTH=1` to enable X-Test-* header authentication.
-  Start via: `python tools/server_manager.py start` or `scripts/start-backend.ps1` or
-  `scripts/start-backend.sh` (each sets the auth flag automatically).
-- **jq:** JSON query tool for parsing responses. Install via package manager or <https://stedolan.github.io/jq/download/>.
+- **Backend:** running with `OFFICE_HERO_TEST_AUTH=1` to enable `X-Test-*` header authentication.
+  Start via: `OFFICE_HERO_TEST_AUTH=1 poetry run uvicorn office_hero.main:app --host 127.0.0.1 --port 8000`
+  or `python tools/server_manager.py start`.
 - **Port configuration:** Backend defaults to `http://127.0.0.1:8000`.
-  Override by passing `BACKEND_URL=http://127.0.0.1:PORT bash scripts/<script-name>`.
+  Override with the `--url` flag or `BACKEND_URL` env var.
+
+## Running all demos (recommended)
+
+**Python runner (no bash/jq dependency):**
+
+```powershell
+$env:PYTHONIOENCODING = "utf-8"
+python scripts/run-demos.py --stage all
+```
+
+Individual stages: `--stage 1`, `--stage 2`, `--stage 2b`.
+
+Each run saves numbered JSON files + `transcript.txt` under `demos/<timestamp>_<stage>/`.
 
 ## Stage 1 — Core Dispatch MVP (Slices 1–15)
 
-**Script:** `scripts/run-demo.sh`
-
 Creates a customer, location, and single job. Dispatches the job to a vehicle, commits a route,
-and walks through the complete technician workflow: start route, mark stop arrived, record GPS location,
+and walks through the complete technician workflow: start route, mark stop arrived,
 mark stop complete, auto-complete route when all stops are terminal. Verifies RBAC enforcement,
-tenant isolation, and atomic transactions. Outputs 11 numbered JSON files capturing all API responses.
-
-Run: `bash scripts/run-demo.sh`
+tenant isolation, and atomic transactions.
 
 ## Stage 2 — Contracts, Route Override, CRM Sync (Slices 11, 14+, 24)
 
-**Script:** `scripts/demo-contracts-routes.sh`
-
 Creates a contract with monthly recurrence (started 2 months ago), pauses and resumes it,
-generates due jobs (expect count >= 2), creates a vehicle and crew. Dispatches two jobs to the
+generates due jobs (expect count ≥ 2), creates a vehicle and crew. Dispatches two jobs to the
 same vehicle (demonstrating multi-stop route building), then manually reorders the stops via
-POST /routes/{id}/resequence. Processes the outbox to sync events back to the CRM, verifies
-no dead-letters, and completes the route through its full lifecycle. Demonstrates dispatcher override,
-event outbox mechanics, and back-office integration.
-
-Run: `BACKEND_URL=http://127.0.0.1:8000 bash scripts/demo-contracts-routes.sh`
+`POST /routes/{id}/resequence`. Processes the outbox to sync events back to the CRM, verifies
+no dead-letters, and completes the route through its full lifecycle.
 
 ## Stage 2b — Day-of re-routing: sick-days and emergencies (Slice 16)
 
-Two endpoints handle real-world exceptions once routes are committed. Both accept the
-same `X-Test-*` headers as the scripts above (`X-Test-Permissions: route:write` plus
-`jobs:dispatch` for emergencies).
+Demonstrates two real-world exception flows once routes are committed:
 
-**Technician out — reassign a route to another vehicle:**
+1. **Technician sick-day:** creates two vehicles with routes, starts Vehicle 1's route,
+   completes one stop, then reassigns the remaining stops to Vehicle 2 via
+   `POST /routes/{id}/reassign`. Source route is finalised; target route receives the
+   pending stops.
 
-```bash
-curl -s -X POST "$BACKEND_URL/routes/$ROUTE_ID/reassign" \
-  -H "X-Test-Tenant-Id: $TENANT_ID" -H "X-Test-User-Id: $USER_ID" \
-  -H "X-Test-Role: dispatcher" -H "X-Test-Permissions: route:write" \
-  -H "Content-Type: application/json" \
-  -d '{"target_vehicle_id": "'$OTHER_VEHICLE_ID'"}' | jq .
-```
+2. **Emergency dispatch:** creates an urgent job (priority 100) and inserts it at the
+   head of Vehicle 2's pending queue via `POST /jobs/{id}/emergency-dispatch`. The
+   emergency stop appears before other pending stops.
 
-Moves the route's still-pending stops to the target vehicle's route for the day (creating
-or appending), keeps any completed stops as history on the source, and finalises the
-source route. Returns `{source_route, target_route, moved_count}`.
+**Required permissions:**
 
-**Emergency job — jump the queue:**
-
-```bash
-curl -s -X POST "$BACKEND_URL/jobs/$JOB_ID/emergency-dispatch" \
-  -H "X-Test-Tenant-Id: $TENANT_ID" -H "X-Test-User-Id: $USER_ID" \
-  -H "X-Test-Role: dispatcher" -H "X-Test-Permissions: jobs:dispatch,route:write" \
-  -H "Content-Type: application/json" \
-  -d '{"target_vehicle_id": "'$VEHICLE_ID'"}' | jq .
-```
-
-Inserts the job ahead of the vehicle's pending stops (after any in-progress stop). Omit
-`target_vehicle_id` to let the routing engine pick the nearest available vehicle.
+- Reassign: `X-Test-Permissions: route:write`
+- Emergency dispatch: `X-Test-Permissions: jobs:dispatch,route:write`
 
 ## Stage 3 — Admin Web UI (Slices 5, 11, 14+, 24)
 
@@ -93,9 +79,23 @@ Latest UI images live in `docs/screenshots/admin-web/`.
 
 ## Recorded Demos
 
-For video capture:
+Playwright video demos walk through real UI flows against a live backend.
+Each demo seeds its own isolated tenant so runs don't interfere.
 
-- **PowerShell recording script:** `scripts/record-demo.ps1` (Windows-only; uses OBS or system screen capture).
-- **Admin-web demo mode:** `apps/admin-web/demo-recording.ts` provides mock data for repeatable UI walkthroughs.
+```powershell
+# Ensure backend is running with test auth
+$env:OFFICE_HERO_TEST_AUTH = "1"
+poetry run uvicorn office_hero.main:app --host 127.0.0.1 --port 8000
 
-See individual scripts for recording setup and video codec details.
+# In a second terminal — from apps/admin-web:
+$env:RECORD_VIDEO = "on"
+npx playwright test src/e2e/demo-flows.spec.ts --project=chromium --reporter=line
+```
+
+Videos are written to `apps/admin-web/test-results/` as `.webm` files.
+
+**Demo scenarios:**
+
+- **Demo 1 — Jobs & Dispatch:** Shows jobs list, route page, vehicles page, and the dispatch form.
+- **Demo 2 — Contracts lifecycle:** Shows customer list, contracts page, and generated jobs.
+- **Demo 3 — Route management:** Shows route list and live route progression after stops complete.
