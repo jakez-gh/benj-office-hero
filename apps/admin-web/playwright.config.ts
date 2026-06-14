@@ -42,9 +42,25 @@ export default defineConfig({
     }
   ],
 
-  webServer: {
-    command: 'pnpm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI
-  }
+  webServer: [
+    {
+      command: 'pnpm run dev',
+      url: 'http://localhost:3000',
+      reuseExistingServer: !process.env.CI,
+    },
+    // Backend for demo-flows.spec.ts — only started when DEMO_BACKEND=1 and
+    // no server is already listening on :8000.
+    ...(process.env.DEMO_BACKEND === '1'
+      ? [
+          {
+            command: 'poetry run uvicorn office_hero.main:app --host 127.0.0.1 --port 8000',
+            url: 'http://127.0.0.1:8000/health',
+            reuseExistingServer: true,
+            cwd: '../..',
+            env: { OFFICE_HERO_TEST_AUTH: '1' },
+            timeout: 60_000,
+          },
+        ]
+      : []),
+  ]
 });

@@ -104,19 +104,26 @@ async function seedScenario(ctx: SeedCtx) {
 
 // ── Auth injection ──────────────────────────────────────────────────────────
 
+const TEST_HEADERS = (tenantId: string, userId: string) => ({
+  'X-Test-Tenant-Id': tenantId,
+  'X-Test-User-Id': userId,
+  'X-Test-Role': 'operator',
+  'X-Test-Permissions': '*',
+});
+
 async function injectAuth(page: Page, tenantId: string, userId: string): Promise<void> {
-  // Intercept all backend calls and inject X-Test-* headers so the UI works
-  // against the live backend without JWT tokens.
+  // Two route patterns are needed because the app uses two different clients:
+  //   src/api.ts          → direct http://localhost:8000/**  (CORS-enabled backend)
+  //   @office-hero/api-client → /api/** via Vite proxy        (same-origin)
+  // Both must receive X-Test-* headers so the backend can identify the tenant.
+  const hdrs = TEST_HEADERS(tenantId, userId);
+
   await page.route(`${BACKEND}/**`, async (route) => {
-    await route.continue({
-      headers: {
-        ...route.request().headers(),
-        'X-Test-Tenant-Id': tenantId,
-        'X-Test-User-Id': userId,
-        'X-Test-Role': 'operator',
-        'X-Test-Permissions': '*',
-      },
-    });
+    await route.continue({ headers: { ...route.request().headers(), ...hdrs } });
+  });
+
+  await page.route('**/api/**', async (route) => {
+    await route.continue({ headers: { ...route.request().headers(), ...hdrs } });
   });
 
   // Seed localStorage so the app treats the session as authenticated.
@@ -138,8 +145,12 @@ async function pause(ms = 800): Promise<void> {
 
 // ── Demo flow ───────────────────────────────────────────────────────────────
 
+// viewport and video are set via playwright.config.ts projects or RECORD_VIDEO env var
+test.use({ viewport: { width: 1280, height: 800 }, testIdAttribute: 'data-testid' });
+// Each demo navigates multiple pages with deliberate pauses for video capture
+test.setTimeout(120_000);
+
 test.describe('Demo flows', () => {
-  test.use({ video: 'on', viewport: { width: 1280, height: 800 } });
 
   test('Demo 1 — Jobs & Dispatch overview', async ({ page, request }) => {
     const tenantId = randomUUID();

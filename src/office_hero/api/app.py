@@ -9,10 +9,12 @@ continue to work.
 
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from office_hero.adapters.geocoding.stub import StubGeocodingAdapter
 from office_hero.api.exception_handlers import register_exception_handlers
@@ -375,6 +377,17 @@ def create_app(
     # NEVER enable in production — it bypasses JWT auth entirely.
     if test_auth_enabled():
         application.add_middleware(TestAuthMiddleware)
+        # CORS for local dev/demo: allows the Vite dev server (localhost:3000) to
+        # call the backend directly without proxy. Only active with test auth.
+        _cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
+        application.add_middleware(
+            CORSMiddleware,
+            allow_origins=_cors_origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+            expose_headers=["*"],
+        )
     application.add_middleware(SecurityHeadersMiddleware)
     application.add_middleware(LoggingMiddleware)
 
