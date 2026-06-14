@@ -64,7 +64,7 @@ for (const [viewport, size] of Object.entries(VIEWPORTS)) {
             void r.continue();
           }
         });
-        await page.goto(route.path, { waitUntil: 'networkidle' });
+        await page.goto(route.path, { waitUntil: 'load' });
         // Determinism: freeze CSS animation (skeleton pulse) and hide the
         // per-commit version label, or back-to-back captures differ and the
         // pre-push hook would refresh screenshots on every single push.
@@ -78,9 +78,9 @@ for (const [viewport, size] of Object.entries(VIEWPORTS)) {
             [data-testid="app-version"] { visibility: hidden !important; }
           `,
         });
-        // Outlast the pages' 300ms search debounce so the post-debounce
-        // re-render can't race the capture.
-        await page.waitForTimeout(600);
+        // Outlast the pages' 300ms search debounce and Vite dynamic-import
+        // chunk loading so the post-load re-render can't race the capture.
+        await page.waitForTimeout(1200);
         await page.screenshot({
           path: path.join(SCREENSHOT_DIR, viewport, `${route.name}.png`),
           fullPage: true,
