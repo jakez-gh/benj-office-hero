@@ -264,6 +264,8 @@ def _backend_command(port: int) -> list[str]:
         return [part.replace("{port}", str(port)) for part in shlex.split(cmd_from_env)]
 
     venv_python = PROJECT_ROOT / ".venv" / "bin" / "python"
+    if not venv_python.exists() and sys.platform == "win32":
+        venv_python = PROJECT_ROOT / ".venv" / "Scripts" / "python.exe"
     if venv_python.exists():
         python_bin = str(venv_python)
     else:
@@ -397,7 +399,7 @@ def start_servers(quiet: bool = False) -> tuple[int, int]:
     backend_proc = _spawn_process("backend", backend_cmd, backend_env)
 
     try:
-        _wait_http(f"http://{HOST}:{backend_port}/health", timeout_seconds=40.0, label="backend")
+        _wait_http(f"http://{HOST}:{backend_port}/health", timeout_seconds=120.0, label="backend")
     except Exception:
         _terminate_process_group(backend_proc.pid)
         raise
@@ -407,7 +409,7 @@ def start_servers(quiet: bool = False) -> tuple[int, int]:
     frontend_proc = _spawn_process("frontend", frontend_cmd, frontend_env)
 
     try:
-        _wait_http(f"http://{HOST}:{frontend_port}", timeout_seconds=50.0, label="frontend")
+        _wait_http(f"http://{HOST}:{frontend_port}", timeout_seconds=120.0, label="frontend")
     except Exception:
         _terminate_process_group(frontend_proc.pid)
         _terminate_process_group(backend_proc.pid)
