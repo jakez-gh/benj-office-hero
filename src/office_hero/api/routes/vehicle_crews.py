@@ -15,6 +15,8 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, sta
 
 from office_hero.api.deps import require_role
 from office_hero.api.limiter import limiter
+from office_hero.api.request_context import require_tenant_id as _tenant_id
+from office_hero.api.request_context import require_user_id as _user_id
 from office_hero.api.schemas.vehicle_crew import (
     CrewConflictRead,
     CrewMemberRead,
@@ -55,20 +57,6 @@ _CREW_CONFLICT_ROLES = [Role.Dispatcher, Role.TenantAdmin, Role.Operator, Role.O
 require_crew_write = require_role(_CREW_WRITE_ROLES)
 require_crew_read = require_role(_CREW_READ_ROLES)
 require_crew_conflict_read = require_role(_CREW_CONFLICT_ROLES)
-
-
-def _tenant_id(request: Request) -> UUID:
-    raw = getattr(request.state, "tenant_id", None)
-    if not raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    return raw if isinstance(raw, UUID) else UUID(str(raw))
-
-
-def _user_id(request: Request) -> UUID:
-    raw = getattr(request.state, "user_id", None)
-    if not raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    return raw if isinstance(raw, UUID) else UUID(str(raw))
 
 
 def _role(request: Request) -> str:

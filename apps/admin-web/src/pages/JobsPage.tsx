@@ -25,6 +25,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { Skeleton } from '../components/ui/Skeleton';
+import { JobStatusBadge } from '../components/StatusBadges';
 import {
   Table,
   TableBody,
@@ -33,32 +34,6 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/Table';
-
-const STATUS_COLORS: Record<JobStatus, string> = {
-  pending:     'bg-amber-100 text-amber-800',
-  scheduled:   'bg-blue-100 text-blue-800',
-  in_progress: 'bg-indigo-100 text-indigo-800',
-  completed:   'bg-green-100 text-green-800',
-  cancelled:   'bg-neutral-100 text-neutral-500',
-};
-
-const STATUS_LABELS: Record<JobStatus, string> = {
-  pending:     'Pending',
-  scheduled:   'Scheduled',
-  in_progress: 'In Progress',
-  completed:   'Completed',
-  cancelled:   'Cancelled',
-};
-
-function StatusBadge({ status }: { status: JobStatus }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[status] ?? 'bg-neutral-100 text-neutral-600'}`}
-    >
-      {STATUS_LABELS[status] ?? status}
-    </span>
-  );
-}
 
 const STATUS_FILTER_OPTIONS: Array<{ value: JobStatus | ''; label: string }> = [
   { value: '',            label: 'All statuses' },
@@ -669,7 +644,7 @@ export const JobsPage: React.FC = () => {
               <TableRow key={job.id} data-testid="job-row">
                 <TableCell className="font-medium">{job.title}</TableCell>
                 <TableCell>
-                  <StatusBadge status={job.status} />
+                  <JobStatusBadge status={job.status} />
                 </TableCell>
                 <TableCell className="text-neutral-500">{job.service_type ?? '—'}</TableCell>
                 <TableCell className="text-neutral-500">

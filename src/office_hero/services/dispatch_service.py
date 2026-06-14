@@ -223,17 +223,22 @@ class DispatchService:
             raise InvalidRouteTransitionError(str(from_status), str(RouteStatus.CANCELLED))
 
         stops = await self._stop_repo.get_for_route(tenant_id, route_id)
+        non_terminal = [s for s in stops if not is_terminal_stop(RouteStopStatus(s.status))]
+        # Fetch the affected jobs in one query rather than one-per-stop (N+1).
+        jobs_by_id = {
+            j.id: j
+            for j in await self._job_repo.bulk_get_by_ids(
+                [s.job_id for s in non_terminal], tenant_id
+            )
+        }
         affected = 0
-        for stop in stops:
-            if not is_terminal_stop(RouteStopStatus(stop.status)):
-                await self._stop_repo.update_status(stop.id, tenant_id, RouteStopStatus.SKIPPED)
-                # Return scheduled jobs to pending
-                job = await self._job_repo.get_by_id(stop.job_id, tenant_id)
-                if job is not None and job.status == JobStatus.SCHEDULED:
-                    await self._job_repo.update_fields(
-                        stop.job_id, tenant_id, status=JobStatus.PENDING
-                    )
-                affected += 1
+        for stop in non_terminal:
+            await self._stop_repo.update_status(stop.id, tenant_id, RouteStopStatus.SKIPPED)
+            # Return scheduled jobs to pending
+            job = jobs_by_id.get(stop.job_id)
+            if job is not None and job.status == JobStatus.SCHEDULED:
+                await self._job_repo.update_fields(stop.job_id, tenant_id, status=JobStatus.PENDING)
+            affected += 1
 
         route = await self._route_repo.update_status(
             route_id,
@@ -425,9 +430,11 @@ class DispatchService:
         if errors:
             raise ManualSequenceInvalidError("Manual sequence failed validation", errors=errors)
 
-        # Validate each job exists and is not terminal
+        # Validate each job exists and is not terminal (bulk-fetch, then check
+        # in sequence order to preserve error ordering).
+        jobs_by_id = {j.id: j for j in await self._job_repo.bulk_get_by_ids(sequence, tenant_id)}
         for jid in sequence:
-            job = await self._job_repo.get_by_id(jid, tenant_id)
+            job = jobs_by_id.get(jid)
             if job is None:
                 errors.append(f"job {jid} not found in tenant")
             elif job.status in (JobStatus.COMPLETE, JobStatus.CANCELLED):

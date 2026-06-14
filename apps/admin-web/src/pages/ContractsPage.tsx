@@ -25,6 +25,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { Skeleton } from '../components/ui/Skeleton';
+import { ContractStatusBadge } from '../components/StatusBadges';
 import {
   Table,
   TableBody,
@@ -34,18 +35,6 @@ import {
   TableRow,
 } from '../components/ui/Table';
 
-const STATUS_COLORS: Record<ContractStatus, string> = {
-  active: 'bg-green-100 text-green-800',
-  paused: 'bg-amber-100 text-amber-800',
-  ended:  'bg-neutral-100 text-neutral-500',
-};
-
-const STATUS_LABELS: Record<ContractStatus, string> = {
-  active: 'Active',
-  paused: 'Paused',
-  ended:  'Ended',
-};
-
 const FREQUENCY_LABELS: Record<ContractFrequency, string> = {
   weekly:     'Weekly',
   biweekly:   'Every 2 weeks',
@@ -54,16 +43,6 @@ const FREQUENCY_LABELS: Record<ContractFrequency, string> = {
   semiannual: 'Twice a year',
   annual:     'Yearly',
 };
-
-function StatusBadge({ status }: { status: ContractStatus }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[status] ?? 'bg-neutral-100 text-neutral-600'}`}
-    >
-      {STATUS_LABELS[status] ?? status}
-    </span>
-  );
-}
 
 const STATUS_FILTER_OPTIONS: Array<{ value: ContractStatus | ''; label: string }> = [
   { value: '',       label: 'All statuses' },
@@ -587,7 +566,7 @@ export const ContractsPage: React.FC = () => {
               <TableRow key={contract.id} data-testid="contract-row">
                 <TableCell className="font-medium">{contract.title}</TableCell>
                 <TableCell>
-                  <StatusBadge status={contract.status} />
+                  <ContractStatusBadge status={contract.status} />
                 </TableCell>
                 <TableCell className="text-neutral-500">
                   {FREQUENCY_LABELS[contract.frequency] ?? contract.frequency}

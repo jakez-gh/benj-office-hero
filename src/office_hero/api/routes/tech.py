@@ -13,6 +13,8 @@ from pydantic import BaseModel
 
 from office_hero.api.deps import require_permission
 from office_hero.api.limiter import limiter
+from office_hero.api.request_context import require_tenant_id as _tenant_id
+from office_hero.api.request_context import require_user_id as _user_id
 from office_hero.core.logging import get_logger
 
 log = get_logger(__name__)
@@ -22,20 +24,6 @@ class MyCrewTodayResponse(BaseModel):
     crew_id: UUID
     vehicle_id: UUID
     work_date: date
-
-
-def _tenant_id(request: Request) -> UUID:
-    raw = getattr(request.state, "tenant_id", None)
-    if not raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    return raw if isinstance(raw, UUID) else UUID(str(raw))
-
-
-def _user_id(request: Request) -> UUID:
-    raw = getattr(request.state, "user_id", None)
-    if not raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    return raw if isinstance(raw, UUID) else UUID(str(raw))
 
 
 def create_tech_router(*, crew_service_provider) -> APIRouter:

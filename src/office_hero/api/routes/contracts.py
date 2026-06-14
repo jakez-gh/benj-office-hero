@@ -21,6 +21,8 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, sta
 
 from office_hero.api.deps import require_permission
 from office_hero.api.limiter import limiter
+from office_hero.api.request_context import require_tenant_id as _tenant_id
+from office_hero.api.request_context import require_user_id as _user_id
 from office_hero.api.schemas.contract import (
     ContractCreate,
     ContractEndRequest,
@@ -47,22 +49,6 @@ log = get_logger(__name__)
 require_contracts_read = require_permission("contracts:read")
 require_contracts_write = require_permission("contracts:write")
 require_jobs_write = require_permission("jobs:write")
-
-
-def _tenant_id(request: Request) -> UUID:
-    """Extract tenant_id from request.state; raise 401 if missing."""
-    raw = getattr(request.state, "tenant_id", None)
-    if not raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    return raw if isinstance(raw, UUID) else UUID(str(raw))
-
-
-def _user_id(request: Request) -> UUID:
-    """Extract user_id from request.state for audit attribution."""
-    raw = getattr(request.state, "user_id", None)
-    if not raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    return raw if isinstance(raw, UUID) else UUID(str(raw))
 
 
 def create_contract_router(*, service_provider) -> APIRouter:

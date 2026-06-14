@@ -23,6 +23,8 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, sta
 
 from office_hero.api.deps import require_permission, require_role
 from office_hero.api.limiter import limiter
+from office_hero.api.request_context import require_tenant_id as _tenant_id
+from office_hero.api.request_context import require_user_id as _user_id
 from office_hero.api.schemas.job import (
     JobCancelRequest,
     JobCompleteRequest,
@@ -60,22 +62,6 @@ _FIELD_ROLES = [
     Role.OperatorStaff,
 ]
 require_field_role = require_role(_FIELD_ROLES)
-
-
-def _tenant_id(request: Request) -> UUID:
-    """Extract tenant_id from request.state; raise 401 if missing."""
-    raw = getattr(request.state, "tenant_id", None)
-    if not raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    return raw if isinstance(raw, UUID) else UUID(str(raw))
-
-
-def _user_id(request: Request) -> UUID:
-    """Extract user_id from request.state for audit attribution."""
-    raw = getattr(request.state, "user_id", None)
-    if not raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    return raw if isinstance(raw, UUID) else UUID(str(raw))
 
 
 def create_job_router(*, service_provider) -> APIRouter:

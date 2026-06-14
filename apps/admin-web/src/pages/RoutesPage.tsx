@@ -3,7 +3,6 @@ import { listVehicles, type AdminVehicle } from '@office-hero/api-client';
 import {
   type ApiError,
   type RouteRead,
-  type RouteStatus,
   type RouteStopStatus,
   cancelRouteApi,
   listRoutesApi,
@@ -17,22 +16,7 @@ import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { Skeleton } from '../components/ui/Skeleton';
-
-const ROUTE_STATUS_COLORS: Record<RouteStatus, string> = {
-  draft:       'bg-neutral-100 text-neutral-600',
-  committed:   'bg-blue-100 text-blue-800',
-  in_progress: 'bg-indigo-100 text-indigo-800',
-  complete:    'bg-green-100 text-green-800',
-  cancelled:   'bg-neutral-100 text-neutral-500',
-};
-
-const ROUTE_STATUS_LABELS: Record<RouteStatus, string> = {
-  draft:       'Draft',
-  committed:   'Committed',
-  in_progress: 'In Progress',
-  complete:    'Complete',
-  cancelled:   'Cancelled',
-};
+import { RouteStatusBadge } from '../components/StatusBadges';
 
 const STOP_STATUS_COLORS: Record<RouteStopStatus, string> = {
   pending:  'bg-amber-100 text-amber-800',
@@ -40,16 +24,6 @@ const STOP_STATUS_COLORS: Record<RouteStopStatus, string> = {
   complete: 'bg-green-100 text-green-800',
   skipped:  'bg-neutral-100 text-neutral-500',
 };
-
-function StatusBadge({ status }: { status: RouteStatus }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${ROUTE_STATUS_COLORS[status] ?? 'bg-neutral-100 text-neutral-600'}`}
-    >
-      {ROUTE_STATUS_LABELS[status] ?? status}
-    </span>
-  );
-}
 
 function todayISODate(): string {
   const d = new Date();
@@ -283,7 +257,7 @@ function RouteCard({
         <div>
           <div className="flex items-center gap-2">
             <span className="font-semibold text-neutral-900">{vehicleName}</span>
-            <StatusBadge status={route.status} />
+            <RouteStatusBadge status={route.status} />
           </div>
           <p className="mt-0.5 text-sm text-neutral-500">
             {stops.length} stop{stops.length === 1 ? '' : 's'} ·{' '}
