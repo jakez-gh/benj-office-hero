@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 
 from office_hero.api.deps import require_permission
 from office_hero.api.limiter import limiter
+from office_hero.api.request_context import optional_user_id as _user_id
+from office_hero.api.request_context import require_tenant_id as _tenant_id
 from office_hero.api.schemas.dispatch import JobDispatchRequest, JobDispatchResponse
 from office_hero.api.schemas.route import EmergencyDispatchRequest, RouteRead
 from office_hero.core.exceptions import (
@@ -28,20 +30,6 @@ require_job_write = require_permission("job:write")
 require_vehicle_read = require_permission("vehicle:read")
 require_jobs_dispatch = require_permission("jobs:dispatch")
 require_route_write = require_permission("route:write")
-
-
-def _tenant_id(request: Request) -> UUID:
-    raw = getattr(request.state, "tenant_id", None)
-    if not raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    return raw if isinstance(raw, UUID) else UUID(str(raw))
-
-
-def _user_id(request: Request) -> UUID | None:
-    raw = getattr(request.state, "user_id", None)
-    if not raw:
-        return None
-    return raw if isinstance(raw, UUID) else UUID(str(raw))
 
 
 def create_dispatch_router(*, service_provider) -> APIRouter:

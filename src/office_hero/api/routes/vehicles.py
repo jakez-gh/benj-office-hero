@@ -13,6 +13,8 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, sta
 
 from office_hero.api.deps import require_permission, require_role
 from office_hero.api.limiter import limiter
+from office_hero.api.request_context import require_tenant_id as _tenant_id
+from office_hero.api.request_context import require_user_id as _user_id
 from office_hero.api.schemas.vehicle import (
     VehicleCreate,
     VehicleList,
@@ -31,20 +33,6 @@ log = get_logger(__name__)
 
 require_vehicles_read = require_permission("vehicles:read")
 require_vehicles_write = require_role([Role.TenantAdmin, Role.Operator, Role.OperatorStaff])
-
-
-def _tenant_id(request: Request) -> UUID:
-    raw = getattr(request.state, "tenant_id", None)
-    if not raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    return raw if isinstance(raw, UUID) else UUID(str(raw))
-
-
-def _user_id(request: Request) -> UUID:
-    raw = getattr(request.state, "user_id", None)
-    if not raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    return raw if isinstance(raw, UUID) else UUID(str(raw))
 
 
 def create_vehicle_router(*, service_provider) -> APIRouter:

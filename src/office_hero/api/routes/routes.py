@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, sta
 
 from office_hero.api.deps import require_permission
 from office_hero.api.limiter import limiter
+from office_hero.api.request_context import require_tenant_id as _tenant_id
+from office_hero.api.request_context import require_user_id as _user_id
 from office_hero.api.schemas.route import (
     DispatchCommitRequest,
     RouteCancelRequest,
@@ -30,20 +32,6 @@ from office_hero.core.exceptions import (
 from office_hero.core.logging import get_logger
 
 log = get_logger(__name__)
-
-
-def _tenant_id(request: Request) -> UUID:
-    raw = getattr(request.state, "tenant_id", None)
-    if not raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    return raw if isinstance(raw, UUID) else UUID(str(raw))
-
-
-def _user_id(request: Request) -> UUID:
-    raw = getattr(request.state, "user_id", None)
-    if not raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
-    return raw if isinstance(raw, UUID) else UUID(str(raw))
 
 
 def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
