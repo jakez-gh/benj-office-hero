@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import { AuthContext } from '../auth';
 import { Button } from './ui/Button';
+import { PageProgressBar } from './ui/PageProgressBar';
 
 const navItems = [
   { to: '/jobs',      label: 'Jobs'      },
@@ -18,6 +19,7 @@ export const NavShell: React.FC<{ children?: React.ReactNode }> = ({ children })
 
   return (
     <div className="min-h-screen bg-neutral-50">
+      <PageProgressBar />
       <header className="sticky top-0 z-30 border-b border-gray-200 bg-white shadow-sm">
         <div className="flex h-14 items-center gap-3 px-4">
           {/* Wordmark */}
