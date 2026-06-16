@@ -58,6 +58,9 @@ playwright-report/
 test-results/
 test-login.json
 
+# Seeded screenshots (vary by run; not committed — download from CI artifacts)
+apps/admin-web/screenshots-seeded/
+
 # Demo run artifacts and managed dev-server state
 demos/
 .runtime/

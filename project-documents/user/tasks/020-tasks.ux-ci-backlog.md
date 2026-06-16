@@ -82,10 +82,11 @@ architecture docs.
 
 ## Priority 5 — CI/CD Automation
 
-- [ ] **Screenshots with real data** — The current screenshot spec runs without
-  a backend and captures offline/empty shells. Add a second spec
-  `screenshots-seeded.spec.ts` that seeds a tenant, creates sample data, and
-  captures screenshots of the app with real data visible.
+- [x] **Screenshots with real data** — `screenshots-seeded.spec.ts` added
+  (2026-06-16). Requires `DEMO_BACKEND=1`. Seeds one tenant with customer,
+  3 jobs (2 dispatched, 1 pending for Dispatch page), vehicle, crew,
+  contract. Captures all 8 routes × 2 viewports with real data visible.
+  Images go to `screenshots-seeded/` (gitignored; download from CI artifacts).
 
 - [x] **Demo videos in CI** — `.github/workflows/demo-videos.yml` added
   (2026-06-16). Triggers: nightly 02:00 UTC + push to main. Spins up Postgres
