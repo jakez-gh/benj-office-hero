@@ -332,6 +332,7 @@ function RouteCard({
                         size="sm"
                         variant="outline"
                         aria-label={`Move stop ${i + 1} up`}
+                        title="Move this stop earlier in the route"
                         disabled={i === 0 || saving}
                         onClick={() => move(i, -1)}
                       >
@@ -341,6 +342,7 @@ function RouteCard({
                         size="sm"
                         variant="outline"
                         aria-label={`Move stop ${i + 1} down`}
+                        title="Move this stop later in the route"
                         disabled={i === displayedJobIds.length - 1 || saving}
                         onClick={() => move(i, 1)}
                       >
@@ -353,6 +355,11 @@ function RouteCard({
             );
           })}
         </ol>
+        {reorderable && !dirty && stops.length > 1 && (
+          <p className="mt-2 text-xs text-neutral-400">
+            Use ↑↓ to reorder stops before starting the route.
+          </p>
+        )}
         {dirty && (
           <div className="mt-3 flex justify-end gap-2">
             <Button size="sm" variant="ghost" onClick={() => setOrder(null)} disabled={saving}>
