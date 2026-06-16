@@ -37,10 +37,14 @@ Each foundation slice leaves the system in a runnable, tested state.
    `outbox_events` and `saga_log` tables included in initial migration (required by back-office
    slices). Dependencies: none. Effort: 1/5
 
-1a. [ ] **CLI & tooling baseline** — `tools/` directory with a simple Python CLI for
+1a. [x] **CLI & tooling baseline** — `tools/` directory with a simple Python CLI for
    migrations, health checks, and operator maintenance commands; shared code for
    generating JWTs and invoking the REST API. Establishes the presentation-tier CLI
    mentioned in the concept. Dependencies: Slice 1. Effort: 1/5
+   **Status:** Complete — `hero` console script (pyproject.toml scripts entry);
+   `hero db migrate|rollback|status|history`, `hero health`,
+   `hero jwt generate` (RS256 JWT from env key), `hero run-server`.
+   6 CLI tests in tests/test_cli.py.
 
 2. [x] **Database foundation** — Neon connection, SQLAlchemy async session factory,
    Alembic migration workflow, base `tenant_id` column pattern, RLS policy helpers,
@@ -254,14 +258,22 @@ Each integration is a separate slice. All implement the `BackOfficeAdapter` prot
     Technician receives Route → location update posted.
     Dependencies: Slices 17–22. Effort: 4/5
 
-29. [ ] **Deployment automation** — Fly.io deployment pipeline (GitHub Actions);
+29. [x] **Deployment automation** — Fly.io deployment pipeline (GitHub Actions);
     Neon branch promotion (dev → production); zero-downtime deploys via Fly.io
     rolling restart. Dependencies: Slice 1. Effort: 2/5
+    **Status:** Complete — Dockerfile.api (multi-stage Python/uvicorn), fly.api.toml
+    (release_command runs alembic), .github/workflows/deploy.yml (test gate →
+    deploy-api → deploy-web; workflow_dispatch with api|web|both selector).
+    Set FLY_API_TOKEN secret to activate.
 
-30. [ ] **Monitoring & alerting** — Sentry error tracking (free tier); Fly.io metrics
+30. [x] **Monitoring & alerting** — Sentry error tracking (free tier); Fly.io metrics
     dashboard; uptime check against `GET /health`; SLO reporting (99.5% target);
     dead-letter growth alerting (back-office Saga failures).
     Dependencies: Slices 4, 29. Effort: 2/5
+    **Status:** Complete — sentry-sdk[fastapi] in backend (create_app initializes
+    when SENTRY_DSN set); @sentry/react in frontend (browserTracingIntegration,
+    VITE_SENTRY_DSN). uptime.yml: hourly cron pings /health; optional dead-letter
+    count check via PROD_ADMIN_TOKEN repo secret (>10 = error).
 
 ---
 
