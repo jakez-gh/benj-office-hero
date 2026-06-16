@@ -45,9 +45,11 @@ architecture docs.
   "Saving…", etc.) while in-flight. Confirmed by code review (2026-06-16).
   No silent no-ops found.
 
-- [ ] **Full-page transition** — When navigating between pages, if data takes
-  >200 ms to load, show a top-of-page progress bar (e.g. NProgress or Tailwind
-  animate-pulse bar) so the user knows something is happening.
+- [x] **Full-page transition** — `PageProgressBar` component added
+  (2026-06-16). Fixed 3px strip at top of viewport; three CSS phases:
+  scaleX 0→0.8 via keyframe (loading), scaleX→1 (complete), opacity→0
+  (fading). Mounted in `NavShell`; uses `useLocation()` to detect
+  navigation; no external packages required.
 
 ---
 
