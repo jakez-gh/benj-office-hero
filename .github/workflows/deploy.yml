@@ -1,0 +1,129 @@
+name: Deploy
+
+# Deploys both the API and admin-web to Fly.io on push to main.
+#
+# Required repository secrets:
+#   FLY_API_TOKEN   — from `fly tokens create deploy -a office-hero-api` (shared token for both apps)
+#
+# Required Fly.io secrets (set once via `fly secrets set -a <app> KEY=value`):
+#   office-hero-api:
+#     DATABASE_URL       — postgresql+asyncpg://<user>:<pass>@<host>/<db>?sslmode=require
+#     JWT_PRIVATE_KEY    — RSA-2048 private key PEM (newlines as \n)
+#     JWT_PUBLIC_KEY     — RSA-2048 public key PEM (newlines as \n)
+#     ORS_API_KEY        — OpenRouteService API key
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to deploy: api | web | both'
+        required: false
+        default: 'both'
+
+jobs:
+  # ── Build gate ────────────────────────────────────────────────────────────
+  # Ensure tests pass before deploying. Reuses the CI job definitions.
+  test:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: hero
+          POSTGRES_PASSWORD: hero
+          POSTGRES_DB: office_hero_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U hero"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: pipx install poetry==1.8.3
+
+      - name: Configure Poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Cache virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-py3.11-${{ hashFiles('poetry.lock') }}-deploy
+
+      - name: Install dependencies
+        run: poetry install --with dev --no-interaction
+
+      - name: Generate RSA key pair
+        run: |
+          openssl genrsa -out private.pem 2048
+          openssl rsa -in private.pem -pubout -out public.pem
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://hero:hero@localhost:5432/office_hero_test
+          JWT_PRIVATE_KEY: ${{ env.JWT_PRIVATE_KEY }}
+          JWT_PUBLIC_KEY: ${{ env.JWT_PUBLIC_KEY }}
+          JWT_ALGORITHM: RS256
+        run: |
+          JWT_PRIVATE_KEY=$(awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' private.pem)
+          JWT_PUBLIC_KEY=$(awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' public.pem)
+          export JWT_PRIVATE_KEY JWT_PUBLIC_KEY
+          poetry run alembic upgrade head
+          poetry run pytest --override-ini="addopts=" --tb=short -q
+
+  # ── Deploy API ────────────────────────────────────────────────────────────
+  deploy-api:
+    name: Deploy API → Fly.io
+    runs-on: ubuntu-latest
+    needs: test
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.service == 'api' ||
+      github.event.inputs.service == 'both'
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy API
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        # --remote-only: build on Fly's builders, not locally (no Docker needed on runner)
+        run: flyctl deploy --config fly.api.toml --remote-only --wait-timeout 300
+
+  # ── Deploy web ────────────────────────────────────────────────────────────
+  deploy-web:
+    name: Deploy admin-web → Fly.io
+    runs-on: ubuntu-latest
+    needs: test
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.service == 'web' ||
+      github.event.inputs.service == 'both'
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy admin-web
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl deploy --config fly.toml --remote-only --wait-timeout 300

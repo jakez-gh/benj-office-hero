@@ -167,12 +167,13 @@ Ordered by dependency and value. Each slice is independently demonstrable.
     Customer + Location, enter Job, view routing options, dispatch. Uses shared API client.
     Dependencies: Slices 5a, 9–10, 13–14. Risk: Medium. Effort: 3/5
 
-21. [ ] **Tenant Admin web — Dispatch dashboard** — Route board view (all Vehicles + their
+21. [x] **Tenant Admin web — Dispatch dashboard** — Route board view (all Vehicles + their
     Routes for the day), drag-and-drop resequencing, live Vehicle positions (polling),
     day-of exception handling UI. Dependencies: Slices 12–16, 20. Risk: High. Effort: 4/5
-    **Status:** Routes page shipped (per-day route board, manual stop resequencing via
-    move up/down + save, start/cancel route). Drag-and-drop, live vehicle positions,
-    and day-of exception flows remain.
+    **Status:** Complete — Routes page (per-day board, stop resequencing via drag-and-drop
+    + ↑↓ buttons + save, start/cancel route, Reassign modal); live GPS polling every 30s
+    for in_progress routes via GET /vehicles/{id}/location; day-of exception flows via
+    Reassign modal (design: 025-slice.dynamic-rerouting.md).
 
 22. [x] **Technician web view** — Lighter React view: own Route for the day, Job details,
     basic Job entry. Separate from Technician Android app; useful for desktop/laptop use.
@@ -200,11 +201,11 @@ Each integration is a separate slice. All implement the `BackOfficeAdapter` prot
 >
 > Each integration slice must include:
 >
-> - Saga orchestrator class for all multi-step operations
-> - Compensating transaction for every Saga step
-> - Idempotency key generation and storage in `outbox_events`
-> - Integration test simulating failure at each Saga step
-> - Dead-letter handling via `GET /admin/dead-letters` (Operator-only)
+> + Saga orchestrator class for all multi-step operations
+> + Compensating transaction for every Saga step
+> + Idempotency key generation and storage in `outbox_events`
+> + Integration test simulating failure at each Saga step
+> + Dead-letter handling via `GET /admin/dead-letters` (Operator-only)
 
 24. [x] **BackOfficeAdapter protocol** — Define the full protocol ABC; refactor all
     existing code to call the NativeAdapter through it (NativeAdapter is already
@@ -238,15 +239,15 @@ Each integration is a separate slice. All implement the `BackOfficeAdapter` prot
 28. [ ] **E2E test suite** — Full cross-platform coverage across all client types.
     Emulator setup is a prerequisite (see `950-tasks.maintenance.md`):
 
-    - **Android** — Maestro against Android Emulator (AVD). Auth, Route view,
+    + **Android** — Maestro against Android Emulator (AVD). Auth, Route view,
       Job entry, location tracking (foreground + background).
-    - **iOS** — Maestro against iOS Simulator (Xcode/macOS required). Same
+    + **iOS** — Maestro against iOS Simulator (Xcode/macOS required). Same
       flows as Android. Gated on iOS Expo build being enabled.
-    - **Web** — Playwright (Chromium + Firefox + WebKit). Login, Job entry,
+    + **Web** — Playwright (Chromium + Firefox + WebKit). Login, Job entry,
       routing options, dispatch, Dispatch dashboard drag-and-drop.
-    - **API** — pytest + httpx AsyncClient against live test environment. All
+    + **API** — pytest + httpx AsyncClient against live test environment. All
       endpoint contracts, auth flows, RBAC enforcement, rate limiting responses.
-    - **MCP** — pytest invokes MCP tools against test environment. Tool
+    + **MCP** — pytest invokes MCP tools against test environment. Tool
       discovery, auth passthrough, response schema validation.
 
     Core flow (all platforms): Job entry → routing options → dispatch →
@@ -266,19 +267,19 @@ Each integration is a separate slice. All implement the `BackOfficeAdapter` prot
 
 ## Notes
 
-- Slices 1–6 (Foundation) must be done in order. All others can proceed in
++ Slices 1–6 (Foundation) must be done in order. All others can proceed in
   parallel once their listed dependencies are met.
-- Slice 5a (Admin web shell) is inserted between Foundation and Feature slices to
++ Slice 5a (Admin web shell) is inserted between Foundation and Feature slices to
   give stakeholders a working GUI as early as possible. It can be worked in parallel
   with Slice 6 (Mobile scaffold).
-- Back-office integration slices (25–27) are gated on Slice 24 (protocol),
++ Back-office integration slices (25–27) are gated on Slice 24 (protocol),
   which itself is gated on the core FSM slices being stable.
-- Dynamic re-routing (Slice 16) is the highest-effort single feature slice
++ Dynamic re-routing (Slice 16) is the highest-effort single feature slice
   and should be prototyped early to surface complexity.
-- Mobile location tracking (Slice 18) is marked High risk because background
++ Mobile location tracking (Slice 18) is marked High risk because background
   location on Android requires OS-level permissions that can vary by device/OS
   version — test on real hardware as early as possible.
-- Back-office integration slices are upgraded to 5/5 effort (from 4/5) due to
++ Back-office integration slices are upgraded to 5/5 effort (from 4/5) due to
   the Saga + Outbox pattern requirement. See ADR 056.
 
 ---

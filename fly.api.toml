@@ -1,0 +1,49 @@
+# Fly.io configuration for Office Hero API (FastAPI backend)
+#
+# Required secrets (fly secrets set ...):
+#   DATABASE_URL          postgresql+asyncpg://...  (Neon connection string)
+#   JWT_PRIVATE_KEY       RSA private key PEM with \n for newlines
+#   JWT_PUBLIC_KEY        RSA public key PEM with \n for newlines
+#   ORS_API_KEY           OpenRouteService API key
+
+app = "office-hero-api"
+primary_region = "sjc"
+
+[build]
+  dockerfile = "Dockerfile.api"
+
+[env]
+  APP_ENV = "production"
+  JWT_ALGORITHM = "RS256"
+  ACCESS_TOKEN_EXPIRE_MINUTES = "30"
+  REFRESH_TOKEN_EXPIRE_DAYS = "7"
+
+[deploy]
+  # Run DB migrations in a one-off container before any instances start.
+  # Fly.io waits for this to exit 0 before routing traffic to new instances.
+  release_command = "alembic upgrade head"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 100
+    soft_limit = 80
+
+  [[http_service.checks]]
+    grace_period = "20s"
+    interval = "30s"
+    method = "get"
+    path = "/health"
+    protocol = "http"
+    timeout = "5s"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1

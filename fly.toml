@@ -1,13 +1,13 @@
-# Fly.io configuration for Office Hero Admin Web
+# Fly.io configuration for Office Hero Admin Web (React SPA)
+#
+# No secrets required — the app is a static site served via 'serve'.
+# VITE_API_BASE_URL is baked in at build time (see Dockerfile).
 
 app = "office-hero-admin-web"
 primary_region = "sjc"
 
 [build]
-  builder = "pacer"
-
-  [build.args]
-    NODE_ENV = "production"
+  dockerfile = "Dockerfile"
 
 [env]
   VITE_API_BASE_URL = "https://api.office-hero.fly.dev"
@@ -17,20 +17,22 @@ primary_region = "sjc"
   force_https = true
   auto_stop_machines = true
   auto_start_machines = true
+  min_machines_running = 0
 
   [http_service.concurrency]
-    type = "fixed"
-    hard_limit = 100
-    soft_limit = 80
+    type = "requests"
+    hard_limit = 200
+    soft_limit = 150
 
   [[http_service.checks]]
     grace_period = "10s"
-    interval = 10000
+    interval = "30s"
     method = "get"
     path = "/"
     protocol = "http"
-    timeout = 2000
-    tls_server_name = ""
+    timeout = "5s"
 
-[metrics]
-  port = 9090
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1
