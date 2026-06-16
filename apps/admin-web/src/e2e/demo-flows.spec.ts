@@ -194,18 +194,28 @@ test.describe('Demo flows', () => {
     await expect(page.getByText('DEMO-001')).toBeVisible({ timeout: 8000 });
     await pause(1500);
 
-    // — Dispatch page —
+    // — Dispatch page (new dropdown UI) —
+    // Create an extra pending job for this demo — job1/job2 are already scheduled above.
+    const pendingJob = await apiPost<{ id: string }>(ctx, '/jobs', {
+      customer_id: cust.id, location_id: loc.id,
+      title: 'Emergency repair call', service_type: 'Emergency',
+      priority: 90, estimated_duration_min: 45,
+    });
+
     await page.goto('/dispatch');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await pause(800);
-    // Fill in dispatch form with the first job and the vehicle's default crew user
-    await page.getByLabel('Tenant ID').fill(tenantId);
-    await page.getByLabel('Job ID').fill(job1.id);
-    await page.getByLabel('Technician ID').fill(userId);
-    await pause(1000);
+    // Wait for the job dropdown to populate
+    await page.waitForSelector('select[aria-label="Select job"]', { timeout: 10000 });
+    await pause(500);
+    // Filter by title to isolate the emergency job, then select it
+    await page.getByLabel('Search jobs').fill('Emergency');
+    await pause(400);
+    await page.selectOption('select[aria-label="Select job"]', { value: pendingJob.id });
+    await pause(800);
     // Submit dispatch
     await page.getByRole('button', { name: /dispatch job/i }).click();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await pause(2000);
 
     await pause(1000);
