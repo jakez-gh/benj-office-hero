@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { listVehicles, type AdminVehicle } from '@office-hero/api-client';
 import {
   type ApiError,
   type RouteRead,
   type RouteStopStatus,
+  type VehicleLocationResponse,
   cancelRouteApi,
+  getVehicleLatestLocationApi,
   listRoutesApi,
   reassignRouteApi,
   resequenceRouteApi,
@@ -46,6 +48,40 @@ function formatDuration(seconds: number): string {
 function formatDistance(meters: number): string {
   if (meters <= 0) return '—';
   return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${meters} m`;
+}
+
+function formatTimeAgo(date: Date): string {
+  const secs = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (secs < 60) return 'just now';
+  const m = Math.floor(secs / 60);
+  if (m < 60) return `${m} min ago`;
+  const h = Math.floor(m / 60);
+  return `${h}h ago`;
+}
+
+function useVehicleLocation(
+  vehicleId: string,
+  enabled: boolean,
+): VehicleLocationResponse | null {
+  const [location, setLocation] = useState<VehicleLocationResponse | null>(null);
+
+  useEffect(() => {
+    if (!enabled) { setLocation(null); return; }
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const fix = await getVehicleLatestLocationApi(vehicleId);
+        if (!cancelled) setLocation(fix);
+      } catch {
+        // 404 = no fix yet; ignore silently
+      }
+    };
+    void poll();
+    const id = setInterval(() => void poll(), 30_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [vehicleId, enabled]);
+
+  return location;
 }
 
 function CancelRouteModal({
@@ -211,6 +247,13 @@ function RouteCard({
   const [showCancel, setShowCancel] = useState(false);
   const [showReassign, setShowReassign] = useState(false);
 
+  // Drag-and-drop resequencing state.
+  const dragSrcIndex = useRef<number>(-1);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Live GPS position — polls every 30 s while route is in_progress.
+  const location = useVehicleLocation(route.vehicle_id, route.status === 'in_progress');
+
   const stops = [...route.stops].sort((a, b) => a.sequence_index - b.sequence_index);
   const displayedJobIds = order ?? stops.map((s) => s.job_id);
   const byJobId = new Map(stops.map((s) => [s.job_id, s]));
@@ -251,6 +294,32 @@ function RouteCard({
     }
   };
 
+  const handleDragStart = (i: number) => {
+    dragSrcIndex.current = i;
+  };
+
+  const handleDragOver = (e: React.DragEvent, i: number) => {
+    e.preventDefault();
+    if (dragOverIndex !== i) setDragOverIndex(i);
+  };
+
+  const handleDrop = (e: React.DragEvent, i: number) => {
+    e.preventDefault();
+    const from = dragSrcIndex.current;
+    setDragOverIndex(null);
+    dragSrcIndex.current = -1;
+    if (from < 0 || from === i) return;
+    const next = [...displayedJobIds];
+    const [moved] = next.splice(from, 1);
+    next.splice(i, 0, moved);
+    setOrder(next);
+  };
+
+  const handleDragEnd = () => {
+    setDragOverIndex(null);
+    dragSrcIndex.current = -1;
+  };
+
   const reorderable = route.status === 'committed';
 
   return (
@@ -260,6 +329,11 @@ function RouteCard({
           <div className="flex items-center gap-2">
             <span className="font-semibold text-neutral-900">{vehicleName}</span>
             <RouteStatusBadge status={route.status} />
+            {location && (
+              <span className="text-xs text-neutral-400">
+                · GPS {formatTimeAgo(new Date(location.recorded_at))}
+              </span>
+            )}
           </div>
           <p className="mt-0.5 text-sm text-neutral-500">
             {stops.length} stop{stops.length === 1 ? '' : 's'} ·{' '}
@@ -300,9 +374,26 @@ function RouteCard({
               <li
                 key={jobId}
                 data-testid="route-stop"
-                className="flex items-center justify-between rounded-md border border-neutral-200 px-3 py-2"
+                draggable={reorderable}
+                onDragStart={() => handleDragStart(i)}
+                onDragOver={(e) => handleDragOver(e, i)}
+                onDrop={(e) => handleDrop(e, i)}
+                onDragEnd={handleDragEnd}
+                className={`flex items-center justify-between rounded-md border px-3 py-2 transition-colors ${
+                  dragOverIndex === i
+                    ? 'border-primary-400 bg-primary-50'
+                    : 'border-neutral-200'
+                } ${reorderable ? 'cursor-grab active:cursor-grabbing' : ''}`}
               >
                 <div className="flex items-center gap-3">
+                  {reorderable && (
+                    <span
+                      className="select-none text-neutral-300"
+                      aria-hidden="true"
+                    >
+                      ⠿
+                    </span>
+                  )}
                   <span className="w-6 text-center text-sm font-semibold text-neutral-400">
                     {i + 1}
                   </span>
@@ -357,7 +448,7 @@ function RouteCard({
         </ol>
         {reorderable && !dirty && stops.length > 1 && (
           <p className="mt-2 text-xs text-neutral-400">
-            Use ↑↓ to reorder stops before starting the route.
+            Drag stops or use ↑↓ to reorder before starting.
           </p>
         )}
         {dirty && (

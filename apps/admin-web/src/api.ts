@@ -336,6 +336,24 @@ export function reassignRouteApi(
   });
 }
 
+// --- Vehicle location (Slice 15) ---
+
+export interface VehicleLocationResponse {
+  id: string;
+  vehicle_id: string;
+  lat: number;
+  lng: number;
+  accuracy_m: number | null;
+  recorded_at: string;
+}
+
+/** GET /vehicles/{id}/location — latest GPS fix (404 when none recorded). */
+export function getVehicleLatestLocationApi(
+  vehicleId: string,
+): Promise<VehicleLocationResponse> {
+  return request<VehicleLocationResponse>(`/vehicles/${vehicleId}/location`);
+}
+
 // --- Contract types (Slice 11) ---
 
 export type ContractStatus = 'active' | 'paused' | 'ended';
