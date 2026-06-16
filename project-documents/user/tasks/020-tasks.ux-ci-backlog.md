@@ -27,10 +27,11 @@ architecture docs.
 - [x] **Login subtitle color** — Not a real bug. `CardDescription` renders as
   `text-neutral-500` (gray). Confirmed by reading the component source.
 
-- [ ] **Skeleton race condition (Users mobile)** — The mobile screenshot of
-  Users occasionally captures the skeleton-loading state instead of the offline
-  state. Root cause: 1200 ms wait isn't always enough. Fix: add a
-  `waitForSelector` for the error banner or empty state before capturing.
+- [x] **Skeleton race condition (Users mobile)** — Fixed in `screenshots.spec.ts`
+  (2026-06-16, commit 74d3666). Replaced 1200ms flat wait with a
+  `waitForSelector('[role="alert"]', { timeout: 4000 })` for all auth routes.
+  The fetch is always aborted → error banner always appears; waiting for it is
+  deterministic on any machine speed.
 
 ---
 

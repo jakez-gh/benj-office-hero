@@ -95,7 +95,7 @@ repos:
 
       - id: pytest-check
         name: pytest (TDD gate)
-        entry: bash -c 'poetry run pytest --tb=short -q --no-cov'
+        entry: bash -c 'poetry run pytest --override-ini="addopts=" --tb=short -q'
         language: system
         pass_filenames: false
         always_run: true
