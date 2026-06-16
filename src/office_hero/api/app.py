@@ -178,6 +178,25 @@ def create_app(
 
     The factory invokes router factories once at startup, not per-request.
     """
+    # Sentry error tracking — opt-in via SENTRY_DSN env var (not set = disabled).
+    _sentry_dsn = os.environ.get("SENTRY_DSN")
+    if _sentry_dsn:
+        try:
+            import sentry_sdk
+            from sentry_sdk.integrations.fastapi import FastApiIntegration
+            from sentry_sdk.integrations.starlette import StarletteIntegration
+
+            sentry_sdk.init(
+                dsn=_sentry_dsn,
+                integrations=[StarletteIntegration(), FastApiIntegration()],
+                traces_sample_rate=0.1,
+                send_default_pii=False,
+                environment=os.environ.get("APP_ENV", "production"),
+            )
+            log.info("sentry.initialized", dsn_set=True)
+        except ImportError:
+            log.warning("sentry.skipped", reason="sentry-sdk not installed")
+
     if saga_service is None:
         saga_service = SagaService(saga_repo=MockSagaRepository())
     if outbox_repo is None:

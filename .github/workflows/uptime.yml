@@ -1,0 +1,66 @@
+name: Uptime check
+
+# Hourly ping against the production API health endpoint.
+# Workflow failure = notification to repo watchers.
+# Also catches dead-letter accumulation (back-office Saga failures).
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # every hour at :00
+  workflow_dispatch:
+
+jobs:
+  health:
+    name: API health check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping /health
+        run: |
+          status=$(curl -s -o /tmp/health.json -w "%{http_code}" \
+            --max-time 10 \
+            https://api.office-hero.fly.dev/health)
+
+          echo "HTTP status: $status"
+          cat /tmp/health.json || true
+
+          if [ "$status" -ne 200 ]; then
+            echo "::error::API health check failed (HTTP $status)"
+            exit 1
+          fi
+
+          # Warn if DB or ORS is degraded (status 200 but components unhealthy)
+          db_status=$(python3 -c "
+          import json, sys
+          d = json.load(open('/tmp/health.json'))
+          print(d.get('database', {}).get('status', 'unknown'))
+          " 2>/dev/null || echo "unknown")
+
+          if [ "$db_status" != "healthy" ]; then
+            echo "::warning::Database reports status '$db_status' — check Neon dashboard"
+          fi
+
+      - name: Check dead-letter count
+        if: vars.PROD_API_URL != ''
+        env:
+          # Set PROD_ADMIN_TOKEN as a repository variable (not secret — read-only token)
+          PROD_ADMIN_TOKEN: ${{ secrets.PROD_ADMIN_TOKEN }}
+          PROD_API_URL: ${{ vars.PROD_API_URL }}
+        run: |
+          if [ -z "$PROD_ADMIN_TOKEN" ]; then
+            echo "PROD_ADMIN_TOKEN not set — skipping dead-letter check"
+            exit 0
+          fi
+
+          count=$(curl -s -H "Authorization: Bearer $PROD_ADMIN_TOKEN" \
+            "$PROD_API_URL/admin/dead-letters?limit=1" | \
+            python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('total', 0))" 2>/dev/null || echo 0)
+
+          echo "Dead-letter count: $count"
+
+          if [ "$count" -gt 10 ]; then
+            echo "::error::$count dead letters in queue — back-office Sagas failing"
+            exit 1
+          elif [ "$count" -gt 0 ]; then
+            echo "::warning::$count dead letter(s) in queue — review via /admin/dead-letters"
+          fi
