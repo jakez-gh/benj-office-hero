@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { listUsers } from '@office-hero/api-client';
 import type { AdminUser } from '@office-hero/api-client';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { useAutoRecover } from '../hooks/useAutoRecover';
 import { Skeleton } from '../components/ui/Skeleton';
 import {
   Table,
@@ -48,28 +49,23 @@ export const UsersPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async (): Promise<void> => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const data = await listUsers();
-        if (!cancelled) setUsers(data);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    void load();
-    return () => { cancelled = true; };
+  const load = useCallback(async (): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listUsers();
+      setUsers(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const isNetworkError = !!error && /failed to fetch|network error/i.test(error);
+  useAutoRecover(isNetworkError, () => void load());
 
   if (loading) {
     return (
@@ -96,13 +92,15 @@ export const UsersPage: React.FC = () => {
 
       {error && <ErrorBanner error={error} />}
 
-      {!error && users.length === 0 && (
+      {users.length === 0 && !loading && (
         <div className="rounded-lg border border-dashed border-neutral-300 py-12 text-center">
-          <p className="text-neutral-500">No users found.</p>
+          <p className="text-neutral-500">
+            {error ? 'Users could not be loaded.' : 'No users on record.'}
+          </p>
         </div>
       )}
 
-      {!error && users.length > 0 && (
+      {users.length > 0 && (
         <Table>
           <TableHeader>
             <TableRow>

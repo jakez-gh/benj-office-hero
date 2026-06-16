@@ -1,13 +1,16 @@
 /**
- * DispatchPage — dispatch a job via the backoffice saga API.
+ * DispatchPage — dispatch a pending job via the back-office saga API.
  *
- * Posts to POST /sagas with saga_type="dispatch_job" and the form payload,
- * then polls GET /sagas/{id}/state via useSagaStatus and renders the live
- * saga state with SagaStatusBadge.
+ * Jobs and technicians are loaded from the API and presented as searchable
+ * dropdowns. Tenant ID is read from the session automatically.
+ * After submission the live saga state is shown with step-by-step status.
  */
 
-import React, { useState } from 'react';
-import { type ApiError, type SagaState, createSaga } from '../api';
+import React, { useContext, useEffect, useState } from 'react';
+import { listUsers } from '@office-hero/api-client';
+import type { AdminUser } from '@office-hero/api-client';
+import { type ApiError, type SagaState, type JobSummary, createSaga, listJobsApi } from '../api';
+import { AuthContext } from '../auth';
 import { SagaStatusBadge } from '../components/SagaStatusBadge';
 import { useSagaStatus } from '../hooks/useSagaStatus';
 import { Alert } from '../components/ui/Alert';
@@ -15,26 +18,77 @@ import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
+import { Skeleton } from '../components/ui/Skeleton';
+
+const SELECT_CLASS =
+  'block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-neutral-50 disabled:text-neutral-400';
 
 export const DispatchPage: React.FC = () => {
-  const [tenantId, setTenantId] = useState('');
-  const [jobId, setJobId] = useState('');
-  const [technicianId, setTechnicianId] = useState('');
+  const { user } = useContext(AuthContext);
+
+  // Resolved tenant ID: from auth user, localStorage (demo mode), or empty.
+  const tenantId =
+    (user as { tenant_id?: string } | null)?.tenant_id ??
+    localStorage.getItem('tenant_id') ??
+    '';
+
+  const [jobs, setJobs] = useState<JobSummary[]>([]);
+  const [technicians, setTechnicians] = useState<AdminUser[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
+
+  const [jobSearch, setJobSearch] = useState('');
+  const [selectedJobId, setSelectedJobId] = useState('');
+  const [selectedTechnicianId, setSelectedTechnicianId] = useState('');
+
   const [submitting, setSubmitting] = useState(false);
   const [submittedSaga, setSubmittedSaga] = useState<SagaState | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const {
-    saga: liveSaga,
-    error: pollError,
-    refresh,
-  } = useSagaStatus(submittedSaga?.saga_id ?? null);
-
-  // Prefer the polled state once it arrives so the badge reflects later steps.
+  const { saga: liveSaga, error: pollError, refresh } = useSagaStatus(
+    submittedSaga?.saga_id ?? null
+  );
   const displaySaga: SagaState | null = liveSaga ?? submittedSaga;
+
+  // Load pending jobs and technicians once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingOptions(true);
+    setOptionsError(null);
+
+    Promise.all([
+      listJobsApi({ status: 'pending', limit: 100 }),
+      listUsers(),
+    ])
+      .then(([jobsResp, usersResp]) => {
+        if (cancelled) return;
+        setJobs(jobsResp.items);
+        setTechnicians(
+          usersResp.filter((u) =>
+            ['technician', 'tech'].includes(u.role?.toLowerCase() ?? '')
+          )
+        );
+      })
+      .catch((err) => {
+        if (!cancelled) setOptionsError(err instanceof Error ? err.message : String(err));
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingOptions(false);
+      });
+
+    return () => { cancelled = true; };
+  }, []);
+
+  const filteredJobs = jobSearch
+    ? jobs.filter((j) => j.title.toLowerCase().includes(jobSearch.toLowerCase()))
+    : jobs;
+
+  const selectedJob = jobs.find((j) => j.id === selectedJobId) ?? null;
+  const selectedTech = technicians.find((t) => t.id === selectedTechnicianId) ?? null;
 
   const handleSubmit = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault();
+    if (!selectedJobId) return;
     setSubmitting(true);
     setSubmitError(null);
     setSubmittedSaga(null);
@@ -44,15 +98,14 @@ export const DispatchPage: React.FC = () => {
         saga_type: 'dispatch_job',
         context: {
           tenant_id: tenantId,
-          job_id: jobId,
-          technician_id: technicianId,
+          job_id: selectedJobId,
+          technician_id: selectedTechnicianId || undefined,
         },
       });
       setSubmittedSaga(saga);
     } catch (err) {
       const apiErr = err as ApiError;
-      const detail = apiErr?.detail || (err instanceof Error ? err.message : String(err));
-      setSubmitError(detail);
+      setSubmitError(apiErr?.detail || (err instanceof Error ? err.message : String(err)));
     } finally {
       setSubmitting(false);
     }
@@ -63,7 +116,7 @@ export const DispatchPage: React.FC = () => {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-neutral-900">Dispatch</h1>
         <p className="mt-0.5 text-sm text-neutral-500">
-          Assign a pending job to a vehicle and track the orchestration live.
+          Assign a pending job to a technician and track the orchestration live.
         </p>
       </div>
 
@@ -72,50 +125,116 @@ export const DispatchPage: React.FC = () => {
           <CardHeader className="pb-4">
             <CardTitle>Job details</CardTitle>
             <CardDescription>
-              Enter the job and technician UUIDs to dispatch via the saga orchestrator.
+              Select a pending job and assign a technician to dispatch it.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="dispatch-tenant">Tenant ID</Label>
-                <Input
-                  id="dispatch-tenant"
-                  value={tenantId}
-                  onChange={(e) => setTenantId(e.target.value)}
-                  required
-                />
+            {loadingOptions ? (
+              <div className="space-y-3">
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-10 w-full" />
               </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="dispatch-job">Job ID</Label>
-                <Input
-                  id="dispatch-job"
-                  value={jobId}
-                  onChange={(e) => setJobId(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="dispatch-technician">Technician ID</Label>
-                <Input
-                  id="dispatch-technician"
-                  value={technicianId}
-                  onChange={(e) => setTechnicianId(e.target.value)}
-                  required
-                />
-              </div>
-
-              <Button type="submit" disabled={submitting} className="w-full">
-                {submitting ? 'Dispatching…' : 'Dispatch Job'}
-              </Button>
-            </form>
-
-            {submitError && (
-              <Alert variant="destructive" role="alert" className="mt-4">
-                {submitError}
+            ) : optionsError ? (
+              <Alert variant="destructive" className="mb-4">
+                Could not load jobs — {optionsError}
               </Alert>
+            ) : (
+              <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+                {/* Job selector with inline search */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="dispatch-job-search">Search jobs</Label>
+                  <Input
+                    id="dispatch-job-search"
+                    placeholder="Filter by title or customer…"
+                    value={jobSearch}
+                    onChange={(e) => {
+                      setJobSearch(e.target.value);
+                      setSelectedJobId('');
+                    }}
+                  />
+                  <select
+                    aria-label="Select job"
+                    className={SELECT_CLASS}
+                    size={Math.min(filteredJobs.length + 1, 6)}
+                    value={selectedJobId}
+                    onChange={(e) => setSelectedJobId(e.target.value)}
+                    required
+                  >
+                    <option value="">— pick a job —</option>
+                    {filteredJobs.map((j) => (
+                      <option key={j.id} value={j.id}>
+                        {j.title}
+                      </option>
+                    ))}
+                    {filteredJobs.length === 0 && (
+                      <option value="" disabled>
+                        No pending jobs match
+                      </option>
+                    )}
+                  </select>
+                </div>
+
+                {/* Selected job summary */}
+                {selectedJob && (
+                  <div className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm">
+                    <p className="font-medium text-neutral-900">{selectedJob.title}</p>
+                    {selectedJob.service_type && (
+                      <p className="text-neutral-400">{selectedJob.service_type}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Technician selector */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="dispatch-technician">
+                    Technician{' '}
+                    <span className="font-normal text-neutral-400">(optional)</span>
+                  </Label>
+                  <select
+                    id="dispatch-technician"
+                    aria-label="Select technician"
+                    className={SELECT_CLASS}
+                    value={selectedTechnicianId}
+                    onChange={(e) => setSelectedTechnicianId(e.target.value)}
+                  >
+                    <option value="">— assign later —</option>
+                    {technicians.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.full_name ?? t.email}
+                      </option>
+                    ))}
+                    {technicians.length === 0 && (
+                      <option value="" disabled>
+                        No technicians found
+                      </option>
+                    )}
+                  </select>
+                </div>
+
+                {selectedTech && (
+                  <div className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm">
+                    <p className="font-medium text-neutral-900">
+                      {selectedTech.full_name ?? selectedTech.email}
+                    </p>
+                    <p className="capitalize text-neutral-500">{selectedTech.role}</p>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={submitting || !selectedJobId}
+                  className="w-full"
+                >
+                  {submitting ? 'Dispatching…' : 'Dispatch Job'}
+                </Button>
+
+                {submitError && (
+                  <Alert variant="destructive" role="alert" className="mt-2">
+                    {submitError}
+                  </Alert>
+                )}
+              </form>
             )}
           </CardContent>
         </Card>
@@ -128,19 +247,28 @@ export const DispatchPage: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-neutral-500">ID</span>
-                <code className="rounded bg-neutral-100 px-1.5 py-0.5 text-xs">
-                  {displaySaga.saga_id}
-                </code>
-              </div>
-              <div className="flex items-center justify-between">
                 <span className="text-neutral-500">Status</span>
                 <SagaStatusBadge status={displaySaga.status} />
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-neutral-500">Current step</span>
+                <span className="text-neutral-500">Step</span>
                 <span className="font-medium text-neutral-900">{displaySaga.current_step}</span>
               </div>
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-500">Saga ID</span>
+                <code className="rounded bg-neutral-100 px-1.5 py-0.5 text-xs">
+                  {displaySaga.saga_id}
+                </code>
+              </div>
+              {displaySaga.status === 'done' && (
+                <Alert variant="success">
+                  Job dispatched — view it on the{' '}
+                  <a href="/routes" className="underline">
+                    Routes
+                  </a>{' '}
+                  page.
+                </Alert>
+              )}
               {displaySaga.last_error && (
                 <Alert variant="destructive">Last error: {displaySaga.last_error}</Alert>
               )}

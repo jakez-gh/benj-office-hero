@@ -22,6 +22,7 @@ import {
 } from '../api';
 import { Alert } from '../components/ui/Alert';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { useAutoRecover } from '../hooks/useAutoRecover';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
@@ -408,6 +409,11 @@ export const ContractsPage: React.FC = () => {
     });
   }, [debouncedSearch, statusFilter, load]);
 
+  const isNetworkError = !!error && /failed to fetch|network error/i.test(error);
+  useAutoRecover(isNetworkError, () => {
+    void load({ search: debouncedSearch || undefined, status: statusFilter || undefined, limit: 50 });
+  });
+
   const replaceRow = (updated: ContractRead) => {
     setContracts((prev) =>
       prev.map((c) =>
@@ -483,7 +489,7 @@ export const ContractsPage: React.FC = () => {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900">Contracts</h1>
           {!loading && (
@@ -492,7 +498,7 @@ export const ContractsPage: React.FC = () => {
             </p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Button
             variant="outline"
             onClick={() => void handleGenerate()}

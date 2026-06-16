@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   createCustomer,
   listCustomers,
   type CustomerCreate,
   type CustomerSummary,
 } from '@office-hero/api-client';
+import { useAutoRecover } from '../hooks/useAutoRecover';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Label } from '../components/ui/Label';
@@ -130,28 +131,23 @@ export function CustomersPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Fetch customers when debouncedSearch changes; loading starts true so no
-  // setState is called synchronously at effect top (satisfies react-hooks/set-state-in-effect)
-  useEffect(() => {
-    let cancelled = false;
-    listCustomers({ search: debouncedSearch || undefined })
-      .then(r => {
-        if (!cancelled) {
-          setCustomers(r.items);
-          setError(null);
-        }
-      })
-      .catch((e: unknown) => {
-        if (!cancelled)
-          setError(e instanceof Error ? e.message : String(e));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+  const load = useCallback(async (): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await listCustomers({ search: debouncedSearch || undefined });
+      setCustomers(r.items);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
   }, [debouncedSearch]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const isNetworkError = !!error && /failed to fetch|network error/i.test(error);
+  useAutoRecover(isNetworkError, () => void load());
 
   return (
     <div className="space-y-4">

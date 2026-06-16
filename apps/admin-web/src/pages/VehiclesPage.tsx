@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { listVehicles } from '@office-hero/api-client';
 import type { AdminVehicle } from '@office-hero/api-client';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { useAutoRecover } from '../hooks/useAutoRecover';
 import { Skeleton } from '../components/ui/Skeleton';
 import {
   Table,
@@ -41,28 +42,23 @@ export const VehiclesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async (): Promise<void> => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const data = await listVehicles();
-        if (!cancelled) setVehicles(data);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    void load();
-    return () => { cancelled = true; };
+  const load = useCallback(async (): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await listVehicles();
+      setVehicles(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const isNetworkError = !!error && /failed to fetch|network error/i.test(error);
+  useAutoRecover(isNetworkError, () => void load());
 
   if (loading) {
     return (
@@ -89,13 +85,15 @@ export const VehiclesPage: React.FC = () => {
 
       {error && <ErrorBanner error={error} />}
 
-      {!error && vehicles.length === 0 && (
+      {vehicles.length === 0 && !loading && (
         <div className="rounded-lg border border-dashed border-neutral-300 py-12 text-center">
-          <p className="text-neutral-500">No vehicles found.</p>
+          <p className="text-neutral-500">
+            {error ? 'Vehicles could not be loaded.' : 'No vehicles on record.'}
+          </p>
         </div>
       )}
 
-      {!error && vehicles.length > 0 && (
+      {vehicles.length > 0 && (
         <Table>
           <TableHeader>
             <TableRow>

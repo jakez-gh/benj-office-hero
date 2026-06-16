@@ -12,6 +12,7 @@ import {
 } from '../api';
 import { Alert } from '../components/ui/Alert';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { useAutoRecover } from '../hooks/useAutoRecover';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
@@ -428,6 +429,9 @@ export const RoutesPage: React.FC = () => {
   useEffect(() => {
     void load(workDate);
   }, [workDate, load]);
+
+  const isNetworkError = !!error && /failed to fetch|network error/i.test(error);
+  useAutoRecover(isNetworkError, () => void load(workDate));
 
   const vehicleName = (vehicleId: string): string => {
     const v = vehicles.find((x) => x.id === vehicleId);

@@ -19,7 +19,7 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({ error, className }) =>
   if (isNetworkError(error)) {
     return (
       <Alert variant="warning" className={cn('mb-4', className)}>
-        Backend not reachable — check that the server is running on port 8000.
+        Service temporarily unavailable — we'll reconnect automatically.
       </Alert>
     );
   }

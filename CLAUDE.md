@@ -1,5 +1,12 @@
 # Office Hero — Claude Code Instructions
 
+## Active Backlog (read this first)
+
+**`project-documents/user/tasks/020-tasks.ux-ci-backlog.md`** is the canonical
+backlog for all pending UX fixes, CI/CD automation, E2E tests, and the Dispatch
+page redesign. Open it at the start of every session and work top-to-bottom
+through unchecked items before picking up new slice work.
+
 ## Context Building (start here)
 
 Before implementing any slice, run:

@@ -22,6 +22,7 @@ import {
 } from '../api';
 import { Alert } from '../components/ui/Alert';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { useAutoRecover } from '../hooks/useAutoRecover';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
@@ -549,6 +550,11 @@ export const JobsPage: React.FC = () => {
       cancelled = true;
     };
   }, [debouncedSearch, statusFilter, load]);
+
+  const isNetworkError = !!error && /failed to fetch|network error/i.test(error);
+  useAutoRecover(isNetworkError, () => {
+    void load({ search: debouncedSearch || undefined, status: statusFilter || undefined, limit: 50 });
+  });
 
   const handleCreated = (job: JobSummary) => {
     setShowCreate(false);
