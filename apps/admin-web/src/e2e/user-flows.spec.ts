@@ -11,6 +11,33 @@ import { randomUUID } from 'node:crypto';
 const BACKEND = process.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 const TODAY = new Date().toISOString().slice(0, 10);
 
+async function apiGet<T>(ctx: SeedCtx, path: string): Promise<T> {
+  const resp = await ctx.api.get(`${BACKEND}${path}`, {
+    headers: {
+      'X-Test-Tenant-Id': ctx.tenantId,
+      'X-Test-User-Id': ctx.userId,
+      'X-Test-Role': 'operator',
+      'X-Test-Permissions': '*',
+    },
+  });
+  if (!resp.ok()) throw new Error(`GET ${path} → ${resp.status()}: ${await resp.text()}`);
+  return resp.json() as Promise<T>;
+}
+
+async function apiPostEmpty<T>(ctx: SeedCtx, path: string): Promise<T> {
+  const resp = await ctx.api.post(`${BACKEND}${path}`, {
+    data: {},
+    headers: {
+      'X-Test-Tenant-Id': ctx.tenantId,
+      'X-Test-User-Id': ctx.userId,
+      'X-Test-Role': 'operator',
+      'X-Test-Permissions': '*',
+    },
+  });
+  if (!resp.ok()) throw new Error(`POST ${path} → ${resp.status()}: ${await resp.text()}`);
+  return resp.json() as Promise<T>;
+}
+
 interface SeedCtx {
   tenantId: string;
   userId: string;
@@ -400,5 +427,105 @@ test.describe('Dispatch', () => {
     // Saga state card should appear
     await expect(page.getByText(/saga state/i)).toBeVisible({ timeout: 8000 });
     await expect(page.getByText(/running|done|failed/i)).toBeVisible({ timeout: 4000 });
+  });
+});
+
+// ── Route lifecycle ─────────────────────────────────────────────────────────
+
+test.describe('Route lifecycle', () => {
+  test('start route and complete a stop via API, verify UI reflects state', async ({ page, request }) => {
+    const tenantId = randomUUID();
+    const userId = randomUUID();
+    const ctx: SeedCtx = { tenantId, userId, api: request };
+
+    const cust = await apiPost<{ id: string }>(ctx, '/customers', { name: 'Lifecycle Co' });
+    const loc = await apiPost<{ id: string }>(ctx, `/customers/${cust.id}/locations`, {
+      street: '10 Lifecycle St', city: 'Portland', state: 'OR', postal_code: '97201',
+    });
+    const job = await apiPost<{ id: string }>(ctx, '/jobs', {
+      customer_id: cust.id, location_id: loc.id,
+      title: 'Lifecycle job', priority: 60, estimated_duration_min: 60,
+    });
+    const veh = await apiPost<{ id: string }>(ctx, '/vehicles', {
+      license_plate: 'LCY-001', make: 'Ford', model: 'Transit', year: 2022,
+    });
+    await apiPost(ctx, '/vehicle-crews', {
+      vehicle_id: veh.id, work_date: TODAY,
+      shift_start: '07:00:00', shift_end: '17:00:00',
+      members: [{ user_id: userId, role_on_crew: 'lead' }],
+    });
+    const dispatch = await apiPost<{ route_id: string }>(ctx, `/jobs/${job.id}/dispatch`, {
+      vehicle_id: veh.id, scheduled_for: new Date().toISOString(),
+      travel_seconds: 300, distance_meters: 2000,
+    });
+    const routeId = dispatch.route_id;
+
+    await injectAuth(page, tenantId, userId);
+    await page.goto('/routes');
+    await page.waitForLoadState('load');
+    await expect(page.getByTestId('route-card')).toBeVisible({ timeout: 10000 });
+
+    // Start the route via API
+    await apiPostEmpty(ctx, `/routes/${routeId}/start`);
+
+    // Reload and verify in_progress state
+    await page.reload();
+    await page.waitForLoadState('load');
+    await expect(page.getByTestId('route-card')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/in.?progress/i)).toBeVisible({ timeout: 4000 });
+
+    // Get stop ID to complete it
+    const route = await apiGet<{ stops: Array<{ id: string; job_id: string }> }>(ctx, `/routes/${routeId}`);
+    const stop = route.stops.find((s) => s.job_id === job.id);
+    if (stop) {
+      await apiPostEmpty(ctx, `/routes/${routeId}/stops/${stop.id}/arrived`);
+      await apiPostEmpty(ctx, `/routes/${routeId}/stops/${stop.id}/complete`);
+    }
+
+    // Reload and verify stop shows complete
+    await page.reload();
+    await page.waitForLoadState('load');
+    await expect(page.getByTestId('route-stop').first()).toBeVisible({ timeout: 8000 });
+    await expect(page.getByTestId('route-stop').first().getByText(/complete/i)).toBeVisible({ timeout: 4000 });
+  });
+});
+
+// ── Contract → job generation ────────────────────────────────────────────────
+
+test.describe('Contract job generation', () => {
+  test('generate due jobs from a contract and verify they appear in Jobs', async ({ page, request }) => {
+    const tenantId = randomUUID();
+    const userId = randomUUID();
+    const ctx: SeedCtx = { tenantId, userId, api: request };
+
+    const cust = await apiPost<{ id: string }>(ctx, '/customers', { name: 'Gen Co' });
+    const loc = await apiPost<{ id: string }>(ctx, `/customers/${cust.id}/locations`, {
+      street: '11 Generate Ave', city: 'Portland', state: 'OR', postal_code: '97201',
+    });
+    // start_date = today so next_due = today and generation should produce a job
+    await apiPost(ctx, '/contracts', {
+      customer_id: cust.id, location_id: loc.id,
+      title: 'Weekly pest inspection', frequency: 'weekly',
+      start_date: TODAY, service_type: 'Pest inspection',
+      estimated_duration_min: 60,
+    });
+
+    await injectAuth(page, tenantId, userId);
+    await page.goto('/contracts');
+    await page.waitForLoadState('load');
+
+    await expect(page.getByText('Weekly pest inspection')).toBeVisible({ timeout: 8000 });
+
+    // Click "Generate due jobs"
+    await page.getByRole('button', { name: /generate due jobs/i }).click();
+
+    // A success alert should appear
+    await expect(page.getByRole('alert')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(/created|job/i)).toBeVisible({ timeout: 4000 });
+
+    // Navigate to Jobs and verify the generated job appears
+    await page.goto('/jobs');
+    await page.waitForLoadState('load');
+    await expect(page.getByText(/pest inspection/i)).toBeVisible({ timeout: 8000 });
   });
 });

@@ -1,0 +1,174 @@
+name: Demo Videos
+
+# Records Playwright demo-flow videos (RECORD_VIDEO=1) with a live backend +
+# PostgreSQL, then uploads them as workflow artifacts.
+#
+# Triggers:
+#   - Nightly at 02:00 UTC (off-peak)
+#   - Push to main that touches the backend or admin-web
+#   - Manual dispatch
+#
+# Videos are uploaded as `demo-videos` artifacts (retention: 30 days).
+# They are NOT committed — download from the Actions run page to review.
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "apps/admin-web/**"
+      - "packages/**"
+      - "alembic/**"
+      - ".github/workflows/demo-videos.yml"
+  workflow_dispatch:
+
+jobs:
+  record:
+    name: Record demo videos
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: office_hero
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/office_hero
+      APP_ENV: test
+      OFFICE_HERO_TEST_AUTH: "1"
+      ORS_API_KEY: stub
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: pipx install poetry==1.8.3
+
+      - name: Configure Poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-py3.11-poetry-${{ hashFiles('poetry.lock') }}-demo
+          restore-keys: |
+            ${{ runner.os }}-py3.11-poetry-
+
+      - name: Install Python dependencies
+        run: poetry install --with dev --no-interaction
+
+      - name: Install psycopg for Alembic (sync migrations)
+        run: pip install "psycopg[binary]>=3.1"
+
+      - name: Generate JWT key pair (CI only)
+        run: |
+          openssl genrsa -out /tmp/private.pem 2048
+          openssl rsa -in /tmp/private.pem -pubout -out /tmp/public.pem
+          # Export single-line env vars that pydantic-settings accepts
+          JWT_PRIVATE_KEY=$(awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' /tmp/private.pem)
+          JWT_PUBLIC_KEY=$(awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' /tmp/public.pem)
+          echo "JWT_PRIVATE_KEY=$JWT_PRIVATE_KEY" >> "$GITHUB_ENV"
+          echo "JWT_PUBLIC_KEY=$JWT_PUBLIC_KEY" >> "$GITHUB_ENV"
+          echo "JWT_ALGORITHM=RS256" >> "$GITHUB_ENV"
+          echo "ACCESS_TOKEN_EXPIRE_MINUTES=30" >> "$GITHUB_ENV"
+          echo "REFRESH_TOKEN_EXPIRE_DAYS=7" >> "$GITHUB_ENV"
+
+      - name: Run Alembic migrations
+        run: poetry run alembic upgrade head
+
+      - name: Start backend (background)
+        run: |
+          poetry run uvicorn office_hero.main:app \
+            --host 127.0.0.1 --port 8000 --log-level warning &
+          echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
+
+      - name: Wait for backend health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8000/health; then
+              echo "Backend ready after ${i}s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not start in 60s" && exit 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: apps/admin-web
+        run: npx playwright install --with-deps chromium
+
+      - name: Record demo videos
+        working-directory: apps/admin-web
+        env:
+          RECORD_VIDEO: "1"
+          DEMO_BACKEND: "1"
+          VITE_API_BASE_URL: "http://127.0.0.1:8000"
+        run: |
+          npx playwright test src/e2e/demo-flows.spec.ts \
+            --project=chromium \
+            --reporter=line \
+            --timeout=120000
+        continue-on-error: true
+
+      - name: Upload demo videos
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-videos-${{ github.sha }}
+          path: |
+            apps/admin-web/test-results/**/*.webm
+            apps/admin-web/test-results/**/*.mp4
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-playwright-report
+          path: apps/admin-web/playwright-report/
+          retention-days: 7
