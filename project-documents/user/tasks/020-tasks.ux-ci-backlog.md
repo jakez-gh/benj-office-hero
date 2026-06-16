@@ -36,14 +36,14 @@ architecture docs.
 
 ## Priority 2 — Loading & Progress Indicators
 
-- [ ] **Consistent skeleton loaders** — Every list/table page (Jobs, Contracts,
-  Routes, Vehicles, Users, Customers) should show skeleton rows while the
-  initial fetch is in flight. Confirm each page renders skeletons before the
-  first API response (not just a blank area or spinner).
+- [x] **Consistent skeleton loaders** — All 6 data pages (Jobs, Contracts,
+  Routes, Vehicles, Users, Customers) already render 3–5 `<Skeleton>` rows
+  while the initial fetch is in flight. Confirmed by code review (2026-06-16).
 
-- [ ] **Inline action feedback** — Buttons that trigger mutations (Dispatch Job,
-  Generate due jobs, route start/complete, etc.) should disable themselves and
-  show a spinner/loading text while the request is in flight. No silent no-ops.
+- [x] **Inline action feedback** — Every mutation button already disables
+  itself and shows loading text ("Dispatching…", "Generating…", "Creating…",
+  "Saving…", etc.) while in-flight. Confirmed by code review (2026-06-16).
+  No silent no-ops found.
 
 - [ ] **Full-page transition** — When navigating between pages, if data takes
   >200 ms to load, show a top-of-page progress bar (e.g. NProgress or Tailwind
