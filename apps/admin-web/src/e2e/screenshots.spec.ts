@@ -80,7 +80,20 @@ for (const [viewport, size] of Object.entries(VIEWPORTS)) {
         });
         // Outlast the pages' 300ms search debounce and Vite dynamic-import
         // chunk loading so the post-load re-render can't race the capture.
-        await page.waitForTimeout(1200);
+        await page.waitForTimeout(300);
+        // For authenticated pages every API call is aborted above, so the page
+        // will always end up in an error state. Wait for the error banner to
+        // appear before capturing — this eliminates the skeleton-vs-error race
+        // on slow machines without needing a fixed wall-clock timeout.
+        if (route.auth) {
+          await page.waitForSelector('[role="alert"]', {
+            state: 'visible',
+            timeout: 4000,
+          }).catch(() => {
+            // Page settled without an alert (e.g. Dispatch shows inline errors).
+            // Fall through and capture whatever is rendered.
+          });
+        }
         await page.screenshot({
           path: path.join(SCREENSHOT_DIR, viewport, `${route.name}.png`),
           fullPage: true,
