@@ -84,11 +84,11 @@ architecture docs.
   `screenshots-seeded.spec.ts` that seeds a tenant, creates sample data, and
   captures screenshots of the app with real data visible.
 
-- [ ] **Demo videos in CI** — `demo-flows.spec.ts` currently requires
-  `DEMO_BACKEND=1 RECORD_VIDEO=on` to be set manually. Add a GitHub Actions
-  workflow (`.github/workflows/demo-videos.yml`) that runs nightly (or on
-  main push) with these env vars, uploads the `.webm` files as artifacts, and
-  optionally converts them to GIF/MP4 for embedding in docs.
+- [x] **Demo videos in CI** — `.github/workflows/demo-videos.yml` added
+  (2026-06-16). Triggers: nightly 02:00 UTC + push to main. Spins up Postgres
+  16 service, runs Alembic migrations, starts uvicorn, records
+  `demo-flows.spec.ts` with `RECORD_VIDEO=1`, uploads `.webm`/`.mp4` as
+  `demo-videos-{sha}` artifacts (30d retention).
 
 - [ ] **Screenshot diff in PR** — Add a GitHub Actions step that runs the shell
   screenshot spec on every PR and posts a comment with any changed screenshots
@@ -111,11 +111,14 @@ architecture docs.
 
 **Still to add:**
 
-- [ ] **Route lifecycle test** — Start route → arrive at stop → complete stop
-  → verify job status changes to `completed`.
+- [x] **Route lifecycle test** — Start route via API → reload Routes page →
+  verify `in_progress` badge → complete stop via API → reload → verify stop
+  shows `complete`. (`user-flows.spec.ts` — "Route lifecycle" suite, 2026-06-16)
 
-- [ ] **Contract → job generation** — Create contract → "Generate due jobs" →
-  verify jobs appear in Jobs list.
+- [x] **Contract → job generation** — Create contract with `start_date=TODAY`
+  → navigate to Contracts → click "Generate due jobs" → navigate to Jobs →
+  verify generated job appears. (`user-flows.spec.ts` — "Contract job
+  generation" suite, 2026-06-16)
 
 ---
 
