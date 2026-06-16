@@ -1,0 +1,171 @@
+name: Screenshot diff
+
+# Captures UI screenshots on every PR that touches the frontend and posts a
+# comment listing any that changed vs. the base branch. Reviewers can download
+# the "pr-screenshots" artifact to compare side-by-side without checking out.
+#
+# The spec runs without a backend (API calls are intercepted/aborted), so no
+# database or Python environment is needed here.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/admin-web/**'
+      - 'packages/**'
+      - '.github/workflows/screenshot-diff.yml'
+
+jobs:
+  screenshot-diff:
+    name: Capture UI screenshots and diff vs. main
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write   # needed to post the summary comment
+      contents: read
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          lfs: true           # fetch committed screenshots for comparison
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Node dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: apps/admin-web
+        run: npx playwright install --with-deps chromium
+
+      - name: Capture PR screenshots
+        working-directory: apps/admin-web
+        env:
+          SCREENSHOT_DIR: /tmp/pr-screenshots
+        run: |
+          npx playwright test src/e2e/screenshots.spec.ts \
+            --project=chromium \
+            --reporter=line \
+            --timeout=60000
+
+      - name: Diff screenshots vs. committed baseline
+        id: diff
+        shell: bash
+        run: |
+          COMMITTED="apps/admin-web/screenshots"
+          CAPTURED="/tmp/pr-screenshots"
+          CHANGED=()
+          MISSING=()
+
+          for f in "$COMMITTED"/**/*.png; do
+            rel="${f#$COMMITTED/}"
+            cap="$CAPTURED/$rel"
+            if [ ! -f "$cap" ]; then
+              MISSING+=("$rel")
+            elif ! cmp -s "$f" "$cap"; then
+              CHANGED+=("$rel")
+            fi
+          done
+
+          # New screenshots (in PR but not yet committed to baseline)
+          NEW=()
+          for f in "$CAPTURED"/**/*.png; do
+            rel="${f#$CAPTURED/}"
+            if [ ! -f "$COMMITTED/$rel" ]; then
+              NEW+=("$rel")
+            fi
+          done
+
+          echo "changed=${#CHANGED[@]}" >> "$GITHUB_OUTPUT"
+          echo "missing=${#MISSING[@]}" >> "$GITHUB_OUTPUT"
+          echo "new=${#NEW[@]}" >> "$GITHUB_OUTPUT"
+
+          # Write the summary to a file for the comment step
+          {
+            if [ ${#CHANGED[@]} -eq 0 ] && [ ${#NEW[@]} -eq 0 ] && [ ${#MISSING[@]} -eq 0 ]; then
+              echo "All screenshots match the baseline — no visual changes detected."
+            else
+              echo "**Visual changes detected in this PR:**"
+              echo ""
+              if [ ${#CHANGED[@]} -gt 0 ]; then
+                echo "**Changed (${#CHANGED[@]}):**"
+                for f in "${CHANGED[@]}"; do echo "- \`$f\`"; done
+                echo ""
+              fi
+              if [ ${#NEW[@]} -gt 0 ]; then
+                echo "**New (${#NEW[@]}):**"
+                for f in "${NEW[@]}"; do echo "- \`$f\`"; done
+                echo ""
+              fi
+              if [ ${#MISSING[@]} -gt 0 ]; then
+                echo "**Missing from PR capture (${#MISSING[@]}):**"
+                for f in "${MISSING[@]}"; do echo "- \`$f\`"; done
+                echo ""
+              fi
+              echo "_Download the **pr-screenshots** artifact to compare side-by-side with the baseline in \`apps/admin-web/screenshots/\`._"
+            fi
+          } > /tmp/screenshot-diff-comment.md
+
+          cat /tmp/screenshot-diff-comment.md
+
+      - name: Post PR comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('/tmp/screenshot-diff-comment.md', 'utf8');
+            const marker = '<!-- screenshot-diff-bot -->';
+            const fullBody = `${marker}\n## UI screenshot diff\n\n${body}`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: fullBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: fullBody,
+              });
+            }
+
+      - name: Upload PR screenshots artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-screenshots-${{ github.event.pull_request.number }}
+          path: /tmp/pr-screenshots/
+          if-no-files-found: warn
+          retention-days: 14

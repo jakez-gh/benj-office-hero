@@ -94,10 +94,11 @@ architecture docs.
   `demo-flows.spec.ts` with `RECORD_VIDEO=1`, uploads `.webm`/`.mp4` as
   `demo-videos-{sha}` artifacts (30d retention).
 
-- [ ] **Screenshot diff in PR** — Add a GitHub Actions step that runs the shell
-  screenshot spec on every PR and posts a comment with any changed screenshots
-  as an image diff, so reviewers can see UI changes without checking out the
-  branch.
+- [x] **Screenshot diff in PR** — `.github/workflows/screenshot-diff.yml`
+  added (2026-06-16). Triggers on PRs touching `apps/admin-web/**`. Runs
+  offline screenshot spec (chromium), diffs vs committed baseline via `cmp`,
+  posts/updates a sticky PR comment listing changed/new/missing screenshots,
+  uploads `pr-screenshots-{PR#}` artifact (14d) for side-by-side comparison.
 
 ---
 
