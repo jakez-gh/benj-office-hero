@@ -1,4 +1,8 @@
 ---
+id: CON-001
+type: concept
+parent: null
+status: complete
 layer: project
 phase: 1
 phaseName: concept
@@ -7,10 +11,10 @@ audience: [human, ai]
 description: Concept for Office Hero
 dependsOn: []
 dateCreated: 20260308
-dateUpdated: 20260308
-status: complete
+dateUpdated: 20260617
 docType: concept
-project: office-hero---
+project: office-hero
+---
 
 # Office Hero
 

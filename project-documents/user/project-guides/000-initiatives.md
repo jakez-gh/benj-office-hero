@@ -1,4 +1,8 @@
 ---
+id: INIT-001
+type: initiative
+parent: SPEC-001
+status: active
 docType: reference
 layer: project
 audience: [human, ai]

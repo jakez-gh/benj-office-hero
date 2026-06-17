@@ -1,4 +1,8 @@
 ---
+id: SPEC-001
+type: spec
+parent: CON-001
+status: complete
 layer: project
 phase: 2
 phaseName: spec
@@ -7,9 +11,9 @@ audience: [human, ai]
 description: Specification for Office Hero
 dependsOn: [001-concept.office-hero.md]
 dateCreated: 20260308
-dateUpdated: 20260308
-status: complete
-docType: spec---
+dateUpdated: 20260617
+docType: spec
+---
 
 # Office Hero — Specification
 
