@@ -142,10 +142,13 @@ intuitive for the target user (office dispatcher). Key observations:
 
 **Still worth considering:**
 
-- [ ] **Onboarding checklist widget** — "Getting started" banner for a new
+- [x] **Onboarding checklist widget** — "Getting started" banner for a new
   tenant with 0 customers: ① Add a customer → ② Add a vehicle → ③ Create a
   job → ④ Schedule it. Dismiss once first job is dispatched. Low-code; high
   value for first-run experience.
+  **Implemented 2026-06-17**: `OnboardingChecklist.tsx` + `OnboardingChecklist.test.tsx`
+  (6 tests). Mounted in `NavShell`. Auto-dismisses when any dispatched job exists;
+  persists in `localStorage`. Hides when all 3 setup steps complete.
 
 - [ ] **Route reorder UX** — The hint text ("Use ↑↓ to reorder") is subtle.
   If user research shows confusion, promote to a `CardDescription` or add a
