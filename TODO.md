@@ -33,9 +33,9 @@ dead-letter UI in admin panel.
 
 Gated on Slices 17–22 being stable (all complete).
 
-- [ ] Playwright: Firefox + WebKit coverage (Chromium already covered)
-- [ ] API pytest suite against live Fly.io test environment
-- [ ] MCP tool discovery + auth passthrough tests
+- [x] Playwright: Firefox + WebKit already in `playwright.config.ts`; CI runs all three on main pushes
+- [ ] API pytest suite against live Fly.io test environment (needs live env secrets)
+- [ ] MCP tool discovery + auth passthrough tests (needs live env)
 - [ ] Android Maestro tests (requires AVD — DEV-01 in `950-tasks.maintenance.md`)
 - [ ] iOS Maestro tests (requires macOS + Xcode — DEV-02, deferred)
 
