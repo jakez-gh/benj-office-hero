@@ -66,6 +66,7 @@ function useVehicleLocation(
   const [location, setLocation] = useState<VehicleLocationResponse | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!enabled) { setLocation(null); return; }
     let cancelled = false;
     const poll = async () => {

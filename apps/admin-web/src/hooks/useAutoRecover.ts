@@ -10,6 +10,7 @@ const BASE_URL =
  */
 export function useAutoRecover(isNetworkError: boolean, onRecover: () => void): void {
   const callbackRef = useRef(onRecover);
+  // eslint-disable-next-line react-hooks/refs
   callbackRef.current = onRecover;
 
   useEffect(() => {

@@ -158,7 +158,7 @@ test.describe('Demo flows', () => {
     const ctx: SeedCtx = { tenantId, userId, api: request };
 
     // Seed data before browser opens
-    const { job1, job2, veh, routeId, contract: _c } = await seedScenario(ctx);
+    const { cust, loc, job2, routeId, contract: _c } = await seedScenario(ctx);
     void [job2, _c]; // referenced for completeness
 
     await injectAuth(page, tenantId, userId);
@@ -195,7 +195,7 @@ test.describe('Demo flows', () => {
     await pause(1500);
 
     // — Dispatch page (new dropdown UI) —
-    // Create an extra pending job for this demo — job1/job2 are already scheduled above.
+    // Create an extra pending job — the two seeded jobs are already scheduled above.
     const pendingJob = await apiPost<{ id: string }>(ctx, '/jobs', {
       customer_id: cust.id, location_id: loc.id,
       title: 'Emergency repair call', service_type: 'Emergency',

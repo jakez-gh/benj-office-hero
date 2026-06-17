@@ -11,3 +11,21 @@ body {
   from { transform: scaleX(0); }
   to   { transform: scaleX(0.8); }
 }
+
+.nav-progress-loading {
+  transform-origin: left;
+  animation: nav-progress-advance 550ms ease-out forwards;
+}
+
+.nav-progress-complete {
+  transform-origin: left;
+  transform: scaleX(1);
+  transition: transform 150ms ease-out;
+}
+
+.nav-progress-fading {
+  transform-origin: left;
+  transform: scaleX(1);
+  opacity: 0;
+  transition: opacity 300ms ease-out;
+}

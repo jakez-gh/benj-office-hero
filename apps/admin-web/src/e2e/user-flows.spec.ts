@@ -81,7 +81,7 @@ test.setTimeout(90_000);
 // ── Customer flows ──────────────────────────────────────────────────────────
 
 test.describe('Customers', () => {
-  test('create customer via modal and verify it appears', async ({ page, request }) => {
+  test('create customer via modal and verify it appears', async ({ page }) => {
     const tenantId = randomUUID();
     const userId = randomUUID();
     await injectAuth(page, tenantId, userId);
@@ -282,7 +282,7 @@ test.describe('Routes', () => {
     await manualCheckbox.check();
 
     // Select the seeded vehicle
-    await page.locator('#manual-vehicle').selectOption({ label: /MAN-001/i });
+    await page.locator('#manual-vehicle').selectOption({ label: 'MAN-001' });
 
     // Set start time to tomorrow 09:00
     const tomorrow = new Date();
@@ -302,7 +302,7 @@ test.describe('Routes', () => {
 // ── Vehicles flows ──────────────────────────────────────────────────────────
 
 test.describe('Vehicles', () => {
-  test('empty state visible when no vehicles exist', async ({ page, request }) => {
+  test('empty state visible when no vehicles exist', async ({ page }) => {
     const tenantId = randomUUID();
     const userId = randomUUID();
     await injectAuth(page, tenantId, userId);

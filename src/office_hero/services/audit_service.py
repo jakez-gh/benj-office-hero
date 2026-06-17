@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import text
@@ -61,3 +62,63 @@ class AuditService:
             tenant_id=str(tenant_id),
             user_id=str(user_id) if user_id else None,
         )
+
+    async def list_events(
+        self,
+        session: AsyncSession,
+        *,
+        tenant_id: str | None = None,
+        event_type: str | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[dict[str, Any]], int]:
+        """Return a paginated slice of audit events with an accurate total count.
+
+        Returns:
+            (items, total) where items is a list of row dicts and total is the
+            unfiltered-by-pagination count matching the filter predicates.
+        """
+        filters: list[str] = []
+        params: dict[str, Any] = {"limit": limit, "offset": offset}
+
+        if tenant_id is not None:
+            filters.append("tenant_id = :tenant_id")
+            params["tenant_id"] = tenant_id
+        if event_type is not None:
+            filters.append("event_type = :event_type")
+            params["event_type"] = event_type
+
+        where = f"WHERE {' AND '.join(filters)}" if filters else ""
+
+        count_result = await session.execute(
+            text(f"SELECT count(*) FROM audit_events {where}"),
+            params,
+        )
+        total: int = count_result.scalar_one()
+
+        rows_result = await session.execute(
+            text(
+                f"SELECT id, timestamp, tenant_id, user_id, event_type, details, request_id "
+                f"FROM audit_events {where} "
+                f"ORDER BY timestamp DESC "
+                f"LIMIT :limit OFFSET :offset"
+            ),
+            params,
+        )
+        items = [
+            {
+                "id": str(row.id),
+                "timestamp": row.timestamp.isoformat() if row.timestamp else None,
+                "tenant_id": str(row.tenant_id),
+                "user_id": str(row.user_id) if row.user_id else None,
+                "event_type": row.event_type,
+                "details": (
+                    row.details
+                    if isinstance(row.details, dict)
+                    else json.loads(row.details or "{}")
+                ),
+                "request_id": str(row.request_id) if row.request_id else None,
+            }
+            for row in rows_result.mappings()
+        ]
+        return items, total

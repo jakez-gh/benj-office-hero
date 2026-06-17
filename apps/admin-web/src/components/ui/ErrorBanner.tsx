@@ -19,7 +19,7 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({ error, className }) =>
   if (isNetworkError(error)) {
     return (
       <Alert variant="warning" className={cn('mb-4', className)}>
-        Service temporarily unavailable — we'll reconnect automatically.
+        Service temporarily unavailable &mdash; we&rsquo;ll reconnect automatically.
       </Alert>
     );
   }

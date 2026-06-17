@@ -24,7 +24,10 @@ from pydantic import BaseModel
 from office_hero.api.deps import require_role
 from office_hero.core.roles import Role
 from office_hero.repositories.protocols import OutboxRepository
+from office_hero.services.audit_service import AuditService
 from office_hero.services.saga_service import SagaService
+
+_audit_service = AuditService()
 
 logger = logging.getLogger(__name__)
 
@@ -118,19 +121,26 @@ async def list_audit_events(
 
     Returns paginated audit events from the append-only audit_events table.
     Supports filtering by event_type and tenant_id for efficient admin
-    investigation.
-
-    **Note:** DB-backed query wired when async session is available in
-    the admin dependency. Returns an empty result set until then.
+    investigation. Falls back to an empty result set when no database engine
+    is available (e.g. unit-test environments that use in-memory repositories).
     """
-    # TODO: Wire real DB query via AuditService when session is injected.
-    # For now, return the contract shape so the admin panel can bind to it.
-    return {
-        "items": [],
-        "total": 0,
-        "limit": limit,
-        "offset": offset,
-    }
+    try:
+        from office_hero.api.state import get_engine
+        from office_hero.db.session import get_session
+
+        engine = get_engine()
+        async with get_session(engine) as session:
+            items, total = await _audit_service.list_events(
+                session,
+                tenant_id=tenant_id,
+                event_type=event_type,
+                limit=limit,
+                offset=offset,
+            )
+    except RuntimeError:
+        items, total = [], 0
+
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 
 # ---------------------------------------------------------------------------

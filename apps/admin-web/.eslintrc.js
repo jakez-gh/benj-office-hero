@@ -31,4 +31,13 @@ module.exports = {
     'demo-recording.ts',
     'playwright.config.ts',
   ],
+  overrides: [
+    {
+      files: ['src/e2e/**/*.ts'],
+      parserOptions: {
+        project: './src/e2e/tsconfig.json',
+        tsconfigRootDir: __dirname,
+      },
+    },
+  ],
 };
