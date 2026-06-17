@@ -78,30 +78,33 @@ class AuditService:
             (items, total) where items is a list of row dicts and total is the
             unfiltered-by-pagination count matching the filter predicates.
         """
-        filters: list[str] = []
-        params: dict[str, Any] = {"limit": limit, "offset": offset}
+        params: dict[str, Any] = {
+            "limit": limit,
+            "offset": offset,
+            "tenant_id": tenant_id,
+            "event_type": event_type,
+        }
 
-        if tenant_id is not None:
-            filters.append("tenant_id = :tenant_id")
-            params["tenant_id"] = tenant_id
-        if event_type is not None:
-            filters.append("event_type = :event_type")
-            params["event_type"] = event_type
-
-        where = f"WHERE {' AND '.join(filters)}" if filters else ""
-
+        # NULL-safe predicates avoid f-string SQL construction.
+        # When a filter param is None, the condition is always TRUE.
         count_result = await session.execute(
-            text(f"SELECT count(*) FROM audit_events {where}"),
+            text(
+                "SELECT count(*) FROM audit_events"
+                " WHERE (:tenant_id IS NULL OR tenant_id::text = :tenant_id)"
+                " AND (:event_type IS NULL OR event_type = :event_type)"
+            ),
             params,
         )
         total: int = count_result.scalar_one()
 
         rows_result = await session.execute(
             text(
-                f"SELECT id, timestamp, tenant_id, user_id, event_type, details, request_id "
-                f"FROM audit_events {where} "
-                f"ORDER BY timestamp DESC "
-                f"LIMIT :limit OFFSET :offset"
+                "SELECT id, timestamp, tenant_id, user_id, event_type, details, request_id"
+                " FROM audit_events"
+                " WHERE (:tenant_id IS NULL OR tenant_id::text = :tenant_id)"
+                " AND (:event_type IS NULL OR event_type = :event_type)"
+                " ORDER BY timestamp DESC"
+                " LIMIT :limit OFFSET :offset"
             ),
             params,
         )
