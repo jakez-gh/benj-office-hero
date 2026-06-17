@@ -49,7 +49,7 @@ describe('UsersPage', () => {
     render(<UsersPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('No users found.')).toBeInTheDocument();
+      expect(screen.getByText('No users on record.')).toBeInTheDocument();
     });
   });
 

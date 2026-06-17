@@ -67,7 +67,7 @@ describe('VehiclesPage', () => {
     render(<VehiclesPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('No vehicles found.')).toBeInTheDocument();
+      expect(screen.getByText('No vehicles on record.')).toBeInTheDocument();
     });
   });
 
