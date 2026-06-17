@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "^[Cc]ontinue",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /c/Users/jake/Documents/src/github/apps/benj-office-hero && echo '=== Project State ===' && cf status 2>&1 && echo '' && echo '=== Open Work Index ===' && head -80 project-documents/user/tasks/951-tasks.open-work.md 2>&1 && echo '' && echo '=== Git Status ===' && git status --short 2>&1"
+          }
+        ]
+      }
+    ]
+  }
+}

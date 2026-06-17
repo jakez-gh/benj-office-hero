@@ -1,13 +1,32 @@
 # Office Hero — Claude Code Instructions
 
-## Active Backlog (read this first)
+## Session Start (run these first)
 
-**`project-documents/user/tasks/020-tasks.ux-ci-backlog.md`** is the canonical
-backlog for all pending UX fixes, CI/CD automation, E2E tests, and the Dispatch
-page redesign. Open it at the start of every session and work top-to-bottom
-through unchecked items before picking up new slice work.
+Run `/session-start` (or manually):
 
-## Context Building (start here)
+```bash
+cf status          # phase, active tasks file, date
+cf next            # recommended next action
+```
+
+Then read:
+
+**`project-documents/user/tasks/951-tasks.open-work.md`** — the canonical index
+of ALL remaining work. Updated at the end of every session. Start here. Work
+top-to-bottom. Do not skip to a blocked item when a ready item exists above it.
+
+Supporting detail files (read when implementing the relevant item):
+
+- `project-documents/user/tasks/020-tasks.ux-ci-backlog.md` — UX/CI backlog
+  detail (Priority 1–6 complete; 1 open item: Route reorder UX hint)
+- `project-documents/user/tasks/010-tasks.mobile-scaffold.md` — Slice 6 detail
+- `project-documents/user/slices/007a-slice.operator-dashboard.md` — Slice 7a
+  design (not yet written; write it before implementing)
+
+**After completing any task**, update `951-tasks.open-work.md` — move the item
+to `[x]` or remove it, and add any newly-identified work.
+
+## Context Building (for slice work)
 
 Before implementing any slice, run:
 
@@ -16,13 +35,6 @@ cf build
 ```
 
 This generates a focused context document from the active slice design, architecture, and task list. Do not start coding without it.
-
-To check current project state:
-
-```bash
-cf status
-cf next
-```
 
 ## Code Review (required before every merge)
 
