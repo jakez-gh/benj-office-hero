@@ -1,7 +1,7 @@
 ---
 slice: dynamic-rerouting
 project: office-hero
-lld: user/slices/025-slice.dynamic-rerouting.md
+lld: ../slices/025-slice.dynamic-rerouting.md
 dependencies: [12, 13, 14]
 projectState: >
   Dynamic re-routing fully implemented. DynamicDispatchService handles

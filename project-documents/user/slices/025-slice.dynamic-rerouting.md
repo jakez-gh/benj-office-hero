@@ -4,7 +4,7 @@ parent: ../project-guides/003-slices.office-hero.md
 project: office-hero
 dateCreated: 20260613
 dateUpdated: 20260613
-status: in_progress
+status: complete
 slice: dynamic-rerouting
 ---
 
