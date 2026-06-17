@@ -45,6 +45,7 @@ export function OnboardingChecklist() {
 
   useEffect(() => {
     if (dismissed) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh();
   }, [dismissed, refresh]);
 
@@ -95,6 +96,7 @@ export function OnboardingChecklist() {
           </ol>
         </div>
         <button
+          type="button"
           onClick={dismiss}
           aria-label="Dismiss getting started guide"
           className="text-blue-400 hover:text-blue-600"

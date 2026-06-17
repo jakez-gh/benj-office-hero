@@ -5,7 +5,7 @@ import { Button } from './ui/Button';
 import { PageProgressBar } from './ui/PageProgressBar';
 import { OnboardingChecklist } from './OnboardingChecklist';
 
-const navItems = [
+const BASE_NAV = [
   { to: '/jobs',      label: 'Jobs'      },
   { to: '/contracts', label: 'Contracts' },
   { to: '/routes',    label: 'Routes'    },
@@ -16,7 +16,10 @@ const navItems = [
 ];
 
 export const NavShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const { logout } = useContext(AuthContext);
+  const { logout, user } = useContext(AuthContext);
+  const navItems = user?.role === 'operator'
+    ? [...BASE_NAV, { to: '/operator', label: 'Operator' }]
+    : BASE_NAV;
 
   return (
     <div className="min-h-screen bg-neutral-50">

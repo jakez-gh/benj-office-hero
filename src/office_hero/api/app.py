@@ -24,7 +24,7 @@ from office_hero.api.middleware.logging import LoggingMiddleware
 from office_hero.api.middleware.security_headers import SecurityHeadersMiddleware
 from office_hero.api.middleware.test_auth import TestAuthMiddleware, test_auth_enabled
 from office_hero.api.routes import auth, health
-from office_hero.api.routes.admin import audit_router, create_admin_router
+from office_hero.api.routes.admin import audit_router, create_admin_router, rate_limits_router
 from office_hero.api.routes.contracts import create_contract_router
 from office_hero.api.routes.customers import create_customer_router
 from office_hero.api.routes.dispatch import create_dispatch_router
@@ -430,6 +430,7 @@ def create_app(
     )
     application.include_router(admin_router, prefix="/admin", tags=["admin"])
     application.include_router(audit_router, prefix="/admin", tags=["admin"])
+    application.include_router(rate_limits_router, prefix="/admin", tags=["admin"])
 
     customer_router = create_customer_router(
         service_provider=lambda: customer_service,

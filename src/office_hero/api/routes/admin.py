@@ -1,25 +1,30 @@
-"""Admin routes for dead-letter, saga management, and audit events.
+"""Admin routes for dead-letter, saga management, audit events, and rate-limit/ban control.
 
 Provides:
-    - GET  /admin/audit-events             - paginated audit event listing
-    - GET  /admin/dead-letters             - list dead-letter outbox events (Operator only)
-    - POST /admin/dead-letters/{event_id}/retry - reset dead-letter to pending (Operator only)
-    - GET  /admin/sagas/{saga_id}/logs     - retrieve saga execution history (Operator only)
+    - GET    /admin/audit-events              - paginated audit event listing
+    - GET    /admin/rate-limits               - list configured rate limits (Operator only)
+    - PATCH  /admin/rate-limits/{name}        - upsert a rate limit (Operator only)
+    - GET    /admin/ban-filters               - list ban entries (Operator only)
+    - POST   /admin/ban-filters               - add a ban entry (Operator only)
+    - DELETE /admin/ban-filters/{id}          - remove a ban entry (Operator only)
+    - GET    /admin/dead-letters              - list dead-letter outbox events (Operator only)
+    - POST   /admin/dead-letters/{event_id}/retry - reset dead-letter to pending (Operator only)
+    - GET    /admin/sagas/{saga_id}/logs      - retrieve saga execution history (Operator only)
 
 The dead-letter and saga routes are exposed via a factory (``create_admin_router``)
 so that ``SagaService`` and ``OutboxRepository`` can be injected at app construction
-time. Audit-events is a module-level router because it currently returns a static
-contract shape (DB wiring lands when the admin async session is available).
+time. Module-level routers (audit, rate-limits/bans) don't need injected dependencies.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 from pydantic import BaseModel
+from sqlalchemy import text
 
 from office_hero.api.deps import require_role
 from office_hero.core.roles import Role
@@ -141,6 +146,226 @@ async def list_audit_events(
         items, total = [], 0
 
     return {"items": items, "total": total, "limit": limit, "offset": offset}
+
+
+# ---------------------------------------------------------------------------
+# Rate limits & ban filters (Slice 7a)
+# ---------------------------------------------------------------------------
+
+_RATE_LIMIT_DEFAULTS: list[dict[str, Any]] = [
+    {"name": "auth", "limit": 10, "per_seconds": 60, "scope": "auth"},
+    {"name": "write", "limit": 60, "per_seconds": 60, "scope": "write"},
+    {"name": "read", "limit": 300, "per_seconds": 60, "scope": "read"},
+    {"name": "global", "limit": 1000, "per_seconds": 60, "scope": "global"},
+]
+
+
+class RateLimitItem(BaseModel):
+    id: str | None = None
+    name: str
+    limit: int
+    per_seconds: int
+    scope: str
+
+
+class RateLimitUpdate(BaseModel):
+    model_config = {"extra": "forbid"}
+    limit: int
+    per_seconds: int = 60
+    scope: str | None = None
+
+
+class BanFilterItem(BaseModel):
+    id: str
+    name: str
+    scope: str
+    created_at: str | None = None
+
+
+class BanFilterCreate(BaseModel):
+    model_config = {"extra": "forbid"}
+    name: str
+    scope: str
+
+
+rate_limits_router = APIRouter()
+
+
+@rate_limits_router.get(
+    "/rate-limits",
+    response_model=dict,
+    summary="List rate limits",
+    dependencies=[Depends(require_operator)],
+)
+async def list_rate_limits() -> dict:
+    """Return DB-configured rate limits, falling back to hard-coded defaults when empty."""
+    try:
+        from office_hero.api.state import get_engine
+        from office_hero.db.session import get_session
+
+        engine = get_engine()
+        async with get_session(engine) as session:
+            rows = (
+                (
+                    await session.execute(
+                        text(
+                            'SELECT id::text, name, "limit", per_seconds, scope '
+                            "FROM rate_limits ORDER BY name"
+                        )
+                    )
+                )
+                .mappings()
+                .all()
+            )
+    except RuntimeError:
+        rows = []
+
+    items = [dict(r) for r in rows] if rows else _RATE_LIMIT_DEFAULTS
+    return {"items": items, "total": len(items)}
+
+
+@rate_limits_router.patch(
+    "/rate-limits/{name}",
+    response_model=RateLimitItem,
+    summary="Upsert a rate limit",
+    dependencies=[Depends(require_operator)],
+)
+async def upsert_rate_limit(
+    name: Annotated[str, Path(description="Rate limit scope name")],
+    body: RateLimitUpdate,
+) -> RateLimitItem:
+    """Create or update a rate limit entry by name."""
+    scope = body.scope or name
+    try:
+        from office_hero.api.state import get_engine
+        from office_hero.db.session import get_session
+
+        engine = get_engine()
+        async with get_session(engine) as session:
+            row = (
+                (
+                    await session.execute(
+                        text(
+                            'INSERT INTO rate_limits (id, name, "limit", per_seconds, scope) '
+                            "VALUES (gen_random_uuid(), :name, :limit, :per_seconds, :scope) "
+                            "ON CONFLICT (name) DO UPDATE "
+                            'SET "limit" = EXCLUDED."limit", '
+                            "    per_seconds = EXCLUDED.per_seconds, "
+                            "    updated_at = now() "
+                            'RETURNING id::text, name, "limit", per_seconds, scope'
+                        ),
+                        {
+                            "name": name,
+                            "limit": body.limit,
+                            "per_seconds": body.per_seconds,
+                            "scope": scope,
+                        },
+                    )
+                )
+                .mappings()
+                .one()
+            )
+            await session.commit()
+    except RuntimeError:
+        return RateLimitItem(name=name, limit=body.limit, per_seconds=body.per_seconds, scope=scope)
+
+    return RateLimitItem(**dict(row))
+
+
+@rate_limits_router.get(
+    "/ban-filters",
+    response_model=dict,
+    summary="List ban entries",
+    dependencies=[Depends(require_operator)],
+)
+async def list_ban_filters() -> dict:
+    """Return all active ban-list entries."""
+    try:
+        from office_hero.api.state import get_engine
+        from office_hero.db.session import get_session
+
+        engine = get_engine()
+        async with get_session(engine) as session:
+            rows = (
+                (
+                    await session.execute(
+                        text(
+                            "SELECT id::text, name, scope, created_at::text "
+                            "FROM ban_list ORDER BY created_at DESC"
+                        )
+                    )
+                )
+                .mappings()
+                .all()
+            )
+    except RuntimeError:
+        rows = []
+
+    items = [dict(r) for r in rows]
+    return {"items": items, "total": len(items)}
+
+
+@rate_limits_router.post(
+    "/ban-filters",
+    response_model=BanFilterItem,
+    status_code=201,
+    summary="Add a ban entry",
+    dependencies=[Depends(require_operator)],
+)
+async def create_ban_filter(body: BanFilterCreate) -> BanFilterItem:
+    """Insert a new entry into the ban list."""
+    try:
+        from office_hero.api.state import get_engine
+        from office_hero.db.session import get_session
+
+        engine = get_engine()
+        async with get_session(engine) as session:
+            row = (
+                (
+                    await session.execute(
+                        text(
+                            'INSERT INTO ban_list (id, name, "limit", per_seconds, scope) '
+                            "VALUES (gen_random_uuid(), :name, 0, 1, :scope) "
+                            "RETURNING id::text, name, scope, created_at::text"
+                        ),
+                        {"name": body.name, "scope": body.scope},
+                    )
+                )
+                .mappings()
+                .one()
+            )
+            await session.commit()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail="Database unavailable") from exc
+
+    return BanFilterItem(**dict(row))
+
+
+@rate_limits_router.delete(
+    "/ban-filters/{ban_id}",
+    status_code=204,
+    summary="Remove a ban entry",
+    dependencies=[Depends(require_operator)],
+)
+async def delete_ban_filter(
+    ban_id: Annotated[str, Path(description="Ban entry UUID")],
+) -> None:
+    """Delete an entry from the ban list by ID."""
+    try:
+        from office_hero.api.state import get_engine
+        from office_hero.db.session import get_session
+
+        engine = get_engine()
+        async with get_session(engine) as session:
+            result = await session.execute(
+                text("DELETE FROM ban_list WHERE id = :id RETURNING id"),
+                {"id": ban_id},
+            )
+            if result.rowcount == 0:
+                raise HTTPException(status_code=404, detail=f"Ban entry {ban_id} not found")
+            await session.commit()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail="Database unavailable") from exc
 
 
 # ---------------------------------------------------------------------------

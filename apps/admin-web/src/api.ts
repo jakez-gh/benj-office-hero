@@ -469,3 +469,102 @@ export function generateContractJobsApi(asOf?: string): Promise<GenerateJobsResp
     body: JSON.stringify(asOf ? { as_of: asOf } : {}),
   });
 }
+
+// --- Operator admin types (Slice 7a) ---
+
+export interface RateLimitItem {
+  id?: string | null;
+  name: string;
+  limit: number;
+  per_seconds: number;
+  scope: string;
+}
+
+export interface RateLimitListResponse {
+  items: RateLimitItem[];
+  total: number;
+}
+
+export interface BanFilterItem {
+  id: string;
+  name: string;
+  scope: string;
+  created_at: string | null;
+}
+
+export interface BanFilterListResponse {
+  items: BanFilterItem[];
+  total: number;
+}
+
+export interface AuditEvent {
+  id: string;
+  timestamp: string;
+  tenant_id: string;
+  user_id: string | null;
+  event_type: string;
+  details: Record<string, unknown>;
+  request_id: string | null;
+}
+
+export interface AuditEventListResponse {
+  items: AuditEvent[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface AuditEventListParams {
+  event_type?: string;
+  tenant_id?: string;
+  limit?: number;
+  offset?: number;
+}
+
+// --- Operator admin API functions ---
+
+export function listRateLimitsApi(): Promise<RateLimitListResponse> {
+  return request<RateLimitListResponse>('/admin/rate-limits');
+}
+
+export function updateRateLimitApi(
+  name: string,
+  body: { limit: number; per_seconds?: number; scope?: string },
+): Promise<RateLimitItem> {
+  return request<RateLimitItem>(`/admin/rate-limits/${encodeURIComponent(name)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+}
+
+export function listBanFiltersApi(): Promise<BanFilterListResponse> {
+  return request<BanFilterListResponse>('/admin/ban-filters');
+}
+
+export function createBanFilterApi(body: {
+  name: string;
+  scope: string;
+}): Promise<BanFilterItem> {
+  return request<BanFilterItem>('/admin/ban-filters', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+export function deleteBanFilterApi(id: string): Promise<void> {
+  return request<void>(`/admin/ban-filters/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
+export function listAuditEventsApi(
+  params: AuditEventListParams = {},
+): Promise<AuditEventListResponse> {
+  const qs = new URLSearchParams();
+  if (params.event_type) qs.set('event_type', params.event_type);
+  if (params.tenant_id) qs.set('tenant_id', params.tenant_id);
+  if (params.limit != null) qs.set('limit', String(params.limit));
+  if (params.offset != null) qs.set('offset', String(params.offset));
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  return request<AuditEventListResponse>(`/admin/audit-events${query}`);
+}
