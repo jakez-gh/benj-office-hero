@@ -7,7 +7,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "echo 'no eslint configured'",
-    "test": "echo \"no tests configured\""
+    "test": "vitest run"
   },
   "dependencies": {
     "@office-hero/api-client": "workspace:*",
@@ -16,10 +16,15 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^14.3.1",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.3.0",
+    "jsdom": "^29.1.1",
     "typescript": "^5.4.0",
-    "vite": "^7.3.0"
+    "vite": "^7.3.0",
+    "vitest": "^4.1.9"
   }
 }

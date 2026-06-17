@@ -10,10 +10,10 @@ import type {
 
 // --- Base URLs ---
 
-const envBaseUrl =
-  typeof process !== 'undefined' && process.env
-    ? process.env.OFFICE_HERO_API_URL
-    : undefined;
+const _proc = typeof globalThis !== 'undefined' && 'process' in globalThis
+  ? (globalThis as { process?: { env?: { OFFICE_HERO_API_URL?: string } } }).process
+  : undefined;
+const envBaseUrl = _proc?.env?.OFFICE_HERO_API_URL;
 
 /** Mobile SDK base — always hits the origin directly. */
 const BASE_URL = envBaseUrl ?? 'http://localhost:8000';

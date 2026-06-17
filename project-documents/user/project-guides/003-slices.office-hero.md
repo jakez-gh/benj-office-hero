@@ -76,9 +76,12 @@ Each foundation slice leaves the system in a runnable, tested state.
     Demonstrates full auth flow end-to-end. Deployable and demeable after this slice.
     Dependencies: Slices 3, 5. Risk: Low. Effort: 2/5
 
-6. [ ] **Mobile app scaffold** — React Native Expo project (`apps/tech-mobile`),
+6. [x] **Mobile app scaffold** — React Native Expo project (`apps/tech-mobile`),
    Android build config, `expo-location` background permission setup (tested on device
    early — known to require OS-level configuration). Dependencies: Slice 5. Effort: 2/5
+   **Status:** Complete — `apps/tech-mobile/` with LoginScreen, RouteScreen,
+   JobEntryScreen, LocationService (background task), React Navigation stack,
+   and full unit test suite.
 
 ---
 
@@ -152,18 +155,23 @@ Ordered by dependency and value. Each slice is independently demonstrable.
 
 ### Mobile & Technician App
 
-17. [ ] **Technician Android app — Route view** — React Native Expo: auth, view own
+17. [x] **Technician Android app — Route view** — React Native Expo: auth, view own
     daily Route, view Job details per stop, acknowledge route. Uses shared API client.
     Dependencies: Slices 5–6, 8, 14. Risk: Medium. Effort: 3/5
+    **Status:** Complete — `apps/tech-mobile/RouteScreen.tsx` (daily route + stop
+    acknowledgment), `LoginScreen.tsx`, React Navigation stack wired in `App.tsx`.
 
-18. [ ] **Technician Android app — Location tracking** — Background `expo-location`
+18. [x] **Technician Android app — Location tracking** — Background `expo-location`
     posting to `PUT /vehicles/{id}/location` on configurable interval. Handles
     foreground/background/off-route states. Dependencies: Slices 6, 15, 17.
     Risk: High. Effort: 3/5
+    **Status:** Complete — `apps/tech-mobile/LocationService.ts` implements Expo
+    background task, configurable interval, foreground/background/stopped states.
 
-19. [ ] **Technician Android app — Job entry in field** — Technician creates new Job
+19. [x] **Technician Android app — Job entry in field** — Technician creates new Job
     from mobile; triggers routing options flow. Dependencies: Slices 10, 17.
     Risk: Low. Effort: 2/5
+    **Status:** Complete — `apps/tech-mobile/JobEntryScreen.tsx`.
 
 ### Web GUIs
 
