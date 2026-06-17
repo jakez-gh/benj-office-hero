@@ -45,6 +45,8 @@ the index range schema.
 | `059-adr.database.md` | ADR | PostgreSQL 15+ |
 | `060-adr.auth.md` | ADR | JWT RS256 + bcrypt + refresh tokens |
 | `061-adr.mcp-server.md` | ADR | Python MCP SDK + OpenAPI codegen |
+| `062-adr.rate-limiting.md` | ADR | DB-backed rate limits with 1s cache |
+| `063-adr.logging-observability.md` | ADR | structlog JSON + audit table + Sentry |
 
 ## Naming Rules
 
