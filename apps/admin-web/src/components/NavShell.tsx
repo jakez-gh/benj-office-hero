@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { AuthContext } from '../auth';
 import { Button } from './ui/Button';
 import { PageProgressBar } from './ui/PageProgressBar';
+import { OnboardingChecklist } from './OnboardingChecklist';
 
 const navItems = [
   { to: '/jobs',      label: 'Jobs'      },
@@ -65,6 +66,7 @@ export const NavShell: React.FC<{ children?: React.ReactNode }> = ({ children })
         </div>
       </header>
 
+      <OnboardingChecklist />
       <main className="mx-auto max-w-6xl p-4 sm:p-6">{children}</main>
     </div>
   );
