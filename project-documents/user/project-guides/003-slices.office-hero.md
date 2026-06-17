@@ -94,7 +94,7 @@ Ordered by dependency and value. Each slice is independently demonstrable.
 7. [x] **Tenant management** — Operator CRUD for Tenants; Tenant provisioning creates
    DB schema, sets back\_office\_adapter. Dependencies: Slices 1–4. Risk: Low. Effort: 2/5
 
-7a. [ ] **Operator observability dashboard** — Metrics & log viewer with live control panel
+7a. [x] **Operator observability dashboard** — Metrics & log viewer with live control panel
    (rate-limit adjustments, ban filter management) and an audit-log tab. Provides quick
    access to health metrics and enables operators to alter protection rules at runtime.
    Dependencies: Slices 3–4. Risk: Medium. Effort: 3/5

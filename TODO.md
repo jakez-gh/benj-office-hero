@@ -4,33 +4,11 @@ Items are removed as they are completed. Organised by horizon.
 
 ---
 
-## Immediate (code quality / CI)
-
-- [ ] **Tech-web tests** — `apps/tech-web` has zero test coverage. Add vitest +
-  `@testing-library/react` and cover LoginView, TodayView, JobDetailView, NewJobView,
-  and error/loading states.
-
----
-
 ## UX — Priority 7
 
-- [ ] **Onboarding checklist widget** — "Getting started" banner for a new tenant
-  with 0 customers: ① Add customer → ② Add vehicle → ③ Create job → ④ Schedule it.
-  Dismiss once first job dispatched. Low-code; high value for first-run experience.
 - [ ] **Route reorder UX** — Promote hint text to `CardDescription` or add explicit
   drag handles if user research shows confusion with the current subtle hints.
   Deferred pending feedback.
-
----
-
-## Slice 7a — Operator observability dashboard
-
-Rate-limit and ban-filter control panel + audit-log tab. Dependencies (Slices 3–4) complete.
-
-- [ ] `apps/admin-web/src/pages/OperatorDashboardPage.tsx` — live metrics + audit-log tab
-- [ ] Rate-limit adjustment UI → `PATCH /admin/rate-limits`
-- [ ] Ban-filter management UI → `POST/DELETE /admin/ban-filters`
-- [ ] Wire into NavShell (Operator role only)
 
 ---
 
