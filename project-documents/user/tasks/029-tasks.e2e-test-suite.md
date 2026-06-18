@@ -1,4 +1,8 @@
 ---
+id: 1.1.2.4
+type: task
+parent: 1.1.2
+title: Tasks — E2E test suite
 slice: e2e-test-suite
 project: office-hero
 lld: ../slices/029-slice.e2e-test-suite.md

@@ -1,4 +1,8 @@
 ---
+id: 1.1.1.2
+type: adr
+parent: 1.1.1
+title: ADR — API style (REST)
 docType: reference
 layer: project
 audience: [human, ai]

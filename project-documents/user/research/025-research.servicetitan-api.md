@@ -1,7 +1,8 @@
 ---
-id: RES-025
+id: 1.1.4
+title: Research — ServiceTitan API
 type: research
-parent: INIT-001
+parent: 1.1
 status: complete
 researchId: RES-025
 topic: ServiceTitan REST API

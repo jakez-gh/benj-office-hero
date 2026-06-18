@@ -1,7 +1,8 @@
 ---
-id: RES-027
+id: 1.1.6
+title: Research — Jobber API
 type: research
-parent: INIT-001
+parent: 1.1
 status: complete
 researchId: RES-027
 topic: Jobber GraphQL API

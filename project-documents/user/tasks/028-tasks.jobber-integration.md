@@ -1,4 +1,8 @@
 ---
+id: 1.1.2.3
+type: task
+parent: 1.1.2
+title: Tasks — Jobber integration
 slice: jobber-integration
 project: office-hero
 lld: ../slices/028-slice.jobber-integration.md

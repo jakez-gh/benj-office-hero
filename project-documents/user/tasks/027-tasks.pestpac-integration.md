@@ -1,4 +1,8 @@
 ---
+id: 1.1.2.2
+type: task
+parent: 1.1.2
+title: Tasks — PestPac integration
 slice: pestpac-integration
 project: office-hero
 lld: ../slices/027-slice.pestpac-integration.md

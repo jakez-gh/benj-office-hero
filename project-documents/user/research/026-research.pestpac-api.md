@@ -1,7 +1,8 @@
 ---
-id: RES-026
+id: 1.1.5
+title: Research — PestPac API
 type: research
-parent: INIT-001
+parent: 1.1
 status: complete
 researchId: RES-026
 topic: PestPac (WorkWave Service) REST API

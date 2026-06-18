@@ -1,7 +1,8 @@
 ---
-id: INIT-001
+id: 1.1.3
+title: Initiatives — epic registry
 type: initiative
-parent: SPEC-001
+parent: 1.1
 status: active
 docType: reference
 layer: project

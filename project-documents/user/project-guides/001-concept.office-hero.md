@@ -1,5 +1,6 @@
 ---
-id: CON-001
+id: 1
+title: Office Hero — concept
 type: concept
 parent: null
 status: complete

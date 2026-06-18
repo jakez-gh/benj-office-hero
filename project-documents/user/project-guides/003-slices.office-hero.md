@@ -1,6 +1,9 @@
 ---
+id: 1.1.2
+type: slice-plan
+title: Slice plan
 docType: slice-plan
-parent: 002-spec.office-hero.md
+parent: 1.1
 hld: ../architecture/050-arch.hld-office-hero.md
 project: office-hero
 dateCreated: 20260308

@@ -1,4 +1,8 @@
 ---
+id: 1.1.2.1
+type: task
+parent: 1.1.2
+title: Tasks — ServiceTitan integration
 slice: servicetitan-integration
 project: office-hero
 lld: ../slices/026-slice.servicetitan-integration.md

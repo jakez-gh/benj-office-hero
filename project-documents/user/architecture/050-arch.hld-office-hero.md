@@ -1,4 +1,8 @@
 ---
+id: 1.1.1
+type: arch
+parent: 1.1
+title: High-level design
 docType: reference
 layer: project
 phase: 2

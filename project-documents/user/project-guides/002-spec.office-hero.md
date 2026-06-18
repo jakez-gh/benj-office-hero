@@ -1,7 +1,8 @@
 ---
-id: SPEC-001
+id: 1.1
+title: Office Hero — specification
 type: spec
-parent: CON-001
+parent: 1
 status: complete
 layer: project
 phase: 2

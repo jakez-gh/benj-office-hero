@@ -1,11 +1,12 @@
 ---
-id: OWI-951
+id: 1.2
+title: Open work index
 type: open-work
-parent: INIT-001
+parent: 1
 status: active
 docType: tasks
 project: office-hero
-dateUpdated: 20260617
+dateUpdated: 20260618
 ---
 
 # Open Work Index — Office Hero
@@ -93,6 +94,13 @@ See `950-tasks.maintenance.md` for full detail.
 
 ---
 
+## Inbox (drive-by capture — triage to a section above)
+
+*(Empty. `/bug` and `/feature` append one-line captures here; `/promote` turns one
+into a tracked slice/task tree and clears it.)*
+
+---
+
 ## Future Work (not yet sliced — from `003-slices.office-hero.md`)
 
 Promote to a numbered slice + task file when scheduling.
@@ -112,3 +120,4 @@ Promote to a numbered slice + task file when scheduling.
 | --- | --- |
 | 2026-06-17 | Created; initial state |
 | 2026-06-17 | Removed stale Slice 7a entry (implemented 2026-06-17); removed Slices 6/17-19 (code complete in apps/tech-mobile + apps/tech-web — only Maestro tests remain, tracked under Slice 28); added initiatives file reference; added research/ prereq notes for Slices 25-27 |
+| 2026-06-18 | Adopted segmented-decimal spine ids (ADR 1.1.7) across the active path: concept→spec→HLD→14 ADRs→slice plan→initiatives→open tasks (26-29)→research (RES-025/026/027). `/framework-check` PASS (27 artifacts, 0 warn). Added `## Inbox` drive-by capture section. |
