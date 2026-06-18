@@ -139,9 +139,9 @@ calls to external APIs are not permitted outside the adapter layer.
 
 ADRs: [056 backoffice-saga](../architecture/056-adr.backoffice-saga.md)
 
-Research: `research/025-research.servicetitan-api.md` _(not yet written)_,
-`research/026-research.pestpac-api.md` _(not yet written)_,
-`research/027-research.jobber-api.md` _(not yet written)_
+Research: `research/025-research.servicetitan-api.md` _(complete — RES-025)_,
+`research/026-research.pestpac-api.md` _(complete — RES-026)_,
+`research/027-research.jobber-api.md` _(complete — RES-027)_
 
 ---
 

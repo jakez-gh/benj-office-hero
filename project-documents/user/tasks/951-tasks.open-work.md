@@ -49,17 +49,19 @@ Blocked on: External API credentials for each system.
 
 - [ ] **Slice 25 — ServiceTitan** — Needs `SERVICETITAN_CLIENT_ID`,
   `SERVICETITAN_CLIENT_SECRET`, `SERVICETITAN_TENANT_ID` as Fly.io secrets.
-  Before designing: create `research/025-research.servicetitan-api.md`.
+  Research complete: `research/025-research.servicetitan-api.md` (RES-025).
   Tasks: `026-tasks.servicetitan-integration.md`
 
 - [ ] **Slice 26 — PestPac** — Needs `PESTPAC_API_KEY`, `PESTPAC_BASE_URL`
-  as Fly.io secrets.
-  Before designing: create `research/026-research.pestpac-api.md`.
+  as Fly.io secrets; also trial access via `APISales@workwave.com`.
+  Research complete: `research/026-research.pestpac-api.md` (RES-026).
+  **Design blocker:** confirm sync vs. async Odyssey API response model before
+  writing the slice design (see RES-026 open questions).
   Tasks: `027-tasks.pestpac-integration.md`
 
 - [ ] **Slice 27 — Jobber** — Needs `JOBBER_CLIENT_ID`, `JOBBER_CLIENT_SECRET`,
   `JOBBER_REFRESH_TOKEN` as Fly.io secrets; OAuth app at developer.getjobber.com.
-  Before designing: create `research/027-research.jobber-api.md`.
+  Research complete: `research/027-research.jobber-api.md` (RES-027).
   Tasks: `028-tasks.jobber-integration.md`
 
 All three implement `BackOfficeAdapter` + Saga + Transactional Outbox.
