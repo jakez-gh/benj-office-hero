@@ -46,6 +46,7 @@ pip-audit = ">=2.7"
 # the mcp-server package itself; the dev install is so the workspace test job
 # can import it.
 mcp = ">=1.26"
+respx = ">=0.20"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

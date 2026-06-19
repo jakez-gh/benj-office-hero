@@ -96,9 +96,7 @@ See `950-tasks.maintenance.md` for full detail.
 
 ## Inbox (drive-by capture — triage to a section above)
 
-- Reconcile `CLAUDE.md` Gate 1–3 text with the new `/framework-check` flow and the
-  segmented-decimal spine — Gate 1 still describes only `NNN-research` naming; add a
-  pointer to `/framework-check` + spine ids. Small docs task. (captured 2026-06-18)
+_(empty)_
 
 ---
 
@@ -122,3 +120,4 @@ Promote to a numbered slice + task file when scheduling.
 | 2026-06-17 | Created; initial state |
 | 2026-06-17 | Removed stale Slice 7a entry (implemented 2026-06-17); removed Slices 6/17-19 (code complete in apps/tech-mobile + apps/tech-web — only Maestro tests remain, tracked under Slice 28); added initiatives file reference; added research/ prereq notes for Slices 25-27 |
 | 2026-06-18 | Adopted segmented-decimal spine ids (ADR 1.1.7) across the active path: concept→spec→HLD→14 ADRs→slice plan→initiatives→open tasks (26-29)→research (RES-025/026/027). `/framework-check` PASS (27 artifacts, 0 warn). Added `## Inbox` drive-by capture section. |
+| 2026-06-18 | Pre-impl: ServiceTitan adapter (14 tests pass), Jobber adapter (10 tests pass), PestPac scaffold (10 tests pass); migrations 0015/0016/0017; slice designs 026/027/028; CLAUDE.md Gate 1 updated with /framework-check pointer + spine IDs. Cleared Inbox. |

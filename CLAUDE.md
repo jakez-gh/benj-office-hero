@@ -43,13 +43,16 @@ Before writing a slice design for any slice that involves:
 - A technology choice with significant switching cost
 
 **Check `project-documents/user/research/` for an existing research artifact.**
-If none exists, create one:
+If none exists, create one using the `/research` skill, or manually:
 
 1. Spawn an Explore-type subagent to read the external API docs and summarise:
    auth method, rate limits, data model for required entities, pagination, gotchas
 2. Write the artifact using the template in `project-documents/user/research/README.md`
-3. Name it `NNN-research.{topic}.md` (same number as the target slice)
+3. Assign a segmented-decimal spine id (`id: 1.1.N`), `type: research`, `parent: 1.1`
 4. Then proceed to write the slice design
+
+Run `/framework-check` after writing the artifact — G2 (research gate) must
+pass before the slice design is written.
 
 ### Gate 2: ADR check (before any architectural decision)
 
