@@ -96,8 +96,9 @@ See `950-tasks.maintenance.md` for full detail.
 
 ## Inbox (drive-by capture — triage to a section above)
 
-*(Empty. `/bug` and `/feature` append one-line captures here; `/promote` turns one
-into a tracked slice/task tree and clears it.)*
+- Reconcile `CLAUDE.md` Gate 1–3 text with the new `/framework-check` flow and the
+  segmented-decimal spine — Gate 1 still describes only `NNN-research` naming; add a
+  pointer to `/framework-check` + spine ids. Small docs task. (captured 2026-06-18)
 
 ---
 
