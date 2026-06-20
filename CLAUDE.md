@@ -209,8 +209,9 @@ pnpm --filter tech-web test       # vitest
 pnpm --filter tech-mobile start   # expo start
 ```
 
-CI lives in `.github/workflows/` (`ci.yml`, `frontend-ci.yml`, `security.yml`,
-`deploy.yml`, plus screenshot/uptime/demo jobs).
+CI lives in `.github/workflows/`: `ci.yml` (backend), `frontend-ci.yml`,
+`security.yml`, `deploy.yml` (Fly.io), plus `screenshot-diff.yml`,
+`ui-screenshots.yml`, `uptime.yml`, and `demo-videos.yml`.
 
 > `cf` (Context Forge) and `sq` (code review) are external CLI tools the
 > workflow assumes are installed locally; they are not part of this repo.
