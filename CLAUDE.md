@@ -56,18 +56,28 @@ pass before the slice design is written.
 
 ### Gate 2: ADR check (before any architectural decision)
 
-Before proposing an approach that touches system architecture, read the relevant ADRs:
+Before proposing an approach that touches system architecture, read the relevant ADRs.
+The full inventory (14 ADRs) lives in `project-documents/user/architecture/README.md`;
+the ones you will touch most often:
 
 ```
 project-documents/user/architecture/
   050-arch.hld-office-hero.md    ← full system design
   patterns.md                    ← key patterns in use
-  051-adr.web-framework.md       ← FastAPI
+  051-adr.web-framework.md       ← FastAPI over Flask
+  051b-adr.api-style.md          ← REST over GraphQL
   052-adr.routing-engine.md      ← ORS; rate limit implications
-  053-adr.tenant-isolation.md    ← RLS; tenant_id required everywhere
+  053-adr.tenant-isolation.md    ← Postgres RLS; tenant_id required everywhere
+  054-adr.hosting.md             ← Fly.io (app) + Neon (DB)
+  055-adr.frontend.md            ← React web + React Native Expo mobile
   056-adr.backoffice-saga.md     ← Saga + Outbox; no direct API calls
-  060-adr.auth.md                ← RS256 JWT; key rotation
-  062-adr.rate-limiting.md       ← DB-backed rate limits
+  057-adr.language.md            ← Python 3.11+
+  058-adr.orm.md                 ← SQLAlchemy 2.x + Alembic
+  059-adr.database.md            ← PostgreSQL 15+
+  060-adr.auth.md                ← RS256 JWT; bcrypt; refresh tokens; key rotation
+  061-adr.mcp-server.md          ← Python MCP SDK + OpenAPI codegen
+  062-adr.rate-limiting.md       ← DB-backed rate limits (1s cache)
+  063-adr.logging-observability.md ← structlog JSON + audit table + Sentry
 ```
 
 If your proposed approach contradicts an ADR, either justify the departure and
@@ -152,29 +162,93 @@ Blocking findings must be fixed first.
 
 ---
 
+## Tech Stack
+
+- **Backend:** Python 3.11+, FastAPI, SQLAlchemy 2.x (async, asyncpg), Alembic,
+  Pydantic v2 / pydantic-settings, structlog, slowapi, python-jose (RS256 JWT),
+  passlib/bcrypt, Sentry. Dependencies via **Poetry**.
+- **Frontend:** React 18 + TypeScript + Vite (admin-web, tech-web), Tailwind v3
+  (admin-web). React Native + Expo (tech-mobile). JS workspace via **pnpm**.
+- **Shared JS packages:** `@office-hero/api-client`, `@office-hero/types`
+  (consumed by the apps as `workspace:*`).
+- **Data / infra:** PostgreSQL 15+ (Neon), Fly.io hosting, OpenRouteService
+  (ORS) for routing/geocoding.
+- **MCP:** Python MCP server under `mcp-server/`, partly generated from the
+  backend OpenAPI schema (see ADR 061).
+
+## Common Commands
+
+Backend (run from repo root; Poetry-managed):
+
+```bash
+make dev                          # install all deps + activate git hooks
+make run                          # start FastAPI dev server (needs .env)
+make test                         # poetry run pytest -q --tb=short
+poetry run pytest tests/test_x.py # run a single test file
+make lint                         # pre-commit on all files (ruff + black + ...)
+make security                     # bandit + pip-audit
+make qa                           # lint + security + test (full gate)
+make db-migrate                   # alembic upgrade head  (uses DATABASE_URL)
+poetry run alembic revision --autogenerate -m "msg"   # new migration
+```
+
+Pytest config: `asyncio_mode = auto`, 30s per-test timeout, coverage on by
+default (`pyproject.toml`). Test layout: `tests/` with `api/`, `services/`,
+`unit/`, `integration/` subdirs plus top-level `test_*.py`.
+
+Frontend (pnpm workspace; run in the app dir or with `--filter`):
+
+```bash
+pnpm install                      # install workspace deps
+pnpm --filter admin-web dev       # Vite dev server
+pnpm --filter admin-web build     # production build
+pnpm --filter admin-web lint      # eslint
+pnpm --filter admin-web test      # jest unit tests
+pnpm --filter admin-web test:e2e  # Playwright E2E
+pnpm --filter tech-web test       # vitest
+pnpm --filter tech-mobile start   # expo start
+```
+
+CI lives in `.github/workflows/` (`ci.yml`, `frontend-ci.yml`, `security.yml`,
+`deploy.yml`, plus screenshot/uptime/demo jobs).
+
+> `cf` (Context Forge) and `sq` (code review) are external CLI tools the
+> workflow assumes are installed locally; they are not part of this repo.
+
 ## Project Layout
 
 ```
 src/office_hero/          # FastAPI backend
-  api/                    # Routes, schemas, middleware, exception handlers
+  api/                    # app.py, deps, routes/, schemas/, middleware/,
+                          #   exception_handlers, limiter, request_context
   core/                   # Domain exceptions, enums, logging
-  models/                 # SQLAlchemy models
-  repositories/           # DB + in-memory implementations
+  models/                 # SQLAlchemy models (tenant, user, job, route, contract,
+                          #   vehicle, outbox_event, saga_log, ...)
+  repositories/           # DB + in-memory (mocks) implementations; protocols.py
   services/               # Business logic (one service per slice boundary)
-  adapters/               # External adapters (geocoding, routing, back-office)
-apps/admin-web/           # React + TypeScript + Vite + Tailwind v3
+  sagas/                  # Saga core/exceptions (back-office orchestration)
+  adapters/               # External adapters:
+    geocoding/            #   nominatim, ors, stub  (+ factory/protocol)
+    routing/              #   ors, stub             (+ factory/protocol)
+    back_office/          #   servicetitan, jobber, pestpac (+ registry)
+  db/                     # engine, session, RLS helpers
+alembic/                  # migrations (versions/)
+tools/                    # `hero` Click CLI + dev utilities (mock_backend, etc.)
+mcp-server/               # Python MCP server (ADR 061)
+packages/                 # shared JS: api-client/, types/
+apps/admin-web/           # React + TS + Vite + Tailwind v3 (tenant admin)
   src/
     api.ts                # All API client functions and types
     pages/                # Page components
     components/           # Shared UI components
-apps/tech-web/            # React + TypeScript + Vite — technician mobile web view
+apps/tech-web/            # React + TS + Vite — technician mobile web view
 apps/tech-mobile/         # React Native Expo — technician Android app
 project-documents/
   user/
     project-guides/       # 000-initiatives.md, spec, slice plan, concept
     slices/               # Slice design docs (one per slice)
     tasks/                # Task breakdowns + 951-tasks.open-work.md
-    architecture/         # HLD (050), ADRs (051–089), patterns.md
+    architecture/         # HLD (050), ADRs (051–063), patterns.md, README
     research/             # Pre-design research artifacts (create before designing
                           # any slice with external API dependency)
 ```
