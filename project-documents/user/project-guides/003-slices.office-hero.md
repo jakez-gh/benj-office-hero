@@ -324,6 +324,20 @@ See `docs/worktrees.md` for setup instructions.
 
 ---
 
+## Tenant Management (Slices 29–30)
+
+Added 2026-06-24.  No external dependencies; both slices are ready to start.
+
+| # | Slice | id | Status | Effort | Depends on |
+| - | ----- | -- | ------ | ------ | ---------- |
+| 29 | Tenant admin backend (`GET/POST /admin/tenants`) | 1.1.2.14 | ready | 1.5/5 | Slice 27 wiring |
+| 30 | Tenant admin UI (TenantsPage + Jobber connect) | 1.1.2.15 | ready | 2/5 | Slice 29 |
+
+Slice 29 adds list + create tenant endpoints to `integrations.py`; Slice 30 adds
+`TenantsPage.tsx` with adapter selector and Jobber OAuth2 connect button.
+
+---
+
 ## Future Work
 
 Items to track for later planning cycles:

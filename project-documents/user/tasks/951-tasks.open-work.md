@@ -21,6 +21,18 @@ For the epic-level view (what workstream each item belongs to) see:
 
 ## Ready Now (no external dependencies)
 
+### Tenant Management (Epic 7 — Slices 29–30)
+
+- [ ] **Slice 29 — Tenant admin backend** — Add `GET /admin/tenants` (list, with
+  `jobber_connected` flag) and `POST /admin/tenants` (create) to `integrations.py`.
+  8 integration tests. Effort: 1.5/5.
+  Slice: `029-slice.tenant-admin-backend.md` | Tasks: `031-tasks.tenant-admin-backend.md`
+
+- [ ] **Slice 30 — Tenant admin UI** — New `TenantsPage.tsx` with tenant list,
+  adapter selector, Jobber OAuth2 connect button, and create form. Depends on Slice 29.
+  Effort: 2/5.
+  Slice: `030-slice.tenant-admin-ui.md` | Tasks: `032-tasks.tenant-admin-ui.md`
+
 ### UX / Polish
 
 - [ ] **Route reorder UX hint** — The "Use ↑↓ to reorder" text on the Routes
