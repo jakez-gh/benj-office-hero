@@ -1,7 +1,7 @@
 ---
 agent: alpha
 status: idle
-workstream: done (WS-05, WS-08 complete)
+workstream: done (WS-05, WS-08, WS-10, WS-11, WS-12 complete)
 last_commit: 87d673a
 last_updated: 2026-06-24T01:00:00Z
 ---

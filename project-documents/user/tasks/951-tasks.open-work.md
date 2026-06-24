@@ -37,54 +37,16 @@ Full findings: `project-documents/user/tasks/033-tasks.ui-improvements.md`
 
 **CRITICAL — app broken on mobile:**
 
-- [ ] **UI-01: Mobile nav overflow** — At 375px only Jobs/Contracts/Sign-out are
-  visible; no hamburger menu. Routes, Dispatch, Vehicles, Users, Customers, Tenants,
-  Operator are unreachable on mobile.
-  File: `apps/admin-web/src/components/NavShell.tsx`
-  Fix: `hidden md:flex` on nav items + hamburger drawer for `md:hidden`.
-  Effort: 3/5
-
-- [ ] **UI-02: Tenants table truncates on mobile** — CREATED column cut off,
-  no horizontal scroll.
-  File: `apps/admin-web/src/pages/TenantsPage.tsx`
-  Fix: Wrap table in `<div className="overflow-x-auto">`.
-  Effort: 1/5
-
-**HIGH — missing affordances / inconsistency:**
-
-- [ ] **UI-03: Vehicles page missing "Add Vehicle" button** — every other list
-  page has a primary CTA; Vehicles has none.
-  File: `apps/admin-web/src/pages/VehiclesPage.tsx` | Effort: 1/5
-
-- [ ] **UI-04: Users page missing "Add User" / "Invite User" button**
-  File: `apps/admin-web/src/pages/UsersPage.tsx` | Effort: 1/5
-
-- [ ] **UI-05: Empty-state CTAs are plain text, not clickable** — "Create your
-  first job", "Create your first contract", "Add your first customer" look
-  actionable but do nothing.
-  Files: `JobsPage.tsx`, `ContractsPage.tsx`, `CustomersPage.tsx` | Effort: 1/5 each
-
-- [ ] **UI-06: Three inconsistent error presentation styles** — yellow banner
-  (most pages), red no-border banner (Operator), red bordered card (Dispatch).
-  Fix: standardise on yellow/amber banner component everywhere. | Effort: 2/5
-
-- [ ] **UI-07: Operator Dashboard error has no retry button** — "Failed to load
-  rate limits" has no recovery action.
-  File: `apps/admin-web/src/pages/OperatorDashboardPage.tsx` | Effort: 1/5
-
-**MEDIUM:**
-
-- [ ] **UI-08: Button label convention inconsistent** — "New job" / "+ Add
-  Customer" / "New contract" / "Create". Standardise on "New [entity]".
-  Effort: 1/5
-
-- [ ] **UI-09: Onboarding banner shows on operator-only pages** — Tenants and
-  Operator Dashboard show "Getting started — dispatch your first job" which is
-  irrelevant for operators. Suppress for operator role / on those routes.
-  Effort: 1/5
-
-- [ ] **UI-10: Login page missing "Forgot password?" link**
-  File: `apps/admin-web/src/components/LoginPage.tsx` | Effort: 1/5
+- [x] **UI-01: Mobile nav overflow** — hamburger drawer shipped by gamma (WS-09, 50cd9bd)
+- [x] **UI-02: Tenants table overflow-x-auto** — (d0d4bae)
+- [x] **UI-03: Vehicles "New Vehicle" button** — (d0d4bae)
+- [x] **UI-04: Users "New User" button** — (d0d4bae)
+- [x] **UI-05: CustomersPage empty-state CTA now a Button** — (d0d4bae)
+- [x] **UI-06: OperatorDashboardPage error style** — now uses inline ErrorBanner + Retry (d0d4bae)
+- [x] **UI-07: Operator Dashboard retry button** — (d0d4bae)
+- [x] **UI-08: Button labels standardised** — "New Job", "New Contract", "New Customer" (d0d4bae)
+- [x] **UI-09: Onboarding suppressed on /tenants and /operator** — (d0d4bae)
+- [x] **UI-10: Forgot password link added to LoginPage** — (d0d4bae)
 
 - [ ] **Route reorder UX hint** — The "Use ↑↓ to reorder" text on the Routes
   page is subtle. If user testing shows confusion, promote to `CardDescription`
