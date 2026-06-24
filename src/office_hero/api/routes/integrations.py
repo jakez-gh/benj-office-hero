@@ -1,6 +1,8 @@
-"""Integration management routes (Slice 25-28).
+"""Integration management routes (Slices 25-30).
 
 Exposes:
+  GET   /admin/tenants                      — list all tenants (paginated)
+  POST  /admin/tenants                      — create a new tenant
   PATCH /admin/tenants/{tenant_id}/adapter  — set the tenant's back-office adapter
   GET   /admin/integrations/jobber/connect  — begin Jobber OAuth2 authorization flow
   GET   /admin/integrations/jobber/callback — exchange OAuth2 code for tokens
@@ -13,19 +15,64 @@ rather than returning JSON.
 from __future__ import annotations
 
 import os
+from datetime import datetime, timezone
 from typing import Annotated
 from urllib.parse import urlencode
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
 from fastapi.responses import RedirectResponse
-from pydantic import BaseModel
-from sqlalchemy import select, text
+from pydantic import BaseModel, field_validator
+from sqlalchemy import func, select, text
 
 from office_hero.api.routes.admin import require_operator
 
 VALID_ADAPTERS: frozenset[str] = frozenset({"native", "servicetitan", "pestpac", "jobber"})
+VALID_INDUSTRIES: frozenset[str] = frozenset(
+    {"generic", "pest_control", "hvac", "plumbing", "electrical", "landscaping"}
+)
+
+
+# ---------------------------------------------------------------------------
+# Request / response schemas — module-level so FastAPI resolves types correctly
+# ---------------------------------------------------------------------------
+
+
+class TenantResponse(BaseModel):
+    id: str
+    name: str
+    industry: str
+    back_office_adapter: str
+    created_at: str
+    jobber_connected: bool = False
+
+
+class CreateTenantRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+    name: str
+    industry: str
+
+    @field_validator("name")
+    @classmethod
+    def name_not_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("name must not be blank")
+        return v.strip()
+
+    @field_validator("industry")
+    @classmethod
+    def industry_valid(cls, v: str) -> str:
+        if v not in VALID_INDUSTRIES:
+            raise ValueError(
+                f"Invalid industry '{v}'. Valid options: {sorted(VALID_INDUSTRIES)}"
+            )
+        return v
+
+
+class AdapterUpdateRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+    adapter: str
 
 
 def create_integrations_router() -> APIRouter:
@@ -33,12 +80,94 @@ def create_integrations_router() -> APIRouter:
     router = APIRouter()
 
     # -----------------------------------------------------------------------
-    # Tenant adapter management
+    # Tenant CRUD (Slice 29)
     # -----------------------------------------------------------------------
 
-    class AdapterUpdateRequest(BaseModel):
-        model_config = {"extra": "forbid"}
-        adapter: str
+    @router.get(
+        "/tenants",
+        summary="List all tenants",
+        description="Return all tenants with pagination. Includes jobber_connected flag. Operator only.",
+        dependencies=[Depends(require_operator)],
+    )
+    async def list_tenants(
+        limit: int = Query(200, ge=1, le=500),
+        offset: int = Query(0, ge=0),
+    ) -> dict:
+        try:
+            from office_hero.api.state import get_engine  # noqa: PLC0415
+            from office_hero.db.session import get_session  # noqa: PLC0415
+            from office_hero.models.jobber_credentials import JobberCredentials  # noqa: PLC0415
+            from office_hero.models.tenant import Tenant  # noqa: PLC0415
+
+            engine = get_engine()
+            async with get_session(engine) as session:
+                total_result = await session.execute(select(func.count()).select_from(Tenant))
+                total = total_result.scalar_one()
+
+                tenants_result = await session.execute(
+                    select(Tenant).order_by(Tenant.created_at.desc()).offset(offset).limit(limit)
+                )
+                tenants = tenants_result.scalars().all()
+
+                # Collect tenant IDs that have active Jobber credentials
+                now = datetime.now(tz=timezone.utc)
+                creds_result = await session.execute(
+                    select(JobberCredentials.tenant_id).where(
+                        JobberCredentials.expires_at > now
+                    )
+                )
+                jobber_connected_ids = {row[0] for row in creds_result.all()}
+
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail="Database not available") from exc
+
+        items = [
+            TenantResponse(
+                id=str(t.id),
+                name=t.name,
+                industry=t.industry,
+                back_office_adapter=t.back_office_adapter,
+                created_at=t.created_at.isoformat(),
+                jobber_connected=t.id in jobber_connected_ids,
+            )
+            for t in tenants
+        ]
+        return {"items": [i.model_dump() for i in items], "total": total, "limit": limit, "offset": offset}
+
+    @router.post(
+        "/tenants",
+        status_code=201,
+        summary="Create a new tenant",
+        description="Create a tenant with native adapter. Operator only.",
+        dependencies=[Depends(require_operator)],
+    )
+    async def create_tenant(body: Annotated[CreateTenantRequest, Body()]) -> dict:
+        try:
+            from office_hero.api.state import get_engine  # noqa: PLC0415
+            from office_hero.db.session import get_session  # noqa: PLC0415
+            from office_hero.models.tenant import Tenant  # noqa: PLC0415
+
+            engine = get_engine()
+            async with get_session(engine) as session:
+                tenant = Tenant(id=uuid4(), name=body.name, industry=body.industry)
+                session.add(tenant)
+                await session.commit()
+                await session.refresh(tenant)
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail="Database not available") from exc
+
+        return TenantResponse(
+            id=str(tenant.id),
+            name=tenant.name,
+            industry=tenant.industry,
+            back_office_adapter=tenant.back_office_adapter,
+            created_at=tenant.created_at.isoformat(),
+            jobber_connected=False,
+        ).model_dump()
+
+    # -----------------------------------------------------------------------
+    # Tenant adapter management
+    # -----------------------------------------------------------------------
 
     @router.patch(
         "/tenants/{tenant_id}/adapter",
@@ -51,7 +180,7 @@ def create_integrations_router() -> APIRouter:
     )
     async def update_tenant_adapter(
         tenant_id: Annotated[UUID, Path(description="Tenant UUID")],
-        body: AdapterUpdateRequest,
+        body: Annotated[AdapterUpdateRequest, Body()],
     ) -> dict:
         if body.adapter not in VALID_ADAPTERS:
             raise HTTPException(
