@@ -20,7 +20,7 @@ const VIEWPORTS = {
   mobile: { width: 375, height: 812 },
 } as const;
 
-const ROUTES: ReadonlyArray<{ name: string; path: string; auth: boolean }> = [
+const ROUTES: ReadonlyArray<{ name: string; path: string; auth: boolean; role?: string }> = [
   { name: '01-login', path: '/', auth: false },
   { name: '02-jobs', path: '/jobs', auth: true },
   { name: '03-dispatch', path: '/dispatch', auth: true },
@@ -29,19 +29,21 @@ const ROUTES: ReadonlyArray<{ name: string; path: string; auth: boolean }> = [
   { name: '06-customers', path: '/customers', auth: true },
   { name: '07-contracts', path: '/contracts', auth: true },
   { name: '08-routes', path: '/routes', auth: true },
+  { name: '09-tenants', path: '/tenants', auth: true, role: 'operator' },
+  { name: '10-operator-dashboard', path: '/operator', auth: true, role: 'operator' },
 ];
 
 const SCREENSHOT_DIR = process.env.SCREENSHOT_DIR ?? 'screenshots';
 
-async function seedAuth(page: Page): Promise<void> {
-  await page.addInitScript(() => {
+async function seedAuth(page: Page, role = 'Operator'): Promise<void> {
+  await page.addInitScript((r: string) => {
     localStorage.setItem('access_token', 'ci-screenshot-token');
     localStorage.setItem('refresh_token', 'ci-screenshot-refresh');
     localStorage.setItem(
       'user',
-      JSON.stringify({ id: '00000000-0000-0000-0000-000000000001', email: 'ci@officehero.dev', role: 'Operator' })
+      JSON.stringify({ id: '00000000-0000-0000-0000-000000000001', email: 'ci@officehero.dev', role: r })
     );
-  });
+  }, role);
 }
 
 for (const [viewport, size] of Object.entries(VIEWPORTS)) {
@@ -50,7 +52,7 @@ for (const [viewport, size] of Object.entries(VIEWPORTS)) {
 
     for (const route of ROUTES) {
       test(`${route.name} (${route.path})`, async ({ page }) => {
-        if (route.auth) await seedAuth(page);
+        if (route.auth) await seedAuth(page, route.role ?? 'Operator');
         // Determinism: no backend runs during capture, but a slow connection
         // refusal can land before OR after the screenshot, racing skeleton vs
         // error states. Abort ALL fetch/xhr (any origin — direct :8000 calls

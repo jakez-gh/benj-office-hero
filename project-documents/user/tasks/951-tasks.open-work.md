@@ -33,11 +33,74 @@ For the epic-level view (what workstream each item belongs to) see:
 
 ### UX / Polish
 
+Full findings: `project-documents/user/tasks/033-tasks.ui-improvements.md`
+
+**CRITICAL — app broken on mobile:**
+
+- [ ] **UI-01: Mobile nav overflow** — At 375px only Jobs/Contracts/Sign-out are
+  visible; no hamburger menu. Routes, Dispatch, Vehicles, Users, Customers, Tenants,
+  Operator are unreachable on mobile.
+  File: `apps/admin-web/src/components/NavShell.tsx`
+  Fix: `hidden md:flex` on nav items + hamburger drawer for `md:hidden`.
+  Effort: 3/5
+
+- [ ] **UI-02: Tenants table truncates on mobile** — CREATED column cut off,
+  no horizontal scroll.
+  File: `apps/admin-web/src/pages/TenantsPage.tsx`
+  Fix: Wrap table in `<div className="overflow-x-auto">`.
+  Effort: 1/5
+
+**HIGH — missing affordances / inconsistency:**
+
+- [ ] **UI-03: Vehicles page missing "Add Vehicle" button** — every other list
+  page has a primary CTA; Vehicles has none.
+  File: `apps/admin-web/src/pages/VehiclesPage.tsx` | Effort: 1/5
+
+- [ ] **UI-04: Users page missing "Add User" / "Invite User" button**
+  File: `apps/admin-web/src/pages/UsersPage.tsx` | Effort: 1/5
+
+- [ ] **UI-05: Empty-state CTAs are plain text, not clickable** — "Create your
+  first job", "Create your first contract", "Add your first customer" look
+  actionable but do nothing.
+  Files: `JobsPage.tsx`, `ContractsPage.tsx`, `CustomersPage.tsx` | Effort: 1/5 each
+
+- [ ] **UI-06: Three inconsistent error presentation styles** — yellow banner
+  (most pages), red no-border banner (Operator), red bordered card (Dispatch).
+  Fix: standardise on yellow/amber banner component everywhere. | Effort: 2/5
+
+- [ ] **UI-07: Operator Dashboard error has no retry button** — "Failed to load
+  rate limits" has no recovery action.
+  File: `apps/admin-web/src/pages/OperatorDashboardPage.tsx` | Effort: 1/5
+
+**MEDIUM:**
+
+- [ ] **UI-08: Button label convention inconsistent** — "New job" / "+ Add
+  Customer" / "New contract" / "Create". Standardise on "New [entity]".
+  Effort: 1/5
+
+- [ ] **UI-09: Onboarding banner shows on operator-only pages** — Tenants and
+  Operator Dashboard show "Getting started — dispatch your first job" which is
+  irrelevant for operators. Suppress for operator role / on those routes.
+  Effort: 1/5
+
+- [ ] **UI-10: Login page missing "Forgot password?" link**
+  File: `apps/admin-web/src/components/LoginPage.tsx` | Effort: 1/5
+
 - [ ] **Route reorder UX hint** — The "Use ↑↓ to reorder" text on the Routes
   page is subtle. If user testing shows confusion, promote to `CardDescription`
   or add a more visible drag handle. Currently deferred pending feedback.
   File: `apps/admin-web/src/pages/RoutesPage.tsx`
   Effort: 1/5 — one-liner change once the decision is made.
+
+**LOW:**
+
+- [ ] **UI-11: Routes native date picker** — `<input type="date">` looks
+  inconsistent cross-browser. Replace with Tailwind-styled or shadcn Calendar.
+  Effort: 2/5
+
+- [ ] **UI-12/13/14** — Login subtitle color (amber vs blue theme), "0 jobs"
+  count redundant with empty state, Dispatch page large empty space below error.
+  Effort: trivial each
 
 ### Infrastructure / Ops
 
@@ -148,3 +211,4 @@ Promote to a numbered slice + task file when scheduling.
 | 2026-06-18 | Adopted segmented-decimal spine ids (ADR 1.1.7) across the active path: concept→spec→HLD→14 ADRs→slice plan→initiatives→open tasks (26-29)→research (RES-025/026/027). `/framework-check` PASS (27 artifacts, 0 warn). Added `## Inbox` drive-by capture section. |
 | 2026-06-18 | Pre-impl: ServiceTitan adapter (14 tests pass), Jobber adapter (10 tests pass), PestPac scaffold (10 tests pass); migrations 0015/0016/0017; slice designs 026/027/028; CLAUDE.md Gate 1 updated with /framework-check pointer + spine IDs. Cleared Inbox. |
 | 2026-06-24 | Adapter wiring: lazy DB lookup in `_adapter_name`; `_register_back_office_adapters()` in lifespan; `JobberAdapter` lazy credential load + DB token persist; `JobberCredentials` ORM model; integrations router (`PATCH /admin/tenants/{id}/adapter`, Jobber OAuth2 connect/callback). 37 adapter tests pass. |
+| 2026-06-24 | Full-app UI screenshot review (all 10 pages, desktop + mobile). 14 findings logged in `033-tasks.ui-improvements.md`. Critical: mobile nav overflow (5+ pages unreachable). High: missing Vehicles/Users add buttons, non-clickable empty-state CTAs, 3 inconsistent error styles. Medium/low: button label consistency, onboarding on operator pages, forgot-password. WS-09–12 added to workstreams. |

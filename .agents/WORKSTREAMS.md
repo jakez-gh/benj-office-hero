@@ -10,7 +10,11 @@ Each row is a claimable unit of work. Status: `open` | `claimed:<agent-id>` | `d
 | WS-04 | open | BackOfficeSyncService: write unit tests for lazy `_adapter_name` | `tests/` |
 | WS-05 | done | Code review: `sq review code --diff origin/main` — report findings, fix nits | CI gate |
 | WS-06 | open | Route reorder UX hint — decide and implement (RoutesPage.tsx) | `apps/admin-web/src/pages/RoutesPage.tsx` |
-| WS-07 | claimed:gamma | Verify TenantsPage renders correctly: start dev server, smoke-test the UI | `apps/admin-web/` |
+| WS-07 | done | Verify TenantsPage renders correctly: start dev server, smoke-test the UI | `apps/admin-web/` |
 | WS-08 | done | Update DEVLOG.md with Slices 29 + 30 summary | `DEVLOG.md` |
+| WS-09 | open | UI-01: Mobile nav hamburger drawer — 5+ pages unreachable at 375px | `apps/admin-web/src/components/NavShell.tsx` |
+| WS-10 | open | UI-02/03/04/05: Tenants table scroll + Vehicles/Users add buttons + empty-state CTAs | `apps/admin-web/src/pages/` |
+| WS-11 | open | UI-06/07: Standardise error presentation + Operator Dashboard retry button | `apps/admin-web/src/pages/` |
+| WS-12 | open | UI-08/09/10: Button label consistency, suppress onboarding on operator pages, forgot-password link | `apps/admin-web/src/` |
 
 Agents: claim a row by editing its Status cell and pushing immediately.
