@@ -101,6 +101,7 @@ export const TenantsPage: React.FC = () => {
           {[0, 1, 2].map(i => <Skeleton key={i} className="h-10 w-full" />)}
         </div>
       ) : (
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -147,6 +148,7 @@ export const TenantsPage: React.FC = () => {
             )}
           </TableBody>
         </Table>
+        </div>
       )}
 
       {/* New tenant form */}

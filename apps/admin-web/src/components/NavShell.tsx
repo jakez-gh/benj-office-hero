@@ -140,7 +140,7 @@ export const NavShell: React.FC<{ children?: React.ReactNode }> = ({ children })
         </nav>
       </div>
 
-      <OnboardingChecklist />
+      {!/^\/(tenants|operator)(\/|$)/.test(location.pathname) && <OnboardingChecklist />}
       <main className="mx-auto max-w-6xl p-4 sm:p-6">{children}</main>
     </div>
   );

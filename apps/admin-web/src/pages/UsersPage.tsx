@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { listUsers } from '@office-hero/api-client';
 import type { AdminUser } from '@office-hero/api-client';
+import { Button } from '../components/ui/Button';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { useAutoRecover } from '../hooks/useAutoRecover';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -48,6 +49,7 @@ export const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showNewHint, setShowNewHint] = useState(false);
 
   const load = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -83,12 +85,20 @@ export const UsersPage: React.FC = () => {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-neutral-900">Users</h1>
-        {!loading && !error && (
-          <p className="mt-0.5 text-sm text-neutral-500">Live users: {users.length}</p>
-        )}
+      <div className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-neutral-900">Users</h1>
+          {!loading && !error && (
+            <p className="mt-0.5 text-sm text-neutral-500">Live users: {users.length}</p>
+          )}
+        </div>
+        <Button onClick={() => setShowNewHint(v => !v)}>New User</Button>
       </div>
+      {showNewHint && (
+        <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+          User creation is managed via the backend API. Contact your administrator to invite new users.
+        </p>
+      )}
 
       {error && <ErrorBanner error={error} />}
 

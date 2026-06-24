@@ -153,7 +153,7 @@ export function CustomersPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-neutral-900">Customers</h1>
-        <Button onClick={() => setShowAdd(true)}>+ Add Customer</Button>
+        <Button onClick={() => setShowAdd(true)}>New Customer</Button>
       </div>
 
       <Input
@@ -172,8 +172,11 @@ export function CustomersPage() {
           ))}
         </div>
       ) : customers.length === 0 ? (
-        <div className="text-center py-12 text-neutral-500">
-          No customers yet. Add your first customer to get started.
+        <div className="rounded-lg border border-dashed border-neutral-300 py-12 text-center">
+          <p className="text-neutral-500">No customers yet.</p>
+          <Button className="mt-4" variant="ghost" onClick={() => setShowAdd(true)}>
+            Add your first customer
+          </Button>
         </div>
       ) : (
         <Table>

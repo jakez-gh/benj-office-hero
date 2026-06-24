@@ -506,7 +506,7 @@ export const ContractsPage: React.FC = () => {
           >
             {generating ? 'Generating…' : 'Generate due jobs'}
           </Button>
-          <Button onClick={() => setShowCreate(true)}>New contract</Button>
+          <Button onClick={() => setShowCreate(true)}>New Contract</Button>
         </div>
       </div>
 

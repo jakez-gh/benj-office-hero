@@ -27,13 +27,15 @@ function RateLimitsTab() {
   const [editing, setEditing] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
     listRateLimitsApi()
       .then(r => { setItems(r.items); setError(null); })
       .catch((e: ApiError) => setError(e.detail ?? 'Failed to load rate limits'))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   function beginEdit(name: string, current: number) {
     setEditing(prev => ({ ...prev, [name]: current }));
@@ -60,7 +62,18 @@ function RateLimitsTab() {
   }
 
   if (loading) return <p className="text-sm text-neutral-500">Loading…</p>;
-  if (error) return <ErrorBanner error={error} />;
+  if (error) return (
+    <div className="space-y-3">
+      <ErrorBanner error={error} />
+      <button
+        className="text-sm font-medium text-primary-600 hover:underline"
+        type="button"
+        onClick={() => void load()}
+      >
+        Retry
+      </button>
+    </div>
+  );
 
   return (
     <div>

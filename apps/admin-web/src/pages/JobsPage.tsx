@@ -591,7 +591,7 @@ export const JobsPage: React.FC = () => {
             <p className="mt-0.5 text-sm text-neutral-500">{total} job{total === 1 ? '' : 's'}</p>
           )}
         </div>
-        <Button onClick={() => setShowCreate(true)}>New job</Button>
+        <Button onClick={() => setShowCreate(true)}>New Job</Button>
       </div>
 
       <div className="mb-4 flex gap-3">

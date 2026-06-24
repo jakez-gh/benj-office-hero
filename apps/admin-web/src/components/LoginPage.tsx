@@ -86,6 +86,11 @@ export const LoginPage: React.FC = () => {
               >
                 {loading ? 'Signing in…' : 'Sign in'}
               </Button>
+              <p className="text-center text-sm text-neutral-500">
+                <a href="mailto:support@officehero.app" className="text-primary-600 hover:underline">
+                  Forgot password?
+                </a>
+              </p>
             </form>
           </CardContent>
         </Card>
