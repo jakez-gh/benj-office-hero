@@ -6,7 +6,7 @@ parent: 1
 status: active
 docType: tasks
 project: office-hero
-dateUpdated: 20260618
+dateUpdated: 20260624
 ---
 
 # Open Work Index — Office Hero
@@ -48,21 +48,37 @@ These are human actions (no code changes required):
 
 Blocked on: External API credentials for each system.
 
+**Adapter wiring complete** (no credentials needed to complete these):
+
+- `BackOfficeSyncService._adapter_name` does lazy DB lookup per tenant
+- `_register_back_office_adapters()` called at startup — adapters auto-register
+  when their env vars are set on the Fly.io machine
+- `PATCH /admin/tenants/{id}/adapter` endpoint lets operators switch a tenant's
+  back-office adapter at any time
+- `GET /admin/integrations/jobber/connect` + `GET /admin/integrations/jobber/callback`
+  complete the Jobber OAuth2 flow and store tokens in `jobber_credentials`
+
 - [ ] **Slice 25 — ServiceTitan** — Needs `SERVICETITAN_CLIENT_ID`,
-  `SERVICETITAN_CLIENT_SECRET`, `SERVICETITAN_TENANT_ID` as Fly.io secrets.
-  Research complete: `research/025-research.servicetitan-api.md` (RES-025).
+  `SERVICETITAN_CLIENT_SECRET`, `SERVICETITAN_APP_KEY`, `SERVICETITAN_TENANT_ID`
+  as Fly.io secrets. **Pre-impl complete**: adapter (`servicetitan.py`) + 14 tests
+  + migration 0015 + slice design `026-slice.servicetitan-integration.md`.
+  Research: `research/025-research.servicetitan-api.md` (RES-025).
   Tasks: `026-tasks.servicetitan-integration.md`
 
-- [ ] **Slice 26 — PestPac** — Needs `PESTPAC_API_KEY`, `PESTPAC_BASE_URL`
-  as Fly.io secrets; also trial access via `APISales@workwave.com`.
-  Research complete: `research/026-research.pestpac-api.md` (RES-026).
-  **Design blocker:** confirm sync vs. async Odyssey API response model before
-  writing the slice design (see RES-026 open questions).
+- [ ] **Slice 26 — PestPac** — Needs `PESTPAC_API_KEY`, `PESTPAC_COMPANY_KEY`
+  as Fly.io secrets; trial access via `APISales@workwave.com`.
+  **Pre-impl partial**: scaffold (`pestpac.py`) + 10 tests + migration 0017 +
+  slice design `027-slice.pestpac-integration.md` (`status: needs-sandbox`).
+  HTTP call layer still blocked on RES-026 Q1 (sync vs. async response model).
+  Research: `research/026-research.pestpac-api.md` (RES-026).
   Tasks: `027-tasks.pestpac-integration.md`
 
-- [ ] **Slice 27 — Jobber** — Needs `JOBBER_CLIENT_ID`, `JOBBER_CLIENT_SECRET`,
-  `JOBBER_REFRESH_TOKEN` as Fly.io secrets; OAuth app at developer.getjobber.com.
-  Research complete: `research/027-research.jobber-api.md` (RES-027).
+- [ ] **Slice 27 — Jobber** — Needs `JOBBER_CLIENT_ID`, `JOBBER_CLIENT_SECRET`
+  as Fly.io secrets + OAuth app at developer.getjobber.com.
+  **Pre-impl complete**: adapter (`jobber.py`) + 10 tests + migration 0016 +
+  slice design `028-slice.jobber-integration.md`. Credentials stored in DB via
+  OAuth2 callback; `from_tenant` loads them lazily on first API call.
+  Research: `research/027-research.jobber-api.md` (RES-027).
   Tasks: `028-tasks.jobber-integration.md`
 
 All three implement `BackOfficeAdapter` + Saga + Transactional Outbox.
@@ -121,3 +137,4 @@ Promote to a numbered slice + task file when scheduling.
 | 2026-06-17 | Removed stale Slice 7a entry (implemented 2026-06-17); removed Slices 6/17-19 (code complete in apps/tech-mobile + apps/tech-web — only Maestro tests remain, tracked under Slice 28); added initiatives file reference; added research/ prereq notes for Slices 25-27 |
 | 2026-06-18 | Adopted segmented-decimal spine ids (ADR 1.1.7) across the active path: concept→spec→HLD→14 ADRs→slice plan→initiatives→open tasks (26-29)→research (RES-025/026/027). `/framework-check` PASS (27 artifacts, 0 warn). Added `## Inbox` drive-by capture section. |
 | 2026-06-18 | Pre-impl: ServiceTitan adapter (14 tests pass), Jobber adapter (10 tests pass), PestPac scaffold (10 tests pass); migrations 0015/0016/0017; slice designs 026/027/028; CLAUDE.md Gate 1 updated with /framework-check pointer + spine IDs. Cleared Inbox. |
+| 2026-06-24 | Adapter wiring: lazy DB lookup in `_adapter_name`; `_register_back_office_adapters()` in lifespan; `JobberAdapter` lazy credential load + DB token persist; `JobberCredentials` ORM model; integrations router (`PATCH /admin/tenants/{id}/adapter`, Jobber OAuth2 connect/callback). 37 adapter tests pass. |

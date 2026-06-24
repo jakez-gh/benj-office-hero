@@ -48,10 +48,24 @@ class BackOfficeSyncService:
         self._tenant_repo = tenant_repo
 
     async def _adapter_name(self, tenant_id: UUID) -> str:
-        if self._tenant_repo is None:
+        if self._tenant_repo is not None:
+            tenant = await self._tenant_repo.get_by_id(tenant_id)
+            return getattr(tenant, "back_office_adapter", None) or "native"
+        # Lazy DB lookup — works in production without changing the constructor
+        # signature (tests pass no tenant_repo; engine won't be set → "native").
+        try:
+            from office_hero.api.state import get_engine  # noqa: PLC0415
+            from office_hero.db.session import get_session  # noqa: PLC0415
+            from office_hero.models.tenant import Tenant  # noqa: PLC0415
+            from sqlalchemy import select  # noqa: PLC0415
+
+            engine = get_engine()
+            async with get_session(engine) as session:
+                result = await session.execute(select(Tenant).where(Tenant.id == tenant_id))
+                tenant = result.scalars().first()
+                return getattr(tenant, "back_office_adapter", None) or "native"
+        except Exception:  # noqa: BLE001 - engine absent in test env
             return "native"
-        tenant = await self._tenant_repo.get_by_id(tenant_id)
-        return getattr(tenant, "back_office_adapter", None) or "native"
 
     async def _dispatch(self, adapter, event: dict[str, Any]) -> None:
         """Route one event to the adapter method for its type."""

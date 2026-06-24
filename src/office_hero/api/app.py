@@ -25,6 +25,7 @@ from office_hero.api.middleware.security_headers import SecurityHeadersMiddlewar
 from office_hero.api.middleware.test_auth import TestAuthMiddleware, test_auth_enabled
 from office_hero.api.routes import auth, health
 from office_hero.api.routes.admin import audit_router, create_admin_router, rate_limits_router
+from office_hero.api.routes.integrations import create_integrations_router
 from office_hero.api.routes.contracts import create_contract_router
 from office_hero.api.routes.customers import create_customer_router
 from office_hero.api.routes.dispatch import create_dispatch_router
@@ -96,6 +97,44 @@ from office_hero.services.vehicle_service import VehicleService
 log = get_logger(__name__)
 
 
+def _register_back_office_adapters() -> None:
+    """Conditionally register concrete back-office adapters present in env.
+
+    Non-fatal when credentials are absent — those adapters simply won't be
+    available and tenants configured for them fall back to 'native'.  This
+    keeps the in-memory / test environment booting without any credentials.
+    """
+    from office_hero.adapters.back_office.registry import register_adapter  # noqa: PLC0415
+
+    if all(
+        os.environ.get(k)
+        for k in (
+            "SERVICETITAN_CLIENT_ID",
+            "SERVICETITAN_CLIENT_SECRET",
+            "SERVICETITAN_APP_KEY",
+            "SERVICETITAN_TENANT_ID",
+        )
+    ):
+        from office_hero.adapters.back_office.servicetitan import ServiceTitanAdapter  # noqa: PLC0415
+
+        register_adapter("servicetitan", ServiceTitanAdapter.from_tenant)
+        log.info("back_office.registered", adapter="servicetitan")
+
+    if all(os.environ.get(k) for k in ("JOBBER_CLIENT_ID", "JOBBER_CLIENT_SECRET")):
+        from office_hero.adapters.back_office.jobber import JobberAdapter  # noqa: PLC0415
+
+        register_adapter("jobber", JobberAdapter.from_tenant)
+        log.info("back_office.registered", adapter="jobber")
+
+    # PestPac HTTP call layer is blocked on sandbox access (see RES-026 Q1).
+    # Register once the NotImplementedError stubs are completed.
+    if all(os.environ.get(k) for k in ("PESTPAC_API_KEY", "PESTPAC_COMPANY_KEY")):
+        from office_hero.adapters.back_office.pestpac import PestPacAdapter  # noqa: PLC0415
+
+        register_adapter("pestpac", PestPacAdapter.from_tenant)
+        log.info("back_office.registered", adapter="pestpac")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Application lifespan: bring up shared resources, then dispose them.
@@ -127,6 +166,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             engine = create_engine(settings.database_url)
             set_engine(engine)
             set_auth_service(AuthService(settings))
+            _register_back_office_adapters()
             log.info("app.lifespan.startup", db="ready", auth="ready")
         except Exception as exc:  # noqa: BLE001 - intentional broad catch
             log.warning("app.lifespan.startup_skipped", error=str(exc))
@@ -431,6 +471,9 @@ def create_app(
     application.include_router(admin_router, prefix="/admin", tags=["admin"])
     application.include_router(audit_router, prefix="/admin", tags=["admin"])
     application.include_router(rate_limits_router, prefix="/admin", tags=["admin"])
+    application.include_router(
+        create_integrations_router(), prefix="/admin", tags=["admin", "integrations"]
+    )
 
     customer_router = create_customer_router(
         service_provider=lambda: customer_service,

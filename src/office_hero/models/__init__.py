@@ -25,3 +25,4 @@ from office_hero.models.user import User  # noqa: F401, E402
 from office_hero.models.vehicle import Vehicle  # noqa: F401, E402
 from office_hero.models.vehicle_crew import VehicleCrew, VehicleCrewMember  # noqa: F401, E402
 from office_hero.models.vehicle_location import VehicleLocation  # noqa: F401, E402
+from office_hero.models.jobber_credentials import JobberCredentials  # noqa: F401, E402

@@ -119,10 +119,14 @@ class JobberAdapter:
         config: JobberConfig,
         creds: JobberCredentials,
         http: httpx.AsyncClient | None = None,
+        *,
+        db_init_pending: bool = False,
     ) -> None:
         self._cfg = config
         self._creds = creds
         self._http = http or httpx.AsyncClient()
+        # When True, _refresh_token_if_needed loads creds from DB before first call.
+        self._db_init_pending = db_init_pending
         # Scaffold entity cache: (entity_type, internal_id) -> jobber_id
         # Production: replace with jobber_entity_map table queries.
         self._entity_cache: dict[tuple[str, UUID], str] = {}
@@ -131,8 +135,72 @@ class JobberAdapter:
     # Token management
     # ------------------------------------------------------------------
 
+    async def _load_creds_from_db(self) -> None:
+        """Load real OAuth2 credentials from the ``jobber_credentials`` table.
+
+        Called on first use when ``from_tenant`` was constructed without env-var
+        tokens (production path — tokens come from the Jobber OAuth2 callback).
+        """
+        from office_hero.api.state import get_engine  # noqa: PLC0415
+        from office_hero.db.session import get_session  # noqa: PLC0415
+        from office_hero.models.jobber_credentials import (  # noqa: PLC0415
+            JobberCredentials as JCModel,
+        )
+        from sqlalchemy import select  # noqa: PLC0415
+
+        engine = get_engine()
+        async with get_session(engine) as session:
+            result = await session.execute(
+                select(JCModel).where(JCModel.tenant_id == self._creds.tenant_id)
+            )
+            row = result.scalars().first()
+        if row is None:
+            raise RuntimeError(
+                f"No Jobber credentials found for tenant {self._creds.tenant_id}. "
+                "Complete the OAuth2 flow at /admin/integrations/jobber/connect first."
+            )
+        self._creds.access_token = row.access_token
+        self._creds.refresh_token = row.refresh_token
+        self._creds.expires_at = row.expires_at
+        self._creds.custom_field_client_config_id = row.custom_field_client_config_id
+        self._creds.custom_field_job_config_id = row.custom_field_job_config_id
+        self._db_init_pending = False
+
+    async def _persist_creds_to_db(self) -> None:
+        """Persist refreshed tokens back to ``jobber_credentials``.
+
+        Called after every token refresh so rotated refresh tokens are not lost.
+        """
+        from office_hero.api.state import get_engine  # noqa: PLC0415
+        from office_hero.db.session import get_session  # noqa: PLC0415
+        from sqlalchemy import text  # noqa: PLC0415
+
+        try:
+            engine = get_engine()
+            async with get_session(engine) as session:
+                await session.execute(
+                    text(
+                        "UPDATE jobber_credentials "
+                        "SET access_token = :at, refresh_token = :rt, "
+                        "    expires_at = :ea, updated_at = NOW() "
+                        "WHERE tenant_id = :tid"
+                    ),
+                    {
+                        "at": self._creds.access_token,
+                        "rt": self._creds.refresh_token,
+                        "ea": self._creds.expires_at,
+                        "tid": self._creds.tenant_id,
+                    },
+                )
+                await session.commit()
+        except Exception:  # noqa: BLE001 - non-fatal; next process will refresh again
+            pass
+
     async def _refresh_token_if_needed(self) -> None:
         """Refresh the access token if it expires within 5 minutes."""
+        if self._db_init_pending:
+            await self._load_creds_from_db()
+
         threshold = datetime.now(tz=timezone.utc) + timedelta(minutes=5)
         if self._creds.expires_at > threshold:
             return
@@ -154,7 +222,7 @@ class JobberAdapter:
         self._creds.expires_at = datetime.now(tz=timezone.utc) + timedelta(
             seconds=payload.get("expires_in", 3600)
         )
-        # TODO (production): persist updated creds to jobber_credentials table.
+        await self._persist_creds_to_db()
 
     # ------------------------------------------------------------------
     # GraphQL transport
@@ -453,19 +521,35 @@ class JobberAdapter:
     def from_tenant(cls, tenant_id: UUID, customer_repo: Any, job_repo: Any) -> "JobberAdapter":
         """Construct a JobberAdapter for ``tenant_id``.
 
-        Scaffold: loads credentials from environment variables (single-tenant).
-        Production TODO: query ``jobber_credentials`` for the tenant row.
+        Production path: tokens are loaded lazily from the ``jobber_credentials``
+        table on first API call (set ``db_init_pending=True``).  This avoids
+        running a DB query inside a synchronous factory while still supporting
+        the async FastAPI event loop used by ``process_pending``.
+
+        Env-var fallback (single-tenant testing): if ``JOBBER_ACCESS_TOKEN`` is
+        set, use it directly instead of the DB lookup.
         """
         cfg = JobberConfig.from_env()
-        creds = JobberCredentials(
+        # Env-var shortcut for local testing / staging with a single Jobber account
+        if os.environ.get("JOBBER_ACCESS_TOKEN"):
+            creds = JobberCredentials(
+                tenant_id=tenant_id,
+                access_token=os.environ["JOBBER_ACCESS_TOKEN"],
+                refresh_token=os.environ.get("JOBBER_REFRESH_TOKEN", ""),
+                expires_at=datetime.now(tz=timezone.utc) + timedelta(hours=1),
+                custom_field_client_config_id=os.environ.get("JOBBER_CF_CLIENT_ID"),
+                custom_field_job_config_id=os.environ.get("JOBBER_CF_JOB_ID"),
+            )
+            return cls(cfg, creds, db_init_pending=False)
+
+        # Production: placeholder creds — real tokens loaded from DB on first call.
+        placeholder = JobberCredentials(
             tenant_id=tenant_id,
-            access_token=os.environ["JOBBER_ACCESS_TOKEN"],
-            refresh_token=os.environ["JOBBER_REFRESH_TOKEN"],
-            expires_at=datetime.now(tz=timezone.utc) + timedelta(hours=1),
-            custom_field_client_config_id=os.environ.get("JOBBER_CF_CLIENT_ID"),
-            custom_field_job_config_id=os.environ.get("JOBBER_CF_JOB_ID"),
+            access_token="__pending__",
+            refresh_token="__pending__",
+            expires_at=datetime.min.replace(tzinfo=timezone.utc),
         )
-        return cls(cfg, creds)
+        return cls(cfg, placeholder, db_init_pending=True)
 
 
 # ---------------------------------------------------------------------------
