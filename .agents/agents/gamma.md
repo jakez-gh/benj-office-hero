@@ -1,32 +1,29 @@
 ---
 agent: gamma
 status: done
-workstream: WS-07
-last_commit: ""
-last_updated: 2026-06-24T01:00Z
+workstream: WS-07 / WS-09
+last_commit: 50cd9bd
+last_updated: 2026-06-24T02:00Z
 ---
 
 ## Current task
 
-Done — UI review complete, findings documented.
+Done — all WS-09 work complete; alpha handled WS-10/11/12.
 
 ## Completed this session
 
-- Claimed WS-07; registered in ROSTER.md
-- Updated screenshots.spec.ts to include /tenants and /operator routes (with operator role seeding)
-- Captured fresh screenshots for all 10 pages (desktop + mobile) against port 3001
-- Full review: identified 14 findings across Critical/High/Medium/Low
-- Created 033-tasks.ui-improvements.md with full detail on each finding
-- Updated 951-tasks.open-work.md with all findings under UX/Polish
-- Added WS-09/10/11/12 to WORKSTREAMS.md for the fix batches
+- WS-07: Full screenshot review — all 10 pages, desktop + mobile; 14 findings documented
+- WS-09: Mobile nav hamburger drawer (50cd9bd) — fixes UI-01
+- Updated screenshots.spec.ts to include /tenants and /operator routes
+- Created 033-tasks.ui-improvements.md, updated 951-tasks.open-work.md
+- Added WS-09 through WS-12 to WORKSTREAMS.md
 
-## Key findings
+## Alpha completed in parallel (d0d4bae)
 
-- **CRITICAL:** Mobile nav at 375px shows only Jobs/Contracts/Sign-out — 5+ pages unreachable (WS-09)
-- **HIGH:** Vehicles/Users pages have no Add button; empty-state CTAs are plain text (WS-10)
-- **HIGH:** 3 inconsistent error styles across the app (WS-11)
-- **MEDIUM:** Button label inconsistency, onboarding on operator pages, no forgot-password (WS-12)
+- UI-02 through UI-10 (Tenants table scroll, Vehicles/Users add buttons,
+  empty-state CTAs clickable, error style consistency, Operator retry,
+  button label standardisation, onboarding suppression, forgot-password link)
 
 ## Blocked on
 
-Nothing — work is documented and ready for any agent to pick up WS-09 through WS-12.
+Nothing. Remaining open work: UI-11/12/13/14 (low), QA-01/02, infra activations.
