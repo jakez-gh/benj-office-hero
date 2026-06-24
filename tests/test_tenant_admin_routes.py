@@ -16,19 +16,28 @@ import pytest
 from fastapi.testclient import TestClient
 
 from office_hero.api.app import create_app
+from office_hero.api.limiter import limiter
 from tests.conftest import override_admin_auth
 
 
 @pytest.fixture()
 def app():
-    a = create_app()
-    override_admin_auth(a)
-    return a
+    saved = dict(limiter._route_limits)
+    limiter._route_limits.clear()
+    try:
+        a = create_app()
+        override_admin_auth(a)
+        yield a
+    finally:
+        limiter._route_limits.clear()
+        limiter._route_limits.update(saved)
 
 
 @pytest.fixture()
 def client(app):
     return TestClient(app)
+
+
 
 
 @pytest.fixture()

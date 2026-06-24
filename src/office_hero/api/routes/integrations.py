@@ -74,6 +74,15 @@ class AdapterUpdateRequest(BaseModel):
     model_config = {"extra": "forbid"}
     adapter: str
 
+    @field_validator("adapter")
+    @classmethod
+    def adapter_valid(cls, v: str) -> str:
+        if v not in VALID_ADAPTERS:
+            raise ValueError(
+                f"Invalid adapter '{v}'. Valid options: {sorted(VALID_ADAPTERS)}"
+            )
+        return v
+
 
 def create_integrations_router() -> APIRouter:
     """Create and return the integrations router (mount at /admin)."""
@@ -182,14 +191,6 @@ def create_integrations_router() -> APIRouter:
         tenant_id: Annotated[UUID, Path(description="Tenant UUID")],
         body: Annotated[AdapterUpdateRequest, Body()],
     ) -> dict:
-        if body.adapter not in VALID_ADAPTERS:
-            raise HTTPException(
-                status_code=422,
-                detail=(
-                    f"Invalid adapter '{body.adapter}'. "
-                    f"Valid options: {sorted(VALID_ADAPTERS)}"
-                ),
-            )
         try:
             from office_hero.api.state import get_engine  # noqa: PLC0415
             from office_hero.db.session import get_session  # noqa: PLC0415
