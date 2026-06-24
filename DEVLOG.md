@@ -5,6 +5,52 @@ Format: `## YYYYMMDD` date header followed by brief session notes.
 
 ---
 
+## 20260624 (session 7 — Slices 29–30: tenant management + back-office adapter wiring)
+
+Three areas completed:
+
+- **Back-office adapter wiring (Slices 25–28 follow-up):** Fixed
+  `BackOfficeSyncService._adapter_name` (was always returning "native" because
+  `tenant_repo=None` at import time); replaced with lazy DB lookup via
+  `get_engine()` acquired after lifespan startup. Added
+  `_register_back_office_adapters()` in `app.py` lifespan — ServiceTitan,
+  Jobber, and PestPac adapters self-register when their env vars are present.
+  `JobberCredentials` ORM model + migration stub for `jobber_credentials` table
+  (per-tenant OAuth2 tokens, rotate-on-refresh). Jobber adapter updated with
+  `db_init_pending` lazy-load flag so `from_tenant()` can be called synchronously
+  from the registry while credentials are fetched async on first API call.
+
+- **Slice 29 — Tenant admin backend:** New `integrations.py` router (mounted at
+  `/admin`) exposes `GET /admin/tenants` (paginated, `jobber_connected` flag via
+  `jobber_credentials` subquery), `POST /admin/tenants` (creates tenant with
+  native adapter), `PATCH /admin/tenants/{id}/adapter` (switches adapter),
+  `GET /admin/integrations/jobber/connect` (OAuth2 redirect), and
+  `GET /admin/integrations/jobber/callback` (code exchange → upsert creds →
+  set tenant adapter). All routes operator-gated. 11 unit tests; schema
+  validation via Pydantic `@field_validator` on both `industry` and `adapter`
+  fields. Rate-limiter fixture cleanup per CLAUDE.md git rules.
+
+- **Slice 30 — Tenant admin UI:** `TenantsPage.tsx` — table with name, industry,
+  adapter `<select>` (auto-saves via PATCH on change, per-row spinner), integration
+  status column (Connect Jobber link / "Connected" / "Env vars" chip), and inline
+  New Tenant form at bottom. API client additions: `Tenant` interface,
+  `listTenantsApi()`, `createTenantApi()`, `patchTenantAdapterApi()`. Operator-only
+  `/tenants` route wired in `App.tsx`; "Tenants" nav entry added between Users and
+  Operator in `NavShell.tsx`. TypeScript clean.
+
+- **Multi-agent coordination bootstrap:** `.agents/` directory with `README.md`,
+  `WORKSTREAMS.md`, `ROSTER.md`, per-agent heartbeat files, and inbox drop-box.
+  Protocol: prime-number pause between polling cycles, workstream claim via file
+  edit + push, inbox for agent-to-agent notes.
+
+- **Code review (sq review):** Addressed both CONCERNS — rate-limiter fixture
+  save/clear/restore in `test_tenant_admin_routes.py`, and adapter validation
+  moved into `AdapterUpdateRequest.adapter_valid` `@field_validator` (87d673a).
+
+- Commits: bed79e3 → 87d673a. All 11 tenant-route tests pass; TypeScript clean.
+
+---
+
 ## 20260612 (session 6 — customer-ready: Contracts, dispatch override, CRM seam, screenshot pipeline)
 
 Four PRs merged (#109–#112), closing the first-prompt feature bar:
