@@ -2,7 +2,7 @@
 id: 1.1.2.15
 type: slice-design
 parent: 1.1.2
-status: ready
+status: complete
 size: small
 slice: tenant-admin-ui
 dateCreated: 20260624

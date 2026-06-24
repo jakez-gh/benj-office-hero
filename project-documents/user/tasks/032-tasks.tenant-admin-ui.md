@@ -2,7 +2,7 @@
 id: 1.1.2.15.1
 type: tasks
 parent: 1.1.2.15
-status: not_started
+status: complete
 size: small
 slice: tenant-admin-ui
 dateCreated: 20260624
@@ -15,12 +15,12 @@ Parent slice: `030-slice.tenant-admin-ui.md`
 
 ## Tasks
 
-- [ ] **T1** — Add API client functions to `apps/admin-web/src/api.ts`
+- [x] **T1** — Add API client functions to `apps/admin-web/src/api.ts`
   - `listTenantsApi()`, `createTenantApi(body)`, `patchTenantAdapterApi(id, adapter)`
   - `Tenant` interface: `id, name, industry, back_office_adapter, created_at, jobber_connected?`
   - DoD: functions exist and TypeScript compiles cleanly
 
-- [ ] **T2** — Create `apps/admin-web/src/pages/TenantsPage.tsx`
+- [x] **T2** — Create `apps/admin-web/src/pages/TenantsPage.tsx`
   - Tenant list table: name, industry, adapter selector (`<select>`), Connect Jobber / status column
   - Adapter `<select>` fires `patchTenantAdapterApi` on change; show spinner while saving
   - "Connect Jobber" button navigates to `/admin/integrations/jobber/connect?tenant_id={id}`
@@ -29,7 +29,7 @@ Parent slice: `030-slice.tenant-admin-ui.md`
   - Loading / error states following `OperatorDashboardPage.tsx` pattern
   - DoD: page renders, adapter changes save, Create adds a new row
 
-- [ ] **T3** — Wire route and nav link
+- [x] **T3** — Wire route and nav link
   - Add `<Route path="/tenants" element={<TenantsPage />}>` to `App.tsx` (or wherever routes live)
   - Add "Tenants" nav link between Users and Operator entries
   - DoD: clicking the nav link opens the page; browser back works
