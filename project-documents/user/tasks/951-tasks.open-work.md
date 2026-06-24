@@ -102,6 +102,17 @@ Full findings: `project-documents/user/tasks/033-tasks.ui-improvements.md`
   count redundant with empty state, Dispatch page large empty space below error.
   Effort: trivial each
 
+**QA / Screenshot & Demo Coverage:**
+
+- [ ] **QA-01: screenshots-seeded.spec.ts** — Missing `/tenants` and `/operator`
+  routes (committed spec has all 10; seeded variant stopped at 8).
+  File: `apps/admin-web/src/e2e/screenshots-seeded.spec.ts` | Effort: 1/5
+
+- [ ] **QA-02: Demo 4 — Tenants admin + Operator Dashboard**
+  Seed 2–3 tenants, walk `/tenants` (list + adapter badges) then `/operator`
+  (rate-limit panel). No video demo exists for these pages today.
+  File: `apps/admin-web/src/e2e/demo-flows.spec.ts` | Effort: 2/5
+
 ### Infrastructure / Ops
 
 These are human actions (no code changes required):
@@ -212,3 +223,4 @@ Promote to a numbered slice + task file when scheduling.
 | 2026-06-18 | Pre-impl: ServiceTitan adapter (14 tests pass), Jobber adapter (10 tests pass), PestPac scaffold (10 tests pass); migrations 0015/0016/0017; slice designs 026/027/028; CLAUDE.md Gate 1 updated with /framework-check pointer + spine IDs. Cleared Inbox. |
 | 2026-06-24 | Adapter wiring: lazy DB lookup in `_adapter_name`; `_register_back_office_adapters()` in lifespan; `JobberAdapter` lazy credential load + DB token persist; `JobberCredentials` ORM model; integrations router (`PATCH /admin/tenants/{id}/adapter`, Jobber OAuth2 connect/callback). 37 adapter tests pass. |
 | 2026-06-24 | Full-app UI screenshot review (all 10 pages, desktop + mobile). 14 findings logged in `033-tasks.ui-improvements.md`. Critical: mobile nav overflow (5+ pages unreachable). High: missing Vehicles/Users add buttons, non-clickable empty-state CTAs, 3 inconsistent error styles. Medium/low: button label consistency, onboarding on operator pages, forgot-password. WS-09–12 added to workstreams. |
+| 2026-06-24 | QA coverage audit: screenshots.spec.ts complete (all 10 pages). Added QA-01 (seeded spec missing tenants/operator) and QA-02 (Demo 4 — Tenants + Operator Dashboard). WS-14 added. |

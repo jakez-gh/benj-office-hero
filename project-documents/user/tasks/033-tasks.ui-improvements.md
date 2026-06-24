@@ -166,6 +166,35 @@ card to a centred layout. Or add a placeholder/skeleton that occupies the space.
 
 ---
 
+---
+
+## QA / Screenshot & Demo Coverage
+
+### QA-01: screenshots-seeded.spec.ts — add Tenants and Operator Dashboard routes
+
+**File:** `apps/admin-web/src/e2e/screenshots-seeded.spec.ts`
+**Gap:** `screenshots.spec.ts` covers all 10 routes (including `09-tenants` and
+`10-operator-dashboard`). The seeded-screenshot variant stops at 8 — `/tenants`
+and `/operator` were added to the committed spec but never backported here.
+**Fix:** Add two entries to the `ROUTES` array. Tenants: wait for `text=No tenants`
+or a tenant row element once tenant seeding is added to `seedScenario`. Operator
+Dashboard: wait for `h1` or a rate-limit element.
+**Effort:** 1/5
+
+### QA-02: demo-flows.spec.ts — Demo 4 (Tenants admin + Operator Dashboard)
+
+**File:** `apps/admin-web/src/e2e/demo-flows.spec.ts`
+**Gap:** Demos 1–3 cover Jobs, Dispatch, Routes, Vehicles, Customers, Contracts.
+Tenants and Operator Dashboard have no video demo — they are unreachable in any
+recorded walkthrough.
+**Fix:** Add Demo 4: seed 2–3 tenants via `POST /admin/tenants` using the operator
+seed headers, navigate to `/tenants` (show list, adapter badges), then navigate to
+`/operator` (show rate-limit panel). Include the same deliberate `pause()` cadence
+as other demos so the video is reviewable.
+**Effort:** 2/5
+
+---
+
 ## Work assignment in WORKSTREAMS.md
 
 | WS-ID | Item |
@@ -175,3 +204,4 @@ card to a centred layout. Or add a placeholder/skeleton that occupies the space.
 | WS-11 | UI-03/04/05: Vehicles/Users add buttons + empty-state CTAs |
 | WS-12 | UI-06/07: Standardise error presentation + add retry actions |
 | WS-13 | UI-08/09/10: Button labels, onboarding suppression, forgot-password |
+| WS-14 | QA-01/02: seeded-screenshots + Demo 4 coverage |
