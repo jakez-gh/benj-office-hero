@@ -568,3 +568,44 @@ export function listAuditEventsApi(
   const query = qs.toString() ? `?${qs.toString()}` : '';
   return request<AuditEventListResponse>(`/admin/audit-events${query}`);
 }
+
+// ---------------------------------------------------------------------------
+// Tenant management (Slice 30)
+// ---------------------------------------------------------------------------
+
+export interface Tenant {
+  id: string;
+  name: string;
+  industry: string;
+  back_office_adapter: string;
+  created_at: string;
+  jobber_connected?: boolean;
+}
+
+export interface TenantListResponse {
+  items: Tenant[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export function listTenantsApi(): Promise<TenantListResponse> {
+  return request<TenantListResponse>('/admin/tenants');
+}
+
+export function createTenantApi(body: { name: string; industry: string }): Promise<Tenant> {
+  return request<Tenant>('/admin/tenants', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+export function patchTenantAdapterApi(
+  id: string,
+  adapter: string,
+): Promise<{ tenant_id: string; adapter: string }> {
+  return request<{ tenant_id: string; adapter: string }>(
+    `/admin/tenants/${encodeURIComponent(id)}/adapter`,
+    { method: 'PATCH', body: JSON.stringify({ adapter }) },
+  );
+}

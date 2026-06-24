@@ -18,7 +18,7 @@ const BASE_NAV = [
 export const NavShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const { logout, user } = useContext(AuthContext);
   const navItems = user?.role === 'operator'
-    ? [...BASE_NAV, { to: '/operator', label: 'Operator' }]
+    ? [...BASE_NAV, { to: '/tenants', label: 'Tenants' }, { to: '/operator', label: 'Operator' }]
     : BASE_NAV;
 
   return (
