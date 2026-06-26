@@ -4,10 +4,12 @@ Each row is a claimable unit of work. Status: `open` | `claimed:<agent-id>` | `d
 
 | ID | Status | Description | Slice / File |
 |----|--------|-------------|--------------|
-| WS-01 | open | Run full test suite; fix any failures; report coverage | `pytest` |
-| WS-02 | open | Alembic migration: create `jobber_credentials` table (migration 0018) | `alembic/` |
+| WS-01 | claimed:alpha | Run full test suite; fix any failures; report coverage | `pytest` |
+| WS-02 | claimed:alpha | Alembic migration: create `jobber_credentials` table (migration 0018) | `alembic/` |
 | WS-03 | open | Integration tests for tenant admin routes against a real DB (Slice 29 follow-up) | `tests/integration/` |
-| WS-04 | open | BackOfficeSyncService: write unit tests for lazy `_adapter_name` | `tests/` |
+| WS-04 | claimed:alpha | BackOfficeSyncService: write unit tests for lazy `_adapter_name` | `tests/` |
+| WS-13 | claimed:alpha | QA-01: Add /tenants + /operator to screenshots-seeded.spec.ts | `apps/admin-web/src/e2e/` |
+| WS-14 | claimed:alpha | QA-02: Demo 4 — Tenants admin + Operator Dashboard demo-flows.spec.ts | `apps/admin-web/src/e2e/` |
 | WS-05 | done | Code review: `sq review code --diff origin/main` — report findings, fix nits | CI gate |
 | WS-06 | open | Route reorder UX hint — decide and implement (RoutesPage.tsx) | `apps/admin-web/src/pages/RoutesPage.tsx` |
 | WS-07 | done | Verify TenantsPage renders correctly: start dev server, smoke-test the UI | `apps/admin-web/` |
