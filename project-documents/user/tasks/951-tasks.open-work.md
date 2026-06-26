@@ -6,7 +6,7 @@ parent: 1
 status: active
 docType: tasks
 project: office-hero
-dateUpdated: 20260624
+dateUpdated: 20260625
 ---
 
 # Open Work Index — Office Hero
@@ -183,4 +183,4 @@ Promote to a numbered slice + task file when scheduling.
 | 2026-06-24 | Adapter wiring: lazy DB lookup in `_adapter_name`; `_register_back_office_adapters()` in lifespan; `JobberAdapter` lazy credential load + DB token persist; `JobberCredentials` ORM model; integrations router (`PATCH /admin/tenants/{id}/adapter`, Jobber OAuth2 connect/callback). 37 adapter tests pass. |
 | 2026-06-24 | Full-app UI screenshot review (all 10 pages, desktop + mobile). 14 findings logged in `033-tasks.ui-improvements.md`. Critical: mobile nav overflow (5+ pages unreachable). High: missing Vehicles/Users add buttons, non-clickable empty-state CTAs, 3 inconsistent error styles. Medium/low: button label consistency, onboarding on operator pages, forgot-password. WS-09–12 added to workstreams. |
 | 2026-06-24 | QA coverage audit: screenshots.spec.ts complete (all 10 pages). Added QA-01 (seeded spec missing tenants/operator) and QA-02 (Demo 4 — Tenants + Operator Dashboard). WS-14 added. |
-| 2026-06-25 | Slice 031 complete: all UI-01–14 done, QA-01/02 done. UI-11 partial fix (color-scheme:light on date input). UI-12 confirmed no-change. UI-13/14 + demo role fix shipped (a40b4c6). |
+| 2026-06-25 | Slice 031 complete: all UI-01–14 done, QA-01/02 done. UI-11 partial fix (color-scheme:light on date input). UI-12 confirmed no-change. UI-13/14 + demo role fix shipped (a40b4c6). Multi-agent coordination bootstrapped (.agents/ dir, WORKSTREAMS.md, ROSTER.md, per-agent heartbeats). All WS-01–14 done. Coverage: 558 tests, 77.95%. 526c12a pushed. |
