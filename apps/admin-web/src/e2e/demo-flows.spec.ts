@@ -298,4 +298,54 @@ test.describe('Demo flows', () => {
     await page.waitForLoadState('networkidle');
     await pause(2000);
   });
+
+  test('Demo 4 — Tenants admin + Operator Dashboard', async ({ page, request }) => {
+    const tenantId = randomUUID();
+    const userId = randomUUID();
+    const ctx: SeedCtx = { tenantId, userId, api: request };
+
+    // Seed two additional tenants via the admin endpoint so the Tenants table
+    // has real rows to display (the test tenant itself is always present).
+    const adminHeaders = {
+      'X-Test-Tenant-Id': tenantId,
+      'X-Test-User-Id': userId,
+      'X-Test-Role': 'operator',
+      'X-Test-Permissions': '*',
+    };
+    await request.post(`${BACKEND}/admin/tenants`, {
+      data: { name: 'Acme Pest Control', industry: 'pest_control' },
+      headers: adminHeaders,
+    });
+    await request.post(`${BACKEND}/admin/tenants`, {
+      data: { name: 'Cool Air HVAC', industry: 'hvac' },
+      headers: adminHeaders,
+    });
+
+    await injectAuth(page, tenantId, userId);
+
+    // — Tenants page —
+    await page.goto('/tenants');
+    await page.waitForLoadState('load');
+    await pause(800);
+    // Two seeded tenants should appear
+    await page.waitForSelector('h1', { timeout: 8000 });
+    await pause(1500);
+
+    // — New tenant form —
+    // Fill name and industry then submit
+    await page.fill('input[id="tenant-name"]', 'GreenThumb Landscaping');
+    await page.selectOption('select[aria-label="Industry"]', 'landscaping');
+    await page.getByRole('button', { name: /^Create$/i }).click();
+    await page.waitForLoadState('load');
+    await pause(1500);
+
+    // — Operator Dashboard —
+    await page.goto('/operator');
+    await page.waitForLoadState('load');
+    await pause(800);
+    await page.waitForSelector('h1', { timeout: 8000 });
+    await pause(2000);
+
+    void ctx; // seeded above for headers
+  });
 });

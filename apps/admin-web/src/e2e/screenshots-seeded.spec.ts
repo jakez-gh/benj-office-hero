@@ -104,6 +104,9 @@ async function seedScenario(ctx: SeedCtx): Promise<ScenarioResult> {
     start_date: TWO_MONTHS_AGO, service_type: 'Deep cleaning',
     estimated_duration_min: 90,
   });
+  // Seed tenants so the Tenants admin page shows real rows
+  await apiPost(ctx, '/admin/tenants', { name: 'Acme Pest Control', industry: 'pest_control' });
+  await apiPost(ctx, '/admin/tenants', { name: 'Green Thumb HVAC', industry: 'hvac' });
   return { tenantId: ctx.tenantId, userId: ctx.userId, pendingJobId: job3.id };
 }
 
@@ -171,6 +174,8 @@ const ROUTES: RouteConfig[] = [
   { name: '06-customers', path: '/customers',  waitForSelector: 'text=Riverside' },
   { name: '07-contracts', path: '/contracts',  waitForSelector: 'text=Monthly cleaning plan' },
   { name: '08-routes',    path: '/routes',     waitForSelector: '[data-testid="route-card"]' },
+  { name: '09-tenants',   path: '/tenants',    waitForSelector: 'text=Acme Pest Control' },
+  { name: '10-operator',  path: '/operator',   waitForSelector: 'text=Rate Limits' },
 ];
 
 // Capture screenshots for one viewport using the pre-seeded scenario IDs.
