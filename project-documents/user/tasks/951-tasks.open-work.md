@@ -56,24 +56,21 @@ Full findings: `project-documents/user/tasks/033-tasks.ui-improvements.md`
 
 **LOW:**
 
-- [ ] **UI-11: Routes native date picker** — `<input type="date">` looks
-  inconsistent cross-browser. Replace with Tailwind-styled or shadcn Calendar.
-  Effort: 2/5
+- [x] **UI-11: Routes native date picker** — added `[color-scheme:light]` for
+  consistent cross-browser appearance (a40b4c6). Full shadcn Calendar deferred.
 
-- [ ] **UI-12/13/14** — Login subtitle color (amber vs blue theme), "0 jobs"
-  count redundant with empty state, Dispatch page large empty space below error.
-  Effort: trivial each
+- [x] **UI-12/13/14** — UI-12 confirmed no-change (CardDescription already
+  `text-neutral-500`); "0 jobs/contracts" count hidden when total=0 (a40b4c6);
+  Dispatch retry button added + optionsRetryKey state (a40b4c6).
 
 **QA / Screenshot & Demo Coverage:**
 
-- [ ] **QA-01: screenshots-seeded.spec.ts** — Missing `/tenants` and `/operator`
-  routes (committed spec has all 10; seeded variant stopped at 8).
-  File: `apps/admin-web/src/e2e/screenshots-seeded.spec.ts` | Effort: 1/5
+- [x] **QA-01: screenshots-seeded.spec.ts** — `/tenants` and `/operator` routes
+  added with tenant seeding + lowercase role fix (ccba43b).
 
-- [ ] **QA-02: Demo 4 — Tenants admin + Operator Dashboard**
-  Seed 2–3 tenants, walk `/tenants` (list + adapter badges) then `/operator`
-  (rate-limit panel). No video demo exists for these pages today.
-  File: `apps/admin-web/src/e2e/demo-flows.spec.ts` | Effort: 2/5
+- [x] **QA-02: Demo 4 — Tenants admin + Operator Dashboard** — Demo 4 added to
+  `demo-flows.spec.ts` with 2 seeded tenants + create flow + operator page
+  (ccba43b). Role case bug fixed: `Operator` → `operator` (a40b4c6).
 
 ### Infrastructure / Ops
 
@@ -186,3 +183,4 @@ Promote to a numbered slice + task file when scheduling.
 | 2026-06-24 | Adapter wiring: lazy DB lookup in `_adapter_name`; `_register_back_office_adapters()` in lifespan; `JobberAdapter` lazy credential load + DB token persist; `JobberCredentials` ORM model; integrations router (`PATCH /admin/tenants/{id}/adapter`, Jobber OAuth2 connect/callback). 37 adapter tests pass. |
 | 2026-06-24 | Full-app UI screenshot review (all 10 pages, desktop + mobile). 14 findings logged in `033-tasks.ui-improvements.md`. Critical: mobile nav overflow (5+ pages unreachable). High: missing Vehicles/Users add buttons, non-clickable empty-state CTAs, 3 inconsistent error styles. Medium/low: button label consistency, onboarding on operator pages, forgot-password. WS-09–12 added to workstreams. |
 | 2026-06-24 | QA coverage audit: screenshots.spec.ts complete (all 10 pages). Added QA-01 (seeded spec missing tenants/operator) and QA-02 (Demo 4 — Tenants + Operator Dashboard). WS-14 added. |
+| 2026-06-25 | Slice 031 complete: all UI-01–14 done, QA-01/02 done. UI-11 partial fix (color-scheme:light on date input). UI-12 confirmed no-change. UI-13/14 + demo role fix shipped (a40b4c6). |
