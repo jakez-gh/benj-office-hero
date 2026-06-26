@@ -2,11 +2,11 @@
 id: 1.1.2.16
 type: slice-design
 parent: 1.1.2
-status: in_progress
+status: complete
 size: small
 slice: ui-improvements
 dateCreated: 20260624
-dateUpdated: 20260624
+dateUpdated: 20260625
 ---
 
 # Slice Design 031: UI Improvements (UI-01 through UI-14)
@@ -26,6 +26,8 @@ consistency, button label convention, onboarding suppression, login forgot-passw
 - `sq review code` returns APPROVE or APPROVE_WITH_NITS; no FAIL
 - Open-work index updated, slice marked complete
 
+All DoD items complete as of 2026-06-25 (commits 50cd9bd, d0d4bae, ccba43b, a40b4c6).
+
 ---
 
 ## Work Breakdown
@@ -33,21 +35,24 @@ consistency, button label convention, onboarding suppression, login forgot-passw
 Items grouped by WS (workstream) as registered in `.agents/WORKSTREAMS.md`:
 
 ### WS-09 (gamma): UI-01 — Mobile nav hamburger
+
 - `apps/admin-web/src/components/NavShell.tsx`
 - `hidden md:flex` on the nav scroll area; hamburger icon + slide-out drawer for `md:hidden`
-- Owned by gamma
 
 ### WS-10 (alpha): UI-02/03/04/05 — Table scroll + missing add buttons + empty-state CTAs
+
 - `TenantsPage.tsx`: wrap table in `<div className="overflow-x-auto">`
 - `VehiclesPage.tsx`: add "New Vehicle" button (opens existing modal/form)
 - `UsersPage.tsx`: add "New User" / "Invite User" button
-- `JobsPage.tsx`, `ContractsPage.tsx`, `CustomersPage.tsx`: make empty-state text into `<Button onClick={openForm}>` 
+- `JobsPage.tsx`, `ContractsPage.tsx`, `CustomersPage.tsx`: make empty-state text into `<Button onClick={openForm}>`
 
 ### WS-11 (alpha): UI-06/07 — Error style + retry button
+
 - Standardise all pages on the amber `ErrorBanner` component
 - `OperatorDashboardPage.tsx`: add a Retry button next to the error banner
 
 ### WS-12 (alpha): UI-08/09/10 — Button labels, onboarding suppression, forgot-password
+
 - Rename button labels to "New [entity]" convention across all pages
 - Suppress `OnboardingChecklist` for operator role or on `/tenants`+`/operator` routes
 - `LoginPage.tsx`: add "Forgot password?" link placeholder
