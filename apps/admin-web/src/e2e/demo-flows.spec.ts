@@ -132,7 +132,7 @@ async function injectAuth(page: Page, tenantId: string, userId: string): Promise
     localStorage.setItem('refresh_token', 'demo-video-refresh');
     localStorage.setItem(
       'user',
-      JSON.stringify({ id: uid, email: 'demo@officehero.dev', role: 'Operator' })
+      JSON.stringify({ id: uid, email: 'demo@officehero.dev', role: 'operator' })
     );
     // Expose tenant for any component that reads it
     localStorage.setItem('tenant_id', tid);

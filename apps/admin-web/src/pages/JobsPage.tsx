@@ -587,7 +587,7 @@ export const JobsPage: React.FC = () => {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900">Jobs</h1>
-          {!loading && (
+          {!loading && total > 0 && (
             <p className="mt-0.5 text-sm text-neutral-500">{total} job{total === 1 ? '' : 's'}</p>
           )}
         </div>

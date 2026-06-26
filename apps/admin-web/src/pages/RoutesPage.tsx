@@ -565,7 +565,7 @@ export const RoutesPage: React.FC = () => {
           <Input
             id="route-date"
             type="date"
-            className="w-44"
+            className="w-44 [color-scheme:light]"
             value={workDate}
             onChange={(e) => setWorkDate(e.target.value)}
           />

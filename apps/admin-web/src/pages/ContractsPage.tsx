@@ -492,7 +492,7 @@ export const ContractsPage: React.FC = () => {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900">Contracts</h1>
-          {!loading && (
+          {!loading && total > 0 && (
             <p className="mt-0.5 text-sm text-neutral-500">
               {total} contract{total === 1 ? '' : 's'}
             </p>

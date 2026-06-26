@@ -44,13 +44,14 @@ export const DispatchPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submittedSaga, setSubmittedSaga] = useState<SagaState | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [optionsRetryKey, setOptionsRetryKey] = useState(0);
 
   const { saga: liveSaga, error: pollError, refresh } = useSagaStatus(
     submittedSaga?.saga_id ?? null
   );
   const displaySaga: SagaState | null = liveSaga ?? submittedSaga;
 
-  // Load pending jobs and technicians once on mount.
+  // Load pending jobs and technicians; re-runs when optionsRetryKey increments.
   useEffect(() => {
     let cancelled = false;
     setLoadingOptions(true);
@@ -77,7 +78,7 @@ export const DispatchPage: React.FC = () => {
       });
 
     return () => { cancelled = true; };
-  }, []);
+  }, [optionsRetryKey]);
 
   const filteredJobs = jobSearch
     ? jobs.filter((j) => j.title.toLowerCase().includes(jobSearch.toLowerCase()))
@@ -136,9 +137,18 @@ export const DispatchPage: React.FC = () => {
                 <Skeleton className="h-10 w-full" />
               </div>
             ) : optionsError ? (
-              <Alert variant="destructive" className="mb-4">
-                Could not load jobs — {optionsError}
-              </Alert>
+              <div className="space-y-3">
+                <Alert variant="destructive">
+                  Could not load jobs — {optionsError}
+                </Alert>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setOptionsRetryKey((k) => k + 1)}
+                >
+                  Retry
+                </Button>
+              </div>
             ) : (
               <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
                 {/* Job selector with inline search */}
