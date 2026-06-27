@@ -74,10 +74,10 @@ Full findings: `project-documents/user/tasks/033-tasks.ui-improvements.md`
 
 ### Live Route Events (Slice 032-LRE)
 
-- [ ] **Slice 032-LRE — Live route events via SSE** — PR #143 open, awaiting merge.
+- [x] **Slice 032-LRE — Live route events via SSE** — Complete (e50d429).
   Backend: `GET /routes/{id}/events` SSE endpoint + `route_events.py` pub/sub hub.
   Frontend: `useRouteEvents` hook + `RouteCard` subscribes when `in_progress`.
-  5 pub/sub hub tests, 569 backend tests all pass. TypeScript clean.
+  5 pub/sub hub tests, 569 backend tests pass. TypeScript clean.
   Slice: `032-slice.live-route-events.md` | ADR: `064-adr.server-sent-events.md`
 
 ### Sales &amp; Documentation (Slices 032–033)

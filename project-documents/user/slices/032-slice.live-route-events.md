@@ -3,7 +3,7 @@ id: 1.1.2.17
 title: Slice 032 — Live route events via SSE
 type: slice-design
 parent: 1.1.2
-status: in_review
+status: complete
 size: small
 slice: live-route-events
 dateCreated: 20260627
