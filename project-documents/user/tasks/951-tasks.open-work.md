@@ -6,7 +6,7 @@ parent: 1
 status: active
 docType: tasks
 project: office-hero
-dateUpdated: 20260627
+dateUpdated: 20260627b
 ---
 
 # Open Work Index — Office Hero
@@ -71,6 +71,14 @@ Full findings: `project-documents/user/tasks/033-tasks.ui-improvements.md`
 - [x] **QA-02: Demo 4 — Tenants admin + Operator Dashboard** — Demo 4 added to
   `demo-flows.spec.ts` with 2 seeded tenants + create flow + operator page
   (ccba43b). Role case bug fixed: `Operator` → `operator` (a40b4c6).
+
+### Live Route Events (Slice 032-LRE)
+
+- [ ] **Slice 032-LRE — Live route events via SSE** — PR #143 open, awaiting merge.
+  Backend: `GET /routes/{id}/events` SSE endpoint + `route_events.py` pub/sub hub.
+  Frontend: `useRouteEvents` hook + `RouteCard` subscribes when `in_progress`.
+  5 pub/sub hub tests, 569 backend tests all pass. TypeScript clean.
+  Slice: `032-slice.live-route-events.md` | ADR: `064-adr.server-sent-events.md`
 
 ### Sales &amp; Documentation (Slices 032–033)
 
@@ -179,7 +187,7 @@ Promote to a numbered slice + task file when scheduling.
 - [ ] iOS EAS Build support
 - [ ] Self-hosted ORS on Fly.io
 - [ ] FieldEdge / ServiceMax BackOfficeAdapters
-- [ ] Real-time route updates via WebSocket (upgrade from polling)
+- [x] Real-time route updates — implemented via SSE (Slice 032-LRE, PR #143)
 - [ ] Tenant-facing analytics dashboard
 
 ---
@@ -198,3 +206,4 @@ Promote to a numbered slice + task file when scheduling.
 | 2026-06-25 | Slice 031 complete: all UI-01–14 done, QA-01/02 done. UI-11 partial fix (color-scheme:light on date input). UI-12 confirmed no-change. UI-13/14 + demo role fix shipped (a40b4c6). Multi-agent coordination bootstrapped (.agents/ dir, WORKSTREAMS.md, ROSTER.md, per-agent heartbeats). All WS-01–14 done. Coverage: 558 tests, 77.95%. 526c12a pushed. |
 | 2026-06-27 | Session close. No new code work. Confirmed: all Ready-Now code items done, slice 031 marked complete (000e304). Framework-check PASS (36 artifacts). Memory updated (ux-backlog-status, slice-completion-status). Remaining open work = external-credential-gated (Slices 25–27), hardware-gated (Slice 28 E2E), and human-action ops items. |
 | 2026-06-27 | Sales materials (Slice 032) + Customer docs (Slice 033) complete. Sales deck: docs/sales/sales-deck.html (12 slides, A4 landscape), scripts/generate-sales-pdf.mjs, docs/sales/DEMO_GUIDE.md. Demo fix: networkidle → load in demo-flows.spec.ts. Customer docs: 9-file suite in docs/customer/. |
+| 2026-06-27 | Slice 032-LRE (Live Route Events via SSE) implementation complete, PR #143 open. route_events.py pub/sub hub + GET /routes/{id}/events SSE endpoint + useRouteEvents React hook. 569 backend tests pass, TypeScript clean. Removed "Real-time via WebSocket" from Future Work (done as SSE). |
