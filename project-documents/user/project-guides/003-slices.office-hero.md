@@ -288,6 +288,24 @@ Each integration is a separate slice. All implement the `BackOfficeAdapter` prot
 
 ---
 
+## Sales &amp; Documentation
+
+31. [x] **UX improvements** — Mobile nav, button labels, empty-state CTAs, error styles,
+    date picker polish, screenshot + demo coverage. Dependencies: Slices 5a, 14, 29–30.
+    Effort: 2/5. **Status:** Complete (a40b4c6). Slice: `031-slice.ui-improvements.md`.
+
+32. [x] **Sales materials** — 12-slide A4 HTML/PDF sales deck, Playwright PDF generator,
+    DEMO_GUIDE.md for sales team, demo-flows `networkidle` → `load` reliability fix.
+    Dependencies: Slice 31. Effort: 2/5.
+    **Status:** Complete (2026-06-27). Slice: `032-slice.sales-materials.md`.
+
+33. [x] **Customer documentation** — Nine-file docs suite: index, getting-started, admin
+    guide, dispatch guide, contracts guide, technician guide, integrations guide, security
+    guide, FAQ. Dependencies: Slices 31–32. Effort: 2/5.
+    **Status:** Complete (2026-06-27). Slice: `033-slice.customer-docs.md`.
+
+---
+
 ## Notes
 
 + Slices 1–6 (Foundation) must be done in order. All others can proceed in

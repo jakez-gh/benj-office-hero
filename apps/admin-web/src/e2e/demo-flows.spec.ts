@@ -165,7 +165,7 @@ test.describe('Demo flows', () => {
 
     // — Jobs page —
     await page.goto('/jobs');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await pause(800);
 
     // Show both jobs in the list
@@ -175,12 +175,12 @@ test.describe('Demo flows', () => {
 
     // Filter to scheduled jobs
     await page.getByRole('combobox').selectOption('scheduled');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await pause(1200);
 
     // — Routes page —
     await page.goto('/routes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await pause(800);
     // At least one route should appear
     await page.waitForSelector('[data-testid="route-row"], tr', { timeout: 8000 }).catch(() => null);
@@ -189,7 +189,7 @@ test.describe('Demo flows', () => {
 
     // — Vehicles page —
     await page.goto('/vehicles');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await pause(800);
     await expect(page.getByText('DEMO-001')).toBeVisible({ timeout: 8000 });
     await pause(1500);
@@ -231,21 +231,21 @@ test.describe('Demo flows', () => {
 
     // — Customers page —
     await page.goto('/customers');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await pause(800);
     await expect(page.getByText('Riverside Cleaning Co')).toBeVisible({ timeout: 8000 });
     await pause(1500);
 
     // — Contracts page —
     await page.goto('/contracts');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await pause(800);
     await expect(page.getByText('Monthly cleaning plan')).toBeVisible({ timeout: 8000 });
     await pause(1500);
 
     // — Jobs generated from contract —
     await page.goto('/jobs');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await pause(800);
     await expect(page.getByText('Morning deep clean')).toBeVisible({ timeout: 8000 });
     await pause(2000);
@@ -261,7 +261,7 @@ test.describe('Demo flows', () => {
 
     // — Routes page —
     await page.goto('/routes');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await pause(800);
     await page.waitForSelector('tr', { timeout: 8000 }).catch(() => null);
     await pause(1500);
@@ -271,7 +271,7 @@ test.describe('Demo flows', () => {
 
     // Reload to pick up in_progress state
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await pause(1500);
 
     // Complete stop 1 via API and reload to show progress
@@ -295,7 +295,7 @@ test.describe('Demo flows', () => {
     void job2;
 
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await pause(2000);
   });
 

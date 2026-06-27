@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Office Hero — Sales Presentation</title>
+  <style>
+    /* ── Reset ─────────────────────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ── Print setup — each .slide is one A4 landscape page ───────────── */
+    @page { size: A4 landscape; margin: 0; }
+
+    /* ── Design tokens ────────────────────────────────────────────────── */
+    :root {
+      --blue-950: #0d1f47;
+      --blue-900: #1e3a8a;
+      --blue-700: #1d4ed8;
+      --blue-500: #3b82f6;
+      --blue-300: #93c5fd;
+      --blue-100: #dbeafe;
+      --blue-50:  #eff6ff;
+      --emerald:  #059669;
+      --emerald-light: #d1fae5;
+      --amber:    #f59e0b;
+      --amber-light: #fef3c7;
+      --rose:     #f43f5e;
+      --rose-light: #fff1f2;
+      --gray-950: #030712;
+      --gray-900: #0f172a;
+      --gray-700: #334155;
+      --gray-500: #64748b;
+      --gray-400: #94a3b8;
+      --gray-200: #e2e8f0;
+      --gray-100: #f1f5f9;
+      --gray-50:  #f8fafc;
+      --white:    #ffffff;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: #cbd5e1;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Screen view — slides stack vertically with shadow ─────────────── */
+    @media screen {
+      body { display: flex; flex-direction: column; align-items: center; padding: 24px; gap: 24px; }
+      .slide { box-shadow: 0 8px 40px rgba(0,0,0,0.18); }
+    }
+
+    /* ── Base slide ───────────────────────────────────────────────────── */
+    .slide {
+      width: 297mm;
+      height: 210mm;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      background: var(--white);
+      page-break-after: always;
+      page-break-inside: avoid;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       SLIDE 1 — COVER
+    ══════════════════════════════════════════════════════════════════ */
+    .s-cover {
+      background: linear-gradient(135deg, var(--blue-950) 0%, var(--blue-900) 55%, var(--blue-700) 100%);
+      flex-direction: column;
+      justify-content: center;
+      padding: 18mm 22mm;
+      color: var(--white);
+    }
+
+    .s-cover .logo-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(59,130,246,0.25);
+      border: 1px solid rgba(147,197,253,0.35);
+      border-radius: 40px;
+      padding: 5px 16px 5px 8px;
+      margin-bottom: 10mm;
+      width: fit-content;
+    }
+    .s-cover .logo-icon {
+      width: 28px; height: 28px;
+      background: var(--blue-500);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 0.8rem; color: var(--white);
+      letter-spacing: -1px;
+    }
+    .s-cover .logo-text { font-size: 0.85rem; font-weight: 600; color: var(--blue-300); letter-spacing: 0.3px; }
+
+    .s-cover h1 {
+      font-size: 4.2rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -3px;
+      margin-bottom: 5mm;
+    }
+    .s-cover h1 span { color: var(--blue-300); }
+
+    .s-cover .tagline {
+      font-size: 1.55rem;
+      font-weight: 300;
+      color: var(--blue-300);
+      margin-bottom: 3mm;
+      letter-spacing: -0.5px;
+    }
+
+    .s-cover .sub {
+      font-size: 0.9rem;
+      color: var(--gray-500);
+      margin-bottom: 14mm;
+    }
+
+    .s-cover .industries {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14mm;
+    }
+    .industry-tag {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 0.78rem;
+      color: var(--blue-300);
+      font-weight: 500;
+    }
+
+    .s-cover .contact-row {
+      font-size: 0.8rem;
+      color: var(--gray-500);
+      margin-top: auto;
+    }
+
+    .s-cover .cover-art {
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 38%;
+      background: linear-gradient(180deg, rgba(59,130,246,0.08) 0%, rgba(29,78,216,0.15) 100%);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6mm;
+      padding: 10mm 8mm;
+    }
+
+    .stat-bubble {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 6mm 8mm;
+      text-align: center;
+      width: 100%;
+    }
+    .stat-bubble .num { font-size: 2rem; font-weight: 800; color: var(--white); }
+    .stat-bubble .lbl { font-size: 0.72rem; color: var(--blue-300); margin-top: 1px; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       SHARED — bottom brand bar
+    ══════════════════════════════════════════════════════════════════ */
+    .brand-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2.5mm;
+      background: linear-gradient(90deg, var(--blue-900), var(--blue-500));
+    }
+
+    .slide-num {
+      position: absolute;
+      bottom: 5.5mm; right: 8mm;
+      font-size: 0.67rem;
+      color: var(--gray-400);
+    }
+
+    .oh-watermark {
+      position: absolute;
+      bottom: 4mm; left: 8mm;
+      font-size: 0.67rem;
+      font-weight: 700;
+      color: var(--gray-400);
+      letter-spacing: 0.3px;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       STANDARD CONTENT SLIDE
+    ══════════════════════════════════════════════════════════════════ */
+    .s-content {
+      flex-direction: column;
+      padding: 12mm 14mm 14mm;
+    }
+
+    .eyebrow {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--blue-500);
+      text-transform: uppercase;
+      letter-spacing: 1.8px;
+      margin-bottom: 2.5mm;
+    }
+
+    .slide-h2 {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--gray-900);
+      line-height: 1.15;
+      letter-spacing: -0.8px;
+      margin-bottom: 7mm;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       FEATURE SPLIT SLIDE (text left / screenshot right)
+    ══════════════════════════════════════════════════════════════════ */
+    .s-feature {
+      flex-direction: row;
+    }
+    .feat-left {
+      width: 42%;
+      background: var(--gray-50);
+      padding: 12mm 10mm 14mm 14mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-right: 1px solid var(--gray-200);
+    }
+    .feat-right {
+      flex: 1;
+      padding: 9mm 10mm 9mm 8mm;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--white);
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       SECTION HEADER SLIDE (dark)
+    ══════════════════════════════════════════════════════════════════ */
+    .s-section {
+      background: var(--blue-900);
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 18mm 22mm;
+      color: var(--white);
+    }
+    .s-section .section-num {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--blue-300);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 5mm;
+    }
+    .s-section h2 {
+      font-size: 3rem;
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1;
+      color: var(--white);
+      margin-bottom: 6mm;
+    }
+    .s-section p {
+      font-size: 1rem;
+      color: var(--blue-300);
+      max-width: 200mm;
+      line-height: 1.55;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       CARDS — used on several slides
+    ══════════════════════════════════════════════════════════════════ */
+    .cards-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6mm;
+      flex: 1;
+    }
+    .cards-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6mm;
+      flex: 1;
+    }
+    .card {
+      background: var(--white);
+      border: 1.5px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 6mm;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-dark {
+      background: rgba(255,255,255,0.06);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 6mm;
+    }
+    .card-icon { font-size: 1.6rem; margin-bottom: 3mm; }
+    .card-title { font-size: 0.88rem; font-weight: 700; color: var(--gray-900); margin-bottom: 2mm; }
+    .card-body  { font-size: 0.76rem; color: var(--gray-700); line-height: 1.55; }
+    .card-dark .card-title { color: var(--white); }
+    .card-dark .card-body  { color: var(--blue-300); }
+
+    /* ══════════════════════════════════════════════════════════════════
+       FEATURE LIST (check-list on left panel)
+    ══════════════════════════════════════════════════════════════════ */
+    .feat-list { list-style: none; }
+    .feat-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 3mm;
+      padding: 2.5mm 0;
+      border-bottom: 1px solid var(--gray-200);
+      font-size: 0.82rem;
+      color: var(--gray-700);
+      line-height: 1.45;
+    }
+    .feat-list li:last-child { border-bottom: none; }
+    .chk { color: var(--emerald); font-weight: 700; flex-shrink: 0; margin-top: 1px; font-size: 0.85rem; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       BROWSER FRAME (wraps screenshots)
+    ══════════════════════════════════════════════════════════════════ */
+    .browser {
+      background: #1e293b;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 6px 30px rgba(0,0,0,0.25);
+      width: 100%;
+    }
+    .browser-bar {
+      background: #334155;
+      padding: 5px 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .dot { width: 9px; height: 9px; border-radius: 50%; }
+    .dot.r { background: #ef4444; }
+    .dot.y { background: #f59e0b; }
+    .dot.g { background: #22c55e; }
+    .url-bar {
+      background: #475569;
+      border-radius: 4px;
+      padding: 2px 10px;
+      font-size: 0.68rem;
+      color: #94a3b8;
+      margin-left: 6px;
+      flex: 1;
+      max-width: 180px;
+    }
+    .browser img {
+      width: 100%;
+      display: block;
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       MOBILE FRAME (wraps mobile screenshots)
+    ══════════════════════════════════════════════════════════════════ */
+    .phone-frame {
+      width: 68mm;
+      background: #0f172a;
+      border-radius: 14px;
+      padding: 6px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    }
+    .phone-screen {
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .phone-screen img { width: 100%; display: block; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       WORKFLOW STEPS (how it works)
+    ══════════════════════════════════════════════════════════════════ */
+    .workflow {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      flex: 1;
+    }
+    .wf-step {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+    .wf-step + .wf-step::before {
+      content: '→';
+      position: absolute;
+      left: -12px;
+      top: 14px;
+      font-size: 1.1rem;
+      color: var(--gray-400);
+    }
+    .wf-num {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--blue-700);
+      color: var(--white);
+      font-weight: 800;
+      font-size: 0.8rem;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 4mm;
+      flex-shrink: 0;
+    }
+    .wf-icon { font-size: 1.4rem; margin-bottom: 2.5mm; }
+    .wf-title { font-size: 0.82rem; font-weight: 700; color: var(--gray-900); margin-bottom: 1.5mm; }
+    .wf-desc  { font-size: 0.72rem; color: var(--gray-500); line-height: 1.45; padding: 0 3mm; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       PAIN / SOLUTION CONTRAST
+    ══════════════════════════════════════════════════════════════════ */
+    .contrast-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 5mm;
+      align-items: start;
+      flex: 1;
+    }
+    .vs-col { display: flex; flex-direction: column; gap: 3mm; }
+    .vs-arrow {
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gray-400); font-size: 1.4rem; padding-top: 8mm;
+    }
+    .pain-item {
+      background: var(--rose-light);
+      border-left: 3px solid var(--rose);
+      border-radius: 0 6px 6px 0;
+      padding: 3.5mm 4mm;
+      font-size: 0.78rem;
+      color: #9f1239;
+      line-height: 1.45;
+    }
+    .fix-item {
+      background: var(--emerald-light);
+      border-left: 3px solid var(--emerald);
+      border-radius: 0 6px 6px 0;
+      padding: 3.5mm 4mm;
+      font-size: 0.78rem;
+      color: #14532d;
+      line-height: 1.45;
+    }
+    .vs-head { font-size: 0.78rem; font-weight: 700; margin-bottom: 2mm; }
+    .vs-head.pain { color: var(--rose); }
+    .vs-head.fix  { color: var(--emerald); }
+
+    /* ══════════════════════════════════════════════════════════════════
+       INTEGRATION GRID
+    ══════════════════════════════════════════════════════════════════ */
+    .integ-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6mm;
+      flex: 1;
+    }
+    .integ-card {
+      border: 2px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 6mm;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 2.5mm;
+    }
+    .integ-logo {
+      font-size: 2rem;
+      margin-bottom: 1mm;
+    }
+    .integ-name { font-size: 0.95rem; font-weight: 800; color: var(--gray-900); }
+    .integ-desc { font-size: 0.74rem; color: var(--gray-500); line-height: 1.45; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      margin-top: 1mm;
+    }
+    .badge-ready  { background: var(--emerald-light); color: #065f46; }
+    .badge-soon   { background: var(--amber-light);   color: #92400e; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       SECURITY GRID
+    ══════════════════════════════════════════════════════════════════ */
+    .sec-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4.5mm;
+      flex: 1;
+    }
+    .sec-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 3mm;
+      padding: 4mm;
+      background: var(--gray-50);
+      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+    }
+    .sec-icon { font-size: 1.25rem; flex-shrink: 0; }
+    .sec-title { font-size: 0.82rem; font-weight: 700; color: var(--gray-900); margin-bottom: 1mm; }
+    .sec-body  { font-size: 0.73rem; color: var(--gray-700); line-height: 1.45; }
+
+    /* ══════════════════════════════════════════════════════════════════
+       CTA SLIDE
+    ══════════════════════════════════════════════════════════════════ */
+    .s-cta {
+      flex-direction: row;
+    }
+    .cta-left {
+      width: 52%;
+      background: var(--blue-900);
+      color: var(--white);
+      padding: 16mm 14mm 16mm 16mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .cta-right {
+      flex: 1;
+      padding: 14mm 12mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5mm;
+    }
+
+    .cta-left h2 {
+      font-size: 2.4rem;
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      line-height: 1.05;
+      margin-bottom: 5mm;
+    }
+    .cta-left .tagline2 {
+      font-size: 0.9rem;
+      color: var(--blue-300);
+      line-height: 1.55;
+      margin-bottom: 8mm;
+    }
+    .cta-btn {
+      display: inline-block;
+      background: var(--amber);
+      color: #1c1917;
+      font-weight: 800;
+      font-size: 0.9rem;
+      padding: 3.5mm 8mm;
+      border-radius: 8px;
+      width: fit-content;
+    }
+
+    .contact-block {
+      background: var(--gray-50);
+      border: 1.5px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 5mm 6mm;
+    }
+    .contact-label { font-size: 0.68rem; font-weight: 700; color: var(--blue-500); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 2.5mm; }
+    .contact-line  { font-size: 0.8rem; color: var(--gray-700); margin-bottom: 1.5mm; }
+    .contact-line:last-child { margin-bottom: 0; }
+
+    .demo-links-block {
+      background: var(--blue-50);
+      border: 1.5px solid var(--blue-100);
+      border-radius: 10px;
+      padding: 5mm 6mm;
+    }
+    .demo-links-block .contact-label { color: var(--blue-700); }
+
+    /* ══════════════════════════════════════════════════════════════════
+       STATS ROW
+    ══════════════════════════════════════════════════════════════════ */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5mm;
+      margin-bottom: 7mm;
+    }
+    .stat-card {
+      background: var(--blue-50);
+      border-radius: 8px;
+      padding: 4mm;
+      text-align: center;
+    }
+    .stat-num { font-size: 1.8rem; font-weight: 900; color: var(--blue-700); }
+    .stat-lbl { font-size: 0.7rem; color: var(--gray-500); margin-top: 1px; line-height: 1.3; }
+
+    /* Divider line */
+    hr.divider { border: none; border-top: 1.5px solid var(--gray-200); margin: 5mm 0; }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SLIDE 1 — COVER
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="slide s-cover">
+    <div class="logo-pill">
+      <div class="logo-icon">OH</div>
+      <span class="logo-text">Office Hero</span>
+    </div>
+    <h1>Office<br><span>Hero</span></h1>
+    <p class="tagline">Dispatch Smarter. Route Faster.</p>
+    <p class="sub">Field Service Management built for small teams who get things done</p>
+    <div class="industries">
+      <span class="industry-tag">Plumbing</span>
+      <span class="industry-tag">HVAC</span>
+      <span class="industry-tag">Pest Control</span>
+      <span class="industry-tag">Landscaping</span>
+    </div>
+    <p class="contact-row">officehero.dev &nbsp;·&nbsp; hello@officehero.dev</p>
+
+    <div class="cover-art">
+      <div class="stat-bubble"><div class="num">3</div><div class="lbl">Route options generated instantly</div></div>
+      <div class="stat-bubble"><div class="num">99.5%</div><div class="lbl">Uptime SLO</div></div>
+      <div class="stat-bubble"><div class="num">< 500ms</div><div class="lbl">API response time (p95)</div></div>
+    </div>
+    <div class="brand-bar"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SLIDE 2 — THE PROBLEM
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="slide s-content">
+    <div class="eyebrow">The Challenge</div>
+    <h2 class="slide-h2">Small service teams are running on spreadsheets and phone calls</h2>
+    <div class="contrast-row">
+      <div class="vs-col">
+        <div class="vs-head pain">Today's reality</div>
+        <div class="pain-item">Dispatchers call technicians manually — missed or double-booked jobs when someone doesn't pick up</div>
+        <div class="pain-item">Routes planned on paper — no optimization, wasted fuel, customers kept guessing</div>
+        <div class="pain-item">Back-office data lives in ServiceTitan, PestPac, or a spreadsheet — re-keyed manually into every system</div>
+        <div class="pain-item">No visibility on where technicians are mid-day — no way to handle sick-day re-routes in real time</div>
+      </div>
+      <div class="vs-arrow">→</div>
+      <div class="vs-col">
+        <div class="vs-head fix">With Office Hero</div>
+        <div class="fix-item">Intelligent 3-option dispatch in one click — nearest, earliest, or balanced workload, auto-calculated</div>
+        <div class="fix-item">ORS-powered route optimization with live GPS tracking — every technician, every stop, every update</div>
+        <div class="fix-item">Native integrations with ServiceTitan, PestPac, and Jobber — data flows both ways automatically</div>
+        <div class="fix-item">Day-of re-routing in seconds — drag, reassign, or emergency-insert without rebuilding from scratch</div>
+      </div>
+    </div>
+    <div class="brand-bar"></div>
+    <div class="oh-watermark">Office Hero</div>
+    <div class="slide-num">2</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SLIDE 3 — THE SOLUTION
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="slide s-content">
+    <div class="eyebrow">What We Do</div>
+    <h2 class="slide-h2">One platform. Every field service workflow.</h2>
+    <div class="cards-3">
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <div class="card-title">Smart Dispatch</div>
+        <div class="card-body">
+          Three ranked routing options generated in under 8 seconds. Nearest truck, earliest completion, or
+          balanced workload — dispatcher picks one and confirms. Job committed to route instantly.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🗺️</div>
+        <div class="card-title">Live Route Management</div>
+        <div class="card-body">
+          OpenRouteService-powered day routing with real-time GPS. Technicians mark stops arrived
+          and complete on their phone. Routes auto-complete when the last stop is done.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <div class="card-title">Back-Office Integration</div>
+        <div class="card-body">
+          Connects to ServiceTitan, PestPac, and Jobber via a bidirectional adapter.
+          Contracts sync automatically. Data never keyed twice. Audit log captures every event.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <div class="card-title">Recurring Contracts</div>
+        <div class="card-body">
+          Monthly, quarterly, or custom schedules. Jobs generate automatically on due date.
+          Modify, pause, or renew contracts without re-entering customer data.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📱</div>
+        <div class="card-title">Technician Mobile</div>
+        <div class="card-body">
+          Android native app + mobile-optimized web view. Full route, stop details, and
+          one-tap status updates. GPS location updates every 30 seconds — no native app required to start.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔒</div>
+        <div class="card-title">Multi-Tenant Security</div>
+        <div class="card-body">
+          PostgreSQL row-level security. Every tenant is completely isolated — no data leakage possible.
+          JWT RS256 auth, role-based permissions, immutable audit log, and 4× daily CVE scanning.
+        </div>
+      </div>
+    </div>
+    <div class="brand-bar"></div>
+    <div class="oh-watermark">Office Hero</div>
+    <div class="slide-num">3</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SLIDE 4 — HOW IT WORKS
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="slide s-content">
+    <div class="eyebrow">The Workflow</div>
+    <h2 class="slide-h2">From customer call to completed job — five steps</h2>
+    <div class="workflow">
+      <div class="wf-step">
+        <div class="wf-num">1</div>
+        <div class="wf-icon">👤</div>
+        <div class="wf-title">Enter Job</div>
+        <div class="wf-desc">Dispatcher logs customer, location, service type, and priority. Existing customers auto-populate.</div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">2</div>
+        <div class="wf-icon">⚡</div>
+        <div class="wf-title">View Route Options</div>
+        <div class="wf-desc">Three ranked options appear instantly — Nearest, Earliest, Balanced — with distance and ETA.</div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">3</div>
+        <div class="wf-icon">✅</div>
+        <div class="wf-title">Dispatch</div>
+        <div class="wf-desc">Pick an option (or enter a custom sequence). Job commits to the vehicle's route in one click.</div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">4</div>
+        <div class="wf-icon">🚛</div>
+        <div class="wf-title">Technician Executes</div>
+        <div class="wf-desc">Technician sees the route on their phone, marks each stop arrived and complete in real time.</div>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">5</div>
+        <div class="wf-icon">🎉</div>
+        <div class="wf-title">Route Complete</div>
+        <div class="wf-desc">Route auto-closes. Audit log captures every timestamp. Back-office systems sync automatically.</div>
+      </div>
+    </div>
+    <hr class="divider">
+    <div class="stats-row" style="margin-bottom:0">
+      <div class="stat-card"><div class="stat-num">&lt; 8s</div><div class="stat-lbl">Route options generated</div></div>
+      <div class="stat-card"><div class="stat-num">2–3 min</div><div class="stat-lbl">Typical dispatch time</div></div>
+      <div class="stat-card"><div class="stat-num">30 sec</div><div class="stat-lbl">GPS location refresh</div></div>
+      <div class="stat-card"><div class="stat-num">100%</div><div class="stat-lbl">Audit-logged operations</div></div>
+    </div>
+    <div class="brand-bar"></div>
+    <div class="oh-watermark">Office Hero</div>
+    <div class="slide-num">4</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SLIDE 5 — SMART DISPATCH (feature + screenshot)
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="slide s-feature">
+    <div class="feat-left">
+      <div class="eyebrow">Feature</div>
+      <h2 class="slide-h2" style="font-size:1.5rem">Smart Dispatch — Three Options, One Click</h2>
+      <ul class="feat-list">
+        <li><span class="chk">✓</span>Nearest vehicle to job location — best for most dispatches</li>
+        <li><span class="chk">✓</span>Earliest completion — minimizes remaining route time for urgent jobs</li>
+        <li><span class="chk">✓</span>Balanced workload — even crew utilization across all vehicles</li>
+        <li><span class="chk">✓</span>Custom sequence — drag-and-drop reorder before committing</li>
+        <li><span class="chk">✓</span>Search and filter pending jobs by status, date, or title</li>
+        <li><span class="chk">✓</span>Emergency dispatch — insert urgent job at head of any active route</li>
+        <li><span class="chk">✓</span>Route reassign — move remaining stops to another vehicle instantly</li>
+      </ul>
+    </div>
+    <div class="feat-right">
+      <div class="browser">
+        <div class="browser-bar">
+          <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+          <div class="url-bar">app.officehero.dev/dispatch</div>
+        </div>
+        <img src="../screenshots/admin-web/desktop/03-dispatch.png" alt="Dispatch page screenshot" loading="eager">
+      </div>
+    </div>
+    <div class="brand-bar"></div>
+    <div class="oh-watermark">Office Hero</div>
+    <div class="slide-num">5</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SLIDE 6 — ROUTE MANAGEMENT (feature + screenshot)
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="slide s-feature">
+    <div class="feat-left">
+      <div class="eyebrow">Feature</div>
+      <h2 class="slide-h2" style="font-size:1.5rem">Route Management — Real-Time Visibility</h2>
+      <ul class="feat-list">
+        <li><span class="chk">✓</span>All routes for any date — filter by vehicle, status, or crew member</li>
+        <li><span class="chk">✓</span>Stop-by-stop progress: Pending → Arrived → Complete → Skipped</li>
+        <li><span class="chk">✓</span>Resequence stops with ↑↓ controls and confirm the new order</li>
+        <li><span class="chk">✓</span>Start or cancel routes from the admin dashboard</li>
+        <li><span class="chk">✓</span>Route auto-completes when the final stop is marked done</li>
+        <li><span class="chk">✓</span>Actual arrival and completion times recorded on every stop</li>
+        <li><span class="chk">✓</span>Full route history — every action timestamped in the audit log</li>
+      </ul>
+    </div>
+    <div class="feat-right">
+      <div class="browser">
+        <div class="browser-bar">
+          <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+          <div class="url-bar">app.officehero.dev/routes</div>
+        </div>
+        <img src="../screenshots/admin-web/desktop/08-routes.png" alt="Routes page screenshot" loading="eager">
+      </div>
+    </div>
+    <div class="brand-bar"></div>
+    <div class="oh-watermark">Office Hero</div>
+    <div class="slide-num">6</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SLIDE 7 — JOBS & CUSTOMERS (feature + screenshot)
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="slide s-feature">
+    <div class="feat-left">
+      <div class="eyebrow">Feature</div>
+      <h2 class="slide-h2" style="font-size:1.5rem">Jobs & Customers — The Core Record</h2>
+      <ul class="feat-list">
+        <li><span class="chk">✓</span>Create jobs in seconds — customer, location, service type, priority</li>
+        <li><span class="chk">✓</span>Industry-specific fields: permit numbers, chemical usage, unit counts</li>
+        <li><span class="chk">✓</span>Job FSM: Pending → Dispatched → In Progress → Complete</li>
+        <li><span class="chk">✓</span>Filter jobs by status, service type, date, or technician</li>
+        <li><span class="chk">✓</span>Customer records with multiple service locations per account</li>
+        <li><span class="chk">✓</span>Auto-geocoding: enter an address, get GPS coordinates instantly</li>
+        <li><span class="chk">✓</span>Customer history — every job ever dispatched, searchable</li>
+      </ul>
+    </div>
+    <div class="feat-right">
+      <div class="browser">
+        <div class="browser-bar">
+          <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+          <div class="url-bar">app.officehero.dev/jobs</div>
+        </div>
+        <img src="../screenshots/admin-web/desktop/02-jobs.png" alt="Jobs page screenshot" loading="eager">
+      </div>
+    </div>
+    <div class="brand-bar"></div>
+    <div class="oh-watermark">Office Hero</div>
+    <div class="slide-num">7</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SLIDE 8 — RECURRING CONTRACTS (feature + screenshot)
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="slide s-feature">
+    <div class="feat-left">
+      <div class="eyebrow">Feature</div>
+      <h2 class="slide-h2" style="font-size:1.5rem">Recurring Contracts — Set It and Forget It</h2>
+      <ul class="feat-list">
+        <li><span class="chk">✓</span>Create service agreements with weekly, monthly, or quarterly schedules</li>
+        <li><span class="chk">✓</span>Jobs generate automatically when a contract comes due</li>
+        <li><span class="chk">✓</span>Pause or resume contracts without losing history</li>
+        <li><span class="chk">✓</span>Links to back-office systems — contracts sync to PestPac, ServiceTitan</li>
+        <li><span class="chk">✓</span>Bulk "generate due jobs" — process all overdue contracts in one click</li>
+        <li><span class="chk">✓</span>Customer and location pre-filled from the contract — zero re-entry</li>
+        <li><span class="chk">✓</span>Contract history and renewal tracking built in</li>
+      </ul>
+    </div>
+    <div class="feat-right">
+      <div class="browser">
+        <div class="browser-bar">
+          <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+          <div class="url-bar">app.officehero.dev/contracts</div>
+        </div>
+        <img src="../screenshots/admin-web/desktop/07-contracts.png" alt="Contracts page screenshot" loading="eager">
+      </div>
+    </div>
+    <div class="brand-bar"></div>
+    <div class="oh-watermark">Office Hero</div>
+    <div class="slide-num">8</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SLIDE 9 — TECHNICIAN MOBILE (feature + screenshot)
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="slide s-feature">
+    <div class="feat-left">
+      <div class="eyebrow">Feature</div>
+      <h2 class="slide-h2" style="font-size:1.5rem">Technician Mobile — Field-Ready on Any Device</h2>
+      <ul class="feat-list">
+        <li><span class="chk">✓</span>Android native app (React Native Expo) — no Play Store needed</li>
+        <li><span class="chk">✓</span>Mobile-optimized web view — works on any smartphone browser</li>
+        <li><span class="chk">✓</span>Full daily route with stop details, customer info, and notes</li>
+        <li><span class="chk">✓</span>One-tap Mark Arrived and Mark Complete — no forms to fill</li>
+        <li><span class="chk">✓</span>Turn-by-turn directions via device navigation apps</li>
+        <li><span class="chk">✓</span>GPS broadcasts location to dispatcher every 30 seconds</li>
+        <li><span class="chk">✓</span>Works offline — syncs when connection restores</li>
+      </ul>
+    </div>
+    <div class="feat-right" style="justify-content:center; gap: 8mm; flex-direction: row; align-items:center">
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <img src="../screenshots/admin-web/mobile/02-jobs.png" alt="Mobile jobs view" loading="eager">
+        </div>
+      </div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <img src="../screenshots/admin-web/mobile/03-dispatch.png" alt="Mobile dispatch view" loading="eager">
+        </div>
+      </div>
+    </div>
+    <div class="brand-bar"></div>
+    <div class="oh-watermark">Office Hero</div>
+    <div class="slide-num">9</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SLIDE 10 — BACK-OFFICE INTEGRATIONS
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="slide s-content">
+    <div class="eyebrow">Integrations</div>
+    <h2 class="slide-h2">Connect your existing back-office system</h2>
+    <div class="integ-grid">
+      <div class="integ-card">
+        <div class="integ-logo">🏢</div>
+        <div class="integ-name">ServiceTitan</div>
+        <div class="integ-desc">
+          Bi-directional job sync. Customers, locations, and jobs flow between platforms.
+          Dispatch events trigger ServiceTitan work order updates automatically.
+        </div>
+        <span class="badge badge-soon">Integration ready — credentials needed</span>
+      </div>
+      <div class="integ-card">
+        <div class="integ-logo">🐛</div>
+        <div class="integ-name">PestPac</div>
+        <div class="integ-desc">
+          Service orders and customer accounts sync natively. Contract terms in PestPac
+          map directly to Office Hero's contract model.
+        </div>
+        <span class="badge badge-soon">Integration ready — credentials needed</span>
+      </div>
+      <div class="integ-card">
+        <div class="integ-logo">🔧</div>
+        <div class="integ-name">Jobber</div>
+        <div class="integ-desc">
+          OAuth2 connection. Work requests, quotes, and jobs flow into Office Hero's
+          dispatch workflow without re-entry.
+        </div>
+        <span class="badge badge-soon">Integration ready — credentials needed</span>
+      </div>
+    </div>
+    <div style="margin-top:6mm; background:var(--blue-50); border:1.5px solid var(--blue-100); border-radius:10px; padding:5mm 6mm;">
+      <div style="font-size:0.8rem; font-weight:700; color:var(--blue-700); margin-bottom:2mm;">Office Hero as system of record</div>
+      <div style="font-size:0.76rem; color:var(--gray-700); line-height:1.5;">
+        Don't have a back-office system? Office Hero stores everything natively — customers, contracts, jobs, vehicles, and routes.
+        Add an external integration at any time without data migration. All adapter interactions are saga-coordinated
+        with transactional outbox for zero data loss.
+      </div>
+    </div>
+    <div class="brand-bar"></div>
+    <div class="oh-watermark">Office Hero</div>
+    <div class="slide-num">10</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SLIDE 11 — SECURITY & RELIABILITY
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="slide s-content">
+    <div class="eyebrow">Trust &amp; Compliance</div>
+    <h2 class="slide-h2">Enterprise-grade security. Small-business price.</h2>
+    <div class="sec-grid">
+      <div class="sec-item">
+        <div class="sec-icon">🔐</div>
+        <div>
+          <div class="sec-title">Tenant Isolation</div>
+          <div class="sec-body">PostgreSQL row-level security enforces hard data boundaries. No tenant can ever read another tenant's records — even at the DB layer. Defense-in-depth at service layer too.</div>
+        </div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon">🛡️</div>
+        <div>
+          <div class="sec-title">JWT RS256 Auth + RBAC</div>
+          <div class="sec-body">15-minute access tokens, 7-day refresh. Eight predefined roles with fine-grained permission overrides per user. Every endpoint declares the minimum role and permission required.</div>
+        </div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon">📋</div>
+        <div>
+          <div class="sec-title">Immutable Audit Log</div>
+          <div class="sec-body">Every auth event, permission denial, data access, and admin action is appended to an append-only audit log. DB triggers prevent modification. Operator search and export available.</div>
+        </div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon">⚡</div>
+        <div>
+          <div class="sec-title">Rate Limiting</div>
+          <div class="sec-body">All endpoints rate-limited by tier: auth (10 req/min/IP), writes (60/min/user), reads (300/min/user). Operators adjust limits live without restart. DDoS basic mitigation built in.</div>
+        </div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon">🔍</div>
+        <div>
+          <div class="sec-title">Continuous CVE Scanning</div>
+          <div class="sec-body">pip-audit runs four times daily (06:00, 12:00, 18:00, 00:00 UTC). Critical vulnerabilities trigger immediate alerts. Bandit static analysis on every push.</div>
+        </div>
+      </div>
+      <div class="sec-item">
+        <div class="sec-icon">☁️</div>
+        <div>
+          <div class="sec-title">99.5% Uptime SLO</div>
+          <div class="sec-body">Fly.io cloud hosting with health checks, Sentry error tracking, and hourly uptime monitoring. Structured JSON logs shipped to Grafana. HTTPS enforced; HTTP redirected.</div>
+        </div>
+      </div>
+    </div>
+    <div class="brand-bar"></div>
+    <div class="oh-watermark">Office Hero</div>
+    <div class="slide-num">11</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       SLIDE 12 — GET STARTED / CTA
+  ══════════════════════════════════════════════════════════════════ -->
+  <div class="slide s-cta">
+    <div class="cta-left">
+      <div class="eyebrow" style="color:var(--blue-300); margin-bottom:4mm">Ready to get started?</div>
+      <h2>Let's get your team dispatching smarter.</h2>
+      <p class="tagline2">
+        Five companies are already waiting for production launch. Schedule a live demo
+        and we'll walk through your workflow, answer your questions, and set up a trial account.
+      </p>
+      <div class="cta-btn">Schedule a Live Demo →</div>
+      <div style="margin-top:8mm; font-size:0.75rem; color:var(--blue-300);">
+        Typical onboarding: 30 minutes · No credit card for trial
+      </div>
+      <div class="brand-bar"></div>
+    </div>
+    <div class="cta-right">
+      <div class="contact-block">
+        <div class="contact-label">Contact</div>
+        <div class="contact-line">📧 hello@officehero.dev</div>
+        <div class="contact-line">🌐 officehero.dev</div>
+        <div class="contact-line">📞 1-800-HERO-FSM (coming soon)</div>
+        <div class="contact-line">💬 In-app chat on every page</div>
+      </div>
+      <div class="demo-links-block">
+        <div class="contact-label">Live Demo Videos</div>
+        <div class="contact-line" style="font-size:0.76rem; color:var(--gray-700); margin-bottom:2mm;">Four recorded walkthroughs — watch at your own pace:</div>
+        <div class="contact-line">▶ Demo 1 — Jobs &amp; Dispatch overview</div>
+        <div class="contact-line">▶ Demo 2 — Contracts lifecycle</div>
+        <div class="contact-line">▶ Demo 3 — Route management (resequence &amp; complete)</div>
+        <div class="contact-line">▶ Demo 4 — Tenant admin &amp; Operator Dashboard</div>
+        <div class="contact-line" style="margin-top:2mm; font-size:0.72rem; color:var(--gray-500);">Videos recorded automatically on every release · officehero.dev/demos</div>
+      </div>
+      <div class="contact-block" style="border-color:var(--emerald); background:var(--emerald-light)">
+        <div class="contact-label" style="color:var(--emerald)">Industries Served</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:1mm;">
+          <span class="badge badge-ready">Plumbing</span>
+          <span class="badge badge-ready">HVAC</span>
+          <span class="badge badge-ready">Pest Control</span>
+          <span class="badge badge-ready">Landscaping</span>
+          <span class="badge badge-ready">Electrical</span>
+          <span class="badge badge-ready">Cleaning</span>
+        </div>
+      </div>
+    </div>
+    <div class="oh-watermark">Office Hero</div>
+    <div class="slide-num">12</div>
+  </div>
+
+</body>
+</html>

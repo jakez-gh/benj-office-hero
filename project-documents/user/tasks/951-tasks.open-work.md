@@ -72,6 +72,18 @@ Full findings: `project-documents/user/tasks/033-tasks.ui-improvements.md`
   `demo-flows.spec.ts` with 2 seeded tenants + create flow + operator page
   (ccba43b). Role case bug fixed: `Operator` → `operator` (a40b4c6).
 
+### Sales &amp; Documentation (Slices 032–033)
+
+- [x] **Slice 032 — Sales materials** — 12-slide A4 HTML/PDF deck (`docs/sales/sales-deck.html`),
+  Playwright PDF generator (`scripts/generate-sales-pdf.mjs`), sales DEMO_GUIDE.md,
+  demo-flows `networkidle` → `load` fix. Complete (2026-06-27).
+  Slice: `032-slice.sales-materials.md` | Tasks: `034-tasks.sales-materials.md`
+
+- [x] **Slice 033 — Customer docs** — Nine-file documentation suite in `docs/customer/`:
+  index, getting-started, admin-guide, dispatch-guide, contracts-guide, technician-guide,
+  integrations-guide, security-guide, faq. Complete (2026-06-27).
+  Slice: `033-slice.customer-docs.md` | Tasks: `035-tasks.customer-docs.md`
+
 ### Infrastructure / Ops
 
 These are human actions (no code changes required):
@@ -185,3 +197,4 @@ Promote to a numbered slice + task file when scheduling.
 | 2026-06-24 | QA coverage audit: screenshots.spec.ts complete (all 10 pages). Added QA-01 (seeded spec missing tenants/operator) and QA-02 (Demo 4 — Tenants + Operator Dashboard). WS-14 added. |
 | 2026-06-25 | Slice 031 complete: all UI-01–14 done, QA-01/02 done. UI-11 partial fix (color-scheme:light on date input). UI-12 confirmed no-change. UI-13/14 + demo role fix shipped (a40b4c6). Multi-agent coordination bootstrapped (.agents/ dir, WORKSTREAMS.md, ROSTER.md, per-agent heartbeats). All WS-01–14 done. Coverage: 558 tests, 77.95%. 526c12a pushed. |
 | 2026-06-27 | Session close. No new code work. Confirmed: all Ready-Now code items done, slice 031 marked complete (000e304). Framework-check PASS (36 artifacts). Memory updated (ux-backlog-status, slice-completion-status). Remaining open work = external-credential-gated (Slices 25–27), hardware-gated (Slice 28 E2E), and human-action ops items. |
+| 2026-06-27 | Sales materials (Slice 032) + Customer docs (Slice 033) complete. Sales deck: docs/sales/sales-deck.html (12 slides, A4 landscape), scripts/generate-sales-pdf.mjs, docs/sales/DEMO_GUIDE.md. Demo fix: networkidle → load in demo-flows.spec.ts. Customer docs: 9-file suite in docs/customer/. |
