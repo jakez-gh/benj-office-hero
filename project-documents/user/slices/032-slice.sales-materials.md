@@ -4,6 +4,7 @@ title: Sales Materials — Deck + Demo Videos
 type: slice
 parent: 1.2
 status: complete
+size: small
 docType: slice
 layer: project
 phase: 4

@@ -1,9 +1,10 @@
 ---
-id: 1.2.33
+id: 1.2.34
 title: Customer Documentation — Comprehensive User Guides
 type: slice
 parent: 1.2
 status: complete
+size: small
 docType: slice
 layer: project
 phase: 4
