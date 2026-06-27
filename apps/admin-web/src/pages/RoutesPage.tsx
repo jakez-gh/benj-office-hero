@@ -6,12 +6,14 @@ import {
   type RouteStopStatus,
   type VehicleLocationResponse,
   cancelRouteApi,
+  getRouteApi,
   getVehicleLatestLocationApi,
   listRoutesApi,
   reassignRouteApi,
   resequenceRouteApi,
   startRouteApi,
 } from '../api';
+import { useRouteEvents } from '../hooks/useRouteEvents';
 import { Alert } from '../components/ui/Alert';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { useAutoRecover } from '../hooks/useAutoRecover';
@@ -254,6 +256,14 @@ function RouteCard({
 
   // Live GPS position — polls every 30 s while route is in_progress.
   const location = useVehicleLocation(route.vehicle_id, route.status === 'in_progress');
+
+  // Live route events via SSE — re-fetch on any state change from another client.
+  useRouteEvents(
+    route.status === 'in_progress' ? route.id : null,
+    useCallback(() => {
+      getRouteApi(route.id).then(onUpdated).catch(() => {});
+    }, [route.id, onUpdated]),
+  );
 
   const stops = [...route.stops].sort((a, b) => a.sequence_index - b.sequence_index);
   const displayedJobIds = order ?? stops.map((s) => s.job_id);

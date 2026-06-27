@@ -7,6 +7,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
+from fastapi.responses import StreamingResponse
 
 from office_hero.api.deps import require_permission
 from office_hero.api.limiter import limiter
@@ -30,6 +31,7 @@ from office_hero.core.exceptions import (
     VehicleNotFoundError,
 )
 from office_hero.core.logging import get_logger
+from office_hero.core.route_events import publish, subscribe
 
 log = get_logger(__name__)
 
@@ -82,6 +84,36 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Route not found")
 
         return route
+
+    @router.get(
+        "/{route_id}/events",
+        summary="SSE stream of route state-change events",
+        description=(
+            "Server-Sent Events stream. Emits JSON on route_started, route_cancelled, "
+            "stop_arrived, stop_completed, stop_skipped. The browser EventSource API "
+            "reconnects automatically. route_id UUIDs are non-guessable (MVP: no auth "
+            "check; add JWT query-param validation in a future slice)."
+        ),
+        response_class=StreamingResponse,
+    )
+    async def route_event_stream(
+        route_id: Annotated[UUID, Path()],
+    ) -> StreamingResponse:
+        """Stream route events to a connected admin-web client via SSE."""
+
+        async def gen():
+            async for msg in subscribe(f"route:{route_id}"):
+                yield f"data: {msg}\n\n"
+
+        return StreamingResponse(
+            gen(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no",
+                "Connection": "keep-alive",
+            },
+        )
 
     @router.post(
         "", response_model=RouteRead, dependencies=[Depends(require_permission("route:write"))]
@@ -216,6 +248,7 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
             ) from exc
 
+        await publish(f"route:{route_id}", {"type": "route_started", "route_id": str(route_id)})
         return route
 
     @router.post(
@@ -243,6 +276,10 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
             ) from exc
 
+        await publish(
+            f"route:{route_id}",
+            {"type": "route_cancelled", "route_id": str(route_id), "reason": body.reason},
+        )
         return route
 
     @router.post(
@@ -266,6 +303,11 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
         route = await repo.get_by_id(route_id, tenant_id)
         if not route:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Route not found")
+
+        await publish(
+            f"route:{route_id}",
+            {"type": "stop_arrived", "route_id": str(route_id), "stop_id": str(stop_id)},
+        )
         return route
 
     @router.post(
@@ -289,6 +331,11 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
         route = await repo.get_by_id(route_id, tenant_id)
         if not route:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Route not found")
+
+        await publish(
+            f"route:{route_id}",
+            {"type": "stop_completed", "route_id": str(route_id), "stop_id": str(stop_id)},
+        )
         return route
 
     @router.post(
@@ -313,6 +360,16 @@ def create_routes_router(*, service_provider, repo_provider) -> APIRouter:
         route = await repo.get_by_id(route_id, tenant_id)
         if not route:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Route not found")
+
+        await publish(
+            f"route:{route_id}",
+            {
+                "type": "stop_skipped",
+                "route_id": str(route_id),
+                "stop_id": str(stop_id),
+                "reason": body.reason,
+            },
+        )
         return route
 
     return router

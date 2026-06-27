@@ -23,8 +23,6 @@ export function useRouteEvents(
   routeId: string | null,
   onEvent: (event: RouteEvent) => void,
 ): void {
-  // Wrap onEvent in useCallback at the call site, or stabilise here with a ref
-  // to avoid re-subscribing on every render.
   const stableOnEvent = useCallback(onEvent, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -41,7 +39,6 @@ export function useRouteEvents(
       }
     };
 
-    // onerror: browser will auto-reconnect with exponential backoff
     es.onerror = () => {};
 
     return () => {
