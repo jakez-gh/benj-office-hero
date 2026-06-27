@@ -6,7 +6,7 @@ parent: 1
 status: active
 docType: tasks
 project: office-hero
-dateUpdated: 20260627b
+dateUpdated: 20260627
 ---
 
 # Open Work Index — Office Hero
@@ -123,8 +123,8 @@ Blocked on: External API credentials for each system.
 
 - [ ] **Slice 25 — ServiceTitan** — Needs `SERVICETITAN_CLIENT_ID`,
   `SERVICETITAN_CLIENT_SECRET`, `SERVICETITAN_APP_KEY`, `SERVICETITAN_TENANT_ID`
-  as Fly.io secrets. **Pre-impl complete**: adapter (`servicetitan.py`) + 14 tests
-  + migration 0015 + slice design `026-slice.servicetitan-integration.md`.
+  as Fly.io secrets. **Pre-impl complete**: adapter (`servicetitan.py`), 14 tests,
+  migration 0015, slice design `026-slice.servicetitan-integration.md`.
   Research: `research/025-research.servicetitan-api.md` (RES-025).
   Tasks: `026-tasks.servicetitan-integration.md`
 
