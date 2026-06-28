@@ -32,6 +32,11 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         if not auth_header or not auth_header.startswith("Bearer "):
             return await call_next(request)
 
+        # If TestAuthMiddleware already set identity (OFFICE_HERO_TEST_AUTH=1),
+        # do not clobber it — skip JWT validation entirely.
+        if getattr(request.state, "tenant_id", None) is not None:
+            return await call_next(request)
+
         from office_hero.api.state import get_auth_service
 
         try:

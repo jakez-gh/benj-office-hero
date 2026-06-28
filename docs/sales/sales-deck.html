@@ -622,7 +622,7 @@
     <p class="contact-row">officehero.dev &nbsp;·&nbsp; hello@officehero.dev</p>
 
     <div class="cover-art">
-      <div class="stat-bubble"><div class="num">3</div><div class="lbl">Route options generated instantly</div></div>
+      <div class="stat-bubble"><div class="num">1-click</div><div class="lbl">Job dispatch to vehicle</div></div>
       <div class="stat-bubble"><div class="num">99.5%</div><div class="lbl">Uptime SLO</div></div>
       <div class="stat-bubble"><div class="num">< 500ms</div><div class="lbl">API response time (p95)</div></div>
     </div>
@@ -646,10 +646,10 @@
       <div class="vs-arrow">→</div>
       <div class="vs-col">
         <div class="vs-head fix">With Office Hero</div>
-        <div class="fix-item">Intelligent 3-option dispatch in one click — nearest, earliest, or balanced workload, auto-calculated</div>
-        <div class="fix-item">ORS-powered route optimization with live GPS tracking — every technician, every stop, every update</div>
-        <div class="fix-item">Native integrations with ServiceTitan, PestPac, and Jobber — data flows both ways automatically</div>
-        <div class="fix-item">Day-of re-routing in seconds — drag, reassign, or emergency-insert without rebuilding from scratch</div>
+        <div class="fix-item">Select a pending job, choose a technician (or skip for now), and dispatch in one click — saga orchestration handles booking and route commit automatically</div>
+        <div class="fix-item">Route management built in — view all active routes, resequence stops with ↑↓ controls, and track progress stop by stop</div>
+        <div class="fix-item">Adapter layer ready for ServiceTitan, PestPac, and Jobber — connect credentials to activate the data flow</div>
+        <div class="fix-item">Day-of route adjustments in seconds — resequence stops or reassign an entire route from the admin dashboard without rebuilding from scratch</div>
       </div>
     </div>
     <div class="brand-bar"></div>
@@ -668,24 +668,24 @@
         <div class="card-icon">⚡</div>
         <div class="card-title">Smart Dispatch</div>
         <div class="card-body">
-          Three ranked routing options generated in under 8 seconds. Nearest truck, earliest completion, or
-          balanced workload — dispatcher picks one and confirms. Job committed to route instantly.
+          Search pending jobs, select a technician (optional), and dispatch with one click.
+          Saga orchestration tracks every step — validate, book, commit — with live status updates.
         </div>
       </div>
       <div class="card">
         <div class="card-icon">🗺️</div>
         <div class="card-title">Live Route Management</div>
         <div class="card-body">
-          OpenRouteService-powered day routing with real-time GPS. Technicians mark stops arrived
-          and complete on their phone. Routes auto-complete when the last stop is done.
+          Full route visibility with stop-by-stop progress. Resequence stops with ↑↓ controls.
+          Routes auto-complete when the final stop is marked done. Every action timestamped.
         </div>
       </div>
       <div class="card">
         <div class="card-icon">🔄</div>
         <div class="card-title">Back-Office Integration</div>
         <div class="card-body">
-          Connects to ServiceTitan, PestPac, and Jobber via a bidirectional adapter.
-          Contracts sync automatically. Data never keyed twice. Audit log captures every event.
+          Adapter layer ready for ServiceTitan, PestPac, and Jobber. All adapter calls are
+          saga-coordinated with transactional outbox — zero data loss on integration failures.
         </div>
       </div>
       <div class="card">
@@ -700,8 +700,8 @@
         <div class="card-icon">📱</div>
         <div class="card-title">Technician Mobile</div>
         <div class="card-body">
-          Android native app + mobile-optimized web view. Full route, stop details, and
-          one-tap status updates. GPS location updates every 30 seconds — no native app required to start.
+          Mobile-responsive web view runs on any smartphone browser — no install required.
+          Android native app (React Native Expo) available as a sideloadable APK for field crews.
         </div>
       </div>
       <div class="card">
@@ -734,14 +734,14 @@
       <div class="wf-step">
         <div class="wf-num">2</div>
         <div class="wf-icon">⚡</div>
-        <div class="wf-title">View Route Options</div>
-        <div class="wf-desc">Three ranked options appear instantly — Nearest, Earliest, Balanced — with distance and ETA.</div>
+        <div class="wf-title">Select Job</div>
+        <div class="wf-desc">Search the pending job queue by title. Select a technician or leave unassigned — both modes supported.</div>
       </div>
       <div class="wf-step">
         <div class="wf-num">3</div>
         <div class="wf-icon">✅</div>
         <div class="wf-title">Dispatch</div>
-        <div class="wf-desc">Pick an option (or enter a custom sequence). Job commits to the vehicle's route in one click.</div>
+        <div class="wf-desc">Click Dispatch Job. Saga orchestrator validates, books, and commits to the vehicle's route automatically.</div>
       </div>
       <div class="wf-step">
         <div class="wf-num">4</div>
@@ -758,9 +758,9 @@
     </div>
     <hr class="divider">
     <div class="stats-row" style="margin-bottom:0">
-      <div class="stat-card"><div class="stat-num">&lt; 8s</div><div class="stat-lbl">Route options generated</div></div>
+      <div class="stat-card"><div class="stat-num">1-click</div><div class="stat-lbl">Job dispatch to route</div></div>
       <div class="stat-card"><div class="stat-num">2–3 min</div><div class="stat-lbl">Typical dispatch time</div></div>
-      <div class="stat-card"><div class="stat-num">30 sec</div><div class="stat-lbl">GPS location refresh</div></div>
+      <div class="stat-card"><div class="stat-num">&lt; 500ms</div><div class="stat-lbl">API response time (p95)</div></div>
       <div class="stat-card"><div class="stat-num">100%</div><div class="stat-lbl">Audit-logged operations</div></div>
     </div>
     <div class="brand-bar"></div>
@@ -774,15 +774,15 @@
   <div class="slide s-feature">
     <div class="feat-left">
       <div class="eyebrow">Feature</div>
-      <h2 class="slide-h2" style="font-size:1.5rem">Smart Dispatch — Three Options, One Click</h2>
+      <h2 class="slide-h2" style="font-size:1.5rem">Smart Dispatch — Search, Select, Dispatch in One Click</h2>
       <ul class="feat-list">
-        <li><span class="chk">✓</span>Nearest vehicle to job location — best for most dispatches</li>
-        <li><span class="chk">✓</span>Earliest completion — minimizes remaining route time for urgent jobs</li>
-        <li><span class="chk">✓</span>Balanced workload — even crew utilization across all vehicles</li>
-        <li><span class="chk">✓</span>Custom sequence — drag-and-drop reorder before committing</li>
-        <li><span class="chk">✓</span>Search and filter pending jobs by status, date, or title</li>
-        <li><span class="chk">✓</span>Emergency dispatch — insert urgent job at head of any active route</li>
-        <li><span class="chk">✓</span>Route reassign — move remaining stops to another vehicle instantly</li>
+        <li><span class="chk">✓</span>Search pending jobs by title — real-time filter narrows the list as you type</li>
+        <li><span class="chk">✓</span>Job details inline — see service type and customer before committing</li>
+        <li><span class="chk">✓</span>Assign a technician or leave unassigned — field crew can self-assign</li>
+        <li><span class="chk">✓</span>One-click dispatch — saga orchestrator validates, books, and commits automatically</li>
+        <li><span class="chk">✓</span>Live saga status panel — watch each step in real time on the same screen</li>
+        <li><span class="chk">✓</span>Dispatched job appears on Routes page — technician picks it up immediately</li>
+        <li><span class="chk">✓</span>Every dispatch is audit-logged with timestamp, actor, and outcome</li>
       </ul>
     </div>
     <div class="feat-right">
@@ -839,8 +839,8 @@
       <h2 class="slide-h2" style="font-size:1.5rem">Jobs & Customers — The Core Record</h2>
       <ul class="feat-list">
         <li><span class="chk">✓</span>Create jobs in seconds — customer, location, service type, priority</li>
-        <li><span class="chk">✓</span>Industry-specific fields: permit numbers, chemical usage, unit counts</li>
-        <li><span class="chk">✓</span>Job FSM: Pending → Dispatched → In Progress → Complete</li>
+        <li><span class="chk">✓</span>Service type, priority, and notes captured on every job</li>
+        <li><span class="chk">✓</span>Job lifecycle: Pending → Scheduled → In Progress → Completed</li>
         <li><span class="chk">✓</span>Filter jobs by status, service type, date, or technician</li>
         <li><span class="chk">✓</span>Customer records with multiple service locations per account</li>
         <li><span class="chk">✓</span>Auto-geocoding: enter an address, get GPS coordinates instantly</li>
@@ -872,7 +872,7 @@
         <li><span class="chk">✓</span>Create service agreements with weekly, monthly, or quarterly schedules</li>
         <li><span class="chk">✓</span>Jobs generate automatically when a contract comes due</li>
         <li><span class="chk">✓</span>Pause or resume contracts without losing history</li>
-        <li><span class="chk">✓</span>Links to back-office systems — contracts sync to PestPac, ServiceTitan</li>
+        <li><span class="chk">✓</span>Back-office adapter layer ready — connect credentials to sync contracts externally</li>
         <li><span class="chk">✓</span>Bulk "generate due jobs" — process all overdue contracts in one click</li>
         <li><span class="chk">✓</span>Customer and location pre-filled from the contract — zero re-entry</li>
         <li><span class="chk">✓</span>Contract history and renewal tracking built in</li>
@@ -904,9 +904,8 @@
         <li><span class="chk">✓</span>Mobile-optimized web view — works on any smartphone browser</li>
         <li><span class="chk">✓</span>Full daily route with stop details, customer info, and notes</li>
         <li><span class="chk">✓</span>One-tap Mark Arrived and Mark Complete — no forms to fill</li>
-        <li><span class="chk">✓</span>Turn-by-turn directions via device navigation apps</li>
-        <li><span class="chk">✓</span>GPS broadcasts location to dispatcher every 30 seconds</li>
-        <li><span class="chk">✓</span>Works offline — syncs when connection restores</li>
+        <li><span class="chk">✓</span>Mobile-responsive web view — all admin features available on any smartphone browser</li>
+        <li><span class="chk">✓</span>React Native Expo app — sideloadable APK for dedicated Android field devices</li>
       </ul>
     </div>
     <div class="feat-right" style="justify-content:center; gap: 8mm; flex-direction: row; align-items:center">

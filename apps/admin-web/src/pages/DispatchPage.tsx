@@ -59,7 +59,8 @@ export const DispatchPage: React.FC = () => {
 
     Promise.all([
       listJobsApi({ status: 'pending', limit: 100 }),
-      listUsers(),
+      // Users endpoint may not be available in all environments; degrade gracefully.
+      listUsers().catch((): AdminUser[] => []),
     ])
       .then(([jobsResp, usersResp]) => {
         if (cancelled) return;

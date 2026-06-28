@@ -116,15 +116,25 @@ async function injectAuth(page: Page, tenantId: string, userId: string): Promise
   //   src/api.ts          → direct http://localhost:8000/**  (CORS-enabled backend)
   //   @office-hero/api-client → /api/** via Vite proxy        (same-origin)
   // Both must receive X-Test-* headers so the backend can identify the tenant.
+  //
+  // Strip the Authorization header: auth.tsx sets "Bearer demo-video-token" from
+  // localStorage, which the JWT middleware sees as an invalid token and clears
+  // request.state — overriding what TestAuthMiddleware already set. Removing it
+  // lets TestAuth's X-Test-* headers be the sole identity signal.
   const hdrs = TEST_HEADERS(tenantId, userId);
+  function mergeHeaders(existing: Record<string, string>) {
+    const merged = { ...existing, ...hdrs };
+    delete merged['authorization'];
+    delete merged['Authorization'];
+    return merged;
+  }
 
-  await page.route(`${BACKEND}/**`, async (route) => {
-    await route.continue({ headers: { ...route.request().headers(), ...hdrs } });
-  });
-
-  await page.route('**/api/**', async (route) => {
-    await route.continue({ headers: { ...route.request().headers(), ...hdrs } });
-  });
+  // Match direct backend calls regardless of whether the app uses 127.0.0.1 or localhost
+  for (const pattern of [`${BACKEND}/**`, 'http://localhost:8000/**', '**/api/**']) {
+    await page.route(pattern, async (route) => {
+      await route.continue({ headers: mergeHeaders(route.request().headers()) });
+    });
+  }
 
   // Seed localStorage so the app treats the session as authenticated.
   await page.addInitScript(({ tid, uid }) => {

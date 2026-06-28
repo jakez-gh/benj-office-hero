@@ -15,12 +15,18 @@
  *   npx playwright install chromium  (from apps/admin-web/)
  */
 
-import { chromium } from '@playwright/test';
+import { createRequire } from 'module';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __dirname0 = dirname(fileURLToPath(import.meta.url));
+// @playwright/test lives in apps/admin-web — resolve it from there so this
+// script works when run from the repo root without a separate pnpm install.
+const require = createRequire(resolve(__dirname0, '../apps/admin-web/package.json'));
+const { chromium } = require('@playwright/test');
+
+const __dirname = __dirname0;
 const REPO_ROOT = resolve(__dirname, '..');
 const HTML_PATH = resolve(REPO_ROOT, 'docs', 'sales', 'sales-deck.html');
 const PDF_PATH  = resolve(REPO_ROOT, 'docs', 'sales', 'office-hero-sales-deck.pdf');

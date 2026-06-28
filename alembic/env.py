@@ -2,9 +2,21 @@ import os
 from logging.config import fileConfig
 
 from dotenv import load_dotenv
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, event, pool
+from sqlalchemy.dialects.sqlite.base import SQLiteTypeCompiler
 
 from alembic import context
+from alembic.ddl.sqlite import SQLiteImpl
+
+# Map PostgreSQL-only column types to their SQLite equivalents so migrations
+# that use postgresql.JSONB, postgresql.ARRAY, etc. can still run locally
+# against SQLite without changing the migration files.
+SQLiteTypeCompiler.visit_JSONB = lambda self, type_, **kw: "JSON"
+SQLiteTypeCompiler.visit_CITEXT = lambda self, type_, **kw: "TEXT"
+
+# SQLite doesn't support ALTER TABLE ADD CONSTRAINT; FK checks are opt-in anyway.
+# Turn add_constraint into a no-op when running against SQLite.
+SQLiteImpl.add_constraint = lambda self, const: None
 
 # Load .env file
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -16,8 +28,9 @@ config = context.config
 # Get DATABASE_URL from environment
 database_url = os.environ.get("DATABASE_URL")
 if database_url:
-    # Convert asyncpg URL to sync psycopg URL for alembic
+    # Convert async driver URLs to sync equivalents for alembic
     database_url = database_url.replace("postgresql+asyncpg://", "postgresql+psycopg://")
+    database_url = database_url.replace("sqlite+aiosqlite://", "sqlite://")
     config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
@@ -64,6 +77,54 @@ async def do_run_migrations(connection):
         context.run_migrations()
 
 
+_NOOP = "SELECT 1 /* pg-only DDL skipped for sqlite */"
+
+# Prefixes that are always PG-only (entire statement is skipped)
+_PG_ONLY_PREFIXES = (
+    "CREATE EXTENSION",
+    "DROP EXTENSION",
+    "CREATE OR REPLACE FUNCTION",
+    "CREATE FUNCTION",
+    "DROP FUNCTION",
+    "CREATE TRIGGER",
+    "DROP TRIGGER",
+    "CREATE POLICY",
+    "DROP POLICY",
+    "DO $$",
+    "DO\n$$",
+)
+
+# Substrings that, when found anywhere in the statement, mark it PG-only
+_PG_ONLY_SUBSTRINGS = (
+    "ENABLE ROW LEVEL SECURITY",
+    "DISABLE ROW LEVEL SECURITY",
+    "OWNER TO",
+    "$$ LANGUAGE",
+    "SET search_path",
+    "LANGUAGE PLPGSQL",
+    "RETURNS TRIGGER",
+    "USING GIN",
+    "USING BRIN",
+    "USING GIST",
+    "USING SPGIST",
+    "gin_trgm_ops",
+    "gist_trgm_ops",
+    "_trgm_ops",
+    "jsonb_path_ops",
+    "current_setting(",
+)
+
+
+def _sqlite_skip_pg_ddl(conn, cursor, statement, parameters, context, executemany):
+    """No-op PostgreSQL-specific DDL when running against SQLite."""
+    upper = statement.upper().strip()
+    if any(upper.startswith(kw.upper()) for kw in _PG_ONLY_PREFIXES):
+        return _NOOP, parameters
+    if any(kw.upper() in upper for kw in _PG_ONLY_SUBSTRINGS):
+        return _NOOP, parameters
+    return statement, parameters
+
+
 def run_migrations_online():
     """Run migrations in 'online' mode.
 
@@ -83,7 +144,13 @@ def run_migrations_online():
 
     # Use sync connection
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        if connectable.dialect.name == "sqlite":
+            event.listen(connection, "before_cursor_execute", _sqlite_skip_pg_ddl, retval=True)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            render_as_batch=connectable.dialect.name == "sqlite",
+        )
         with context.begin_transaction():
             context.run_migrations()
 

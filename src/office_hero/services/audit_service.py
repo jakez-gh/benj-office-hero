@@ -90,7 +90,7 @@ class AuditService:
         count_result = await session.execute(
             text(
                 "SELECT count(*) FROM audit_events"
-                " WHERE (:tenant_id IS NULL OR tenant_id::text = :tenant_id)"
+                " WHERE (:tenant_id IS NULL OR CAST(tenant_id AS TEXT) = :tenant_id)"
                 " AND (:event_type IS NULL OR event_type = :event_type)"
             ),
             params,
@@ -101,7 +101,7 @@ class AuditService:
             text(
                 "SELECT id, timestamp, tenant_id, user_id, event_type, details, request_id"
                 " FROM audit_events"
-                " WHERE (:tenant_id IS NULL OR tenant_id::text = :tenant_id)"
+                " WHERE (:tenant_id IS NULL OR CAST(tenant_id AS TEXT) = :tenant_id)"
                 " AND (:event_type IS NULL OR event_type = :event_type)"
                 " ORDER BY timestamp DESC"
                 " LIMIT :limit OFFSET :offset"

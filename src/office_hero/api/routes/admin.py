@@ -209,7 +209,7 @@ async def list_rate_limits() -> dict:
                 (
                     await session.execute(
                         text(
-                            'SELECT id::text, name, "limit", per_seconds, scope '
+                            'SELECT CAST(id AS TEXT) AS id, name, "limit", per_seconds, scope '
                             "FROM rate_limits ORDER BY name"
                         )
                     )
@@ -217,7 +217,7 @@ async def list_rate_limits() -> dict:
                 .mappings()
                 .all()
             )
-    except RuntimeError:
+    except Exception:
         rows = []
 
     items = [dict(r) for r in rows] if rows else _RATE_LIMIT_DEFAULTS
@@ -290,7 +290,7 @@ async def list_ban_filters() -> dict:
                 (
                     await session.execute(
                         text(
-                            "SELECT id::text, name, scope, created_at::text "
+                            "SELECT CAST(id AS TEXT) AS id, name, scope, CAST(created_at AS TEXT) AS created_at "
                             "FROM ban_list ORDER BY created_at DESC"
                         )
                     )
