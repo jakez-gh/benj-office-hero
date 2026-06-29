@@ -6,7 +6,7 @@ parent: 1
 status: active
 docType: tasks
 project: office-hero
-dateUpdated: 20260627
+dateUpdated: 20260629
 ---
 
 # Open Work Index — Office Hero
@@ -96,8 +96,12 @@ Full findings: `project-documents/user/tasks/033-tasks.ui-improvements.md`
 
 These are human actions (no code changes required):
 
-- [ ] **Activate CI/CD** — Add `FLY_API_TOKEN` GitHub repo secret
-  (`flyctl tokens create deploy`). Then every push to `main` auto-deploys.
+- [ ] **Activate CI/CD** — Add `FLY_API_TOKEN` GitHub repo secret.
+  Run: `flyctl auth login` (browser), then `flyctl apps create office-hero-api`,
+  `flyctl apps create office-hero-admin-web`, `flyctl tokens create deploy -a office-hero-api`.
+  Also set Fly.io app secrets: DATABASE_URL (Neon.tech free tier), JWT keys (pre-generated at
+  `.runtime/jwt_private.pem` + `.runtime/jwt_public.pem`), ORS_API_KEY (openrouteservice.org).
+  Full checklist: `.runtime/deploy-checklist.txt`. CI is fully green (97f1395). ~30 min.
 - [ ] **Activate Sentry** — Create Sentry project (free tier), add `SENTRY_DSN`
   as a Fly.io secret and `VITE_SENTRY_DSN` as a Fly.io build var.
 - [ ] **Activate uptime monitoring** — Add `PROD_ADMIN_TOKEN` + `PROD_API_URL`
@@ -207,3 +211,5 @@ Promote to a numbered slice + task file when scheduling.
 | 2026-06-27 | Session close. No new code work. Confirmed: all Ready-Now code items done, slice 031 marked complete (000e304). Framework-check PASS (36 artifacts). Memory updated (ux-backlog-status, slice-completion-status). Remaining open work = external-credential-gated (Slices 25–27), hardware-gated (Slice 28 E2E), and human-action ops items. |
 | 2026-06-27 | Sales materials (Slice 032) + Customer docs (Slice 033) complete. Sales deck: docs/sales/sales-deck.html (12 slides, A4 landscape), scripts/generate-sales-pdf.mjs, docs/sales/DEMO_GUIDE.md. Demo fix: networkidle → load in demo-flows.spec.ts. Customer docs: 9-file suite in docs/customer/. |
 | 2026-06-27 | Slice 032-LRE (Live Route Events via SSE) implementation complete, PR #143 open. route_events.py pub/sub hub + GET /routes/{id}/events SSE endpoint + useRouteEvents React hook. 569 backend tests pass, TypeScript clean. Removed "Real-time via WebSocket" from Future Work (done as SSE). |
+| 2026-06-28 | Sales deck corrected: removed all unverified claims (GPS tracking, 3-route options, 8s routing, back-office logos) across slides 1–9. PDF regenerated. Committed 773cda5. |
+| 2026-06-29 | CI fully green: fixed psycopg2-binary (alembic driver), bandit B113 (httpx timeouts), ruff SIM105/B904/E402, markdownlint MD024 (siblings_only), trailing whitespace. SHA 97f1395. GitHub release v0.1.0-demo published with 4 demo videos + PDF (see releases page). JWT keys pre-generated at .runtime/. |
