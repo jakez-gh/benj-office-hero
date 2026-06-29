@@ -29,7 +29,7 @@ config = context.config
 database_url = os.environ.get("DATABASE_URL")
 if database_url:
     # Convert async driver URLs to sync equivalents for alembic
-    database_url = database_url.replace("postgresql+asyncpg://", "postgresql+psycopg://")
+    database_url = database_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
     database_url = database_url.replace("sqlite+aiosqlite://", "sqlite://")
     config.set_main_option("sqlalchemy.url", database_url)
 

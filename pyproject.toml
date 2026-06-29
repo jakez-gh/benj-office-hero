@@ -47,6 +47,7 @@ pip-audit = ">=2.7"
 # can import it.
 mcp = ">=1.26"
 respx = ">=0.20"
+psycopg2-binary = ">=2.9"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
