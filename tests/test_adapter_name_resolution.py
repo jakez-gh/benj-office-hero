@@ -8,16 +8,17 @@ Covers the two resolution paths:
 
 from __future__ import annotations
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
-from office_hero.services.back_office_sync_service import BackOfficeSyncService
+import pytest
 
+from office_hero.services.back_office_sync_service import BackOfficeSyncService
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_service(tenant_repo=None) -> BackOfficeSyncService:
     return BackOfficeSyncService(

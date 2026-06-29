@@ -13,11 +13,10 @@ with respx mock tests matching the real Odyssey API shape.
 
 from __future__ import annotations
 
-import pytest
-
 from uuid import uuid4
 
 import httpx
+import pytest
 
 from office_hero.adapters.back_office import BackOfficeAdapter, Customer, Job
 from office_hero.adapters.back_office.pestpac import PestPacAdapter, PestPacConfig

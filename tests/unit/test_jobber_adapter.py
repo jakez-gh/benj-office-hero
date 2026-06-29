@@ -5,9 +5,8 @@ All network calls are intercepted via ``respx`` — no real HTTP traffic.
 
 from __future__ import annotations
 
-import json
-from datetime import datetime, timedelta, timezone
-from uuid import UUID, uuid4
+from datetime import UTC, datetime, timedelta
+from uuid import uuid4
 
 import httpx
 import pytest
@@ -18,7 +17,6 @@ from office_hero.adapters.back_office.jobber import (
     JobberAdapter,
     JobberConfig,
     JobberCredentials,
-    JobberGraphQLError,
 )
 
 GRAPHQL_URL = "https://api.getjobber.com/api/graphql"
@@ -41,7 +39,7 @@ def creds() -> JobberCredentials:
         tenant_id=uuid4(),
         access_token="test-token",
         refresh_token="refresh-tok",
-        expires_at=datetime.now(tz=timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(tz=UTC) + timedelta(hours=1),
         custom_field_client_config_id="cf-client-123",
         custom_field_job_config_id="cf-job-456",
     )
@@ -60,9 +58,7 @@ def adapter(config: JobberConfig, creds: JobberCredentials) -> JobberAdapter:
 def _gql_response(data: dict, *, available: int | None = None) -> dict:
     body: dict = {"data": data}
     if available is not None:
-        body["extensions"] = {
-            "cost": {"throttleStatus": {"currentlyAvailable": available}}
-        }
+        body["extensions"] = {"cost": {"throttleStatus": {"currentlyAvailable": available}}}
     return body
 
 
@@ -142,9 +138,7 @@ async def test_create_customer_idempotent_on_cache_hit(
     update_response = _gql_response(
         {"clientEdit": {"client": {"id": "jobber-c-existing"}, "userErrors": []}}
     )
-    respx.post(GRAPHQL_URL).mock(
-        return_value=httpx.Response(200, json=update_response)
-    )
+    respx.post(GRAPHQL_URL).mock(return_value=httpx.Response(200, json=update_response))
 
     result = await adapter.create_customer(customer)
     assert result == customer
@@ -176,9 +170,7 @@ async def test_create_job_success_with_client_in_cache(
     create_response = _gql_response(
         {"jobCreate": {"job": {"id": "jobber-j-001"}, "userErrors": []}}
     )
-    respx.post(GRAPHQL_URL).mock(
-        return_value=httpx.Response(200, json=create_response)
-    )
+    respx.post(GRAPHQL_URL).mock(return_value=httpx.Response(200, json=create_response))
 
     result = await adapter.create_job(job)
     assert result == job
@@ -197,9 +189,7 @@ async def test_delete_customer_archives_client(adapter: JobberAdapter) -> None:
     archive_response = _gql_response(
         {"clientArchive": {"client": {"id": "jobber-c-del"}, "userErrors": []}}
     )
-    respx.post(GRAPHQL_URL).mock(
-        return_value=httpx.Response(200, json=archive_response)
-    )
+    respx.post(GRAPHQL_URL).mock(return_value=httpx.Response(200, json=archive_response))
 
     result = await adapter.delete_customer(customer_id)
     assert result is None
@@ -216,12 +206,10 @@ async def test_delete_customer_noop_when_not_in_cache(adapter: JobberAdapter) ->
 
 
 @respx.mock
-async def test_token_refresh_on_expiry(
-    config: JobberConfig, creds: JobberCredentials
-) -> None:
+async def test_token_refresh_on_expiry(config: JobberConfig, creds: JobberCredentials) -> None:
     """If expires_at is in the past, the token endpoint is called before GraphQL."""
     # Expire the token
-    creds.expires_at = datetime.now(tz=timezone.utc) - timedelta(seconds=10)
+    creds.expires_at = datetime.now(tz=UTC) - timedelta(seconds=10)
     adapter = JobberAdapter(config, creds, http=httpx.AsyncClient())
 
     token_response = {
@@ -229,9 +217,7 @@ async def test_token_refresh_on_expiry(
         "refresh_token": "new-refresh-token",
         "expires_in": 3600,
     }
-    respx.post(TOKEN_URL).mock(
-        return_value=httpx.Response(200, json=token_response)
-    )
+    respx.post(TOKEN_URL).mock(return_value=httpx.Response(200, json=token_response))
     respx.post(GRAPHQL_URL).mock(
         return_value=httpx.Response(
             200,

@@ -4,7 +4,7 @@
 
 This guide is the complete reference for Company Admins and Dispatchers managing daily operations in Office Hero. Whether you run a plumbing crew of three or a multi-vehicle HVAC fleet, every feature you need is covered here — user management, vehicle and crew setup, customer records, job lifecycle, route operations, and handling the unexpected.
 
-For help beyond this guide, reach us at **support@officehero.dev**, via the in-app chat bubble, or by phone at **1-800-HERO-FSM**.
+For help beyond this guide, reach us at **<support@officehero.dev>**, via the in-app chat bubble, or by phone at **1-800-HERO-FSM**.
 
 ---
 
@@ -255,8 +255,8 @@ To pause a contract, open it and click **Pause**. Jobs stop generating until you
 
 ## Security and Your Data
 
-Every session in Office Hero uses encrypted connections and secure tokens. Your company's data is isolated from all other accounts on the platform — no user from another company can ever access your records, and our support team operates on a minimum-access basis. If you suspect unauthorised access, contact **support@officehero.dev** immediately or call **1-800-HERO-FSM**, and we will lock your account within minutes.
+Every session in Office Hero uses encrypted connections and secure tokens. Your company's data is isolated from all other accounts on the platform — no user from another company can ever access your records, and our support team operates on a minimum-access basis. If you suspect unauthorised access, contact **<support@officehero.dev>** immediately or call **1-800-HERO-FSM**, and we will lock your account within minutes.
 
 ---
 
-*For questions not covered here, contact us at support@officehero.dev, use the in-app chat, or call 1-800-HERO-FSM.*
+*For questions not covered here, contact us at <support@officehero.dev>, use the in-app chat, or call 1-800-HERO-FSM.*

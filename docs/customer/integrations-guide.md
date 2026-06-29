@@ -6,7 +6,7 @@ Office Hero connects with the field service software your company may already us
 
 If your company does not use any external system, skip to the next section. Office Hero works great on its own.
 
-**Questions or ready to connect?** Contact us at support@officehero.dev, through the in-app **Help** chat, or by calling **1-800-HERO-FSM**.
+**Questions or ready to connect?** Contact us at <support@officehero.dev>, through the in-app **Help** chat, or by calling **1-800-HERO-FSM**.
 
 ---
 
@@ -60,7 +60,7 @@ ServiceTitan is popular with mid-to-large plumbing, HVAC, electrical, and multi-
 ### How to Connect
 
 1. In Office Hero, go to **Settings → Integrations → ServiceTitan**.
-2. Contact us at support@officehero.dev or 1-800-HERO-FSM to initiate the connection — our team will walk you through generating the required API credentials in your ServiceTitan account.
+2. Contact us at <support@officehero.dev> or 1-800-HERO-FSM to initiate the connection — our team will walk you through generating the required API credentials in your ServiceTitan account.
 3. Paste your ServiceTitan Tenant ID and API key into the Office Hero connection screen.
 4. Tap **Connect** and confirm.
 
@@ -102,7 +102,7 @@ PestPac (by WorkWave) is the leading platform for pest control companies. It han
 ### How to Connect
 
 1. In Office Hero, go to **Settings → Integrations → PestPac**.
-2. Email us at support@officehero.dev with your company name and your PestPac account number. Our team will coordinate with WorkWave on your behalf to obtain a connection token — this process typically takes **1–2 business days**.
+2. Email us at <support@officehero.dev> with your company name and your PestPac account number. Our team will coordinate with WorkWave on your behalf to obtain a connection token — this process typically takes **1–2 business days**.
 3. Once your token is ready, we will send it to you securely. Enter it in the PestPac integration screen in Office Hero and tap **Activate**.
 
 ### After Connection
@@ -175,7 +175,7 @@ Jobber's API allows near-real-time data access, so the initial sync is fast — 
 
 Setting up an integration is a one-time task, and we are here to help you through it. Reach us at:
 
-- **Email:** support@officehero.dev
+- **Email:** <support@officehero.dev>
 - **In-app chat:** tap **Help** in the bottom navigation bar
 - **Phone:** 1-800-HERO-FSM
 

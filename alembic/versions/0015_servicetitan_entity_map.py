@@ -12,9 +12,10 @@ here avoids a round-trip externalData query on every update/delete.
 Slice 26: ServiceTitan integration.
 """
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
+
+from alembic import op
 
 revision = "0015_servicetitan_entity_map"
 down_revision = "0014_performance_indexes"

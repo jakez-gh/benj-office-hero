@@ -35,7 +35,7 @@ from __future__ import annotations
 import asyncio
 import os
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
@@ -70,7 +70,7 @@ class ServiceTitanConfig:
         return _SANDBOX_API if self.sandbox else _PROD_API
 
     @classmethod
-    def from_env(cls) -> "ServiceTitanConfig":
+    def from_env(cls) -> ServiceTitanConfig:
         """Build config from environment variables; raises KeyError if any are missing."""
         return cls(
             client_id=os.environ["SERVICETITAN_CLIENT_ID"],
@@ -88,7 +88,7 @@ class ServiceTitanAdapter:
 
     def __init__(self, config: ServiceTitanConfig, http: httpx.AsyncClient | None = None) -> None:
         self._cfg = config
-        self._http = http or httpx.AsyncClient()
+        self._http = http or httpx.AsyncClient(timeout=30.0)
         self._token: str | None = None
         self._token_expiry: float = 0.0  # monotonic time
 
@@ -102,7 +102,7 @@ class ServiceTitanAdapter:
         tenant_id: UUID,  # noqa: ARG003  — reserved for per-tenant credential lookup
         customer_repo: Any,  # noqa: ARG003
         job_repo: Any,  # noqa: ARG003
-    ) -> "ServiceTitanAdapter":
+    ) -> ServiceTitanAdapter:
         """Factory matching the :data:`AdapterFactory` signature."""
         return cls(config=ServiceTitanConfig.from_env())
 

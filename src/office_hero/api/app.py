@@ -25,10 +25,10 @@ from office_hero.api.middleware.security_headers import SecurityHeadersMiddlewar
 from office_hero.api.middleware.test_auth import TestAuthMiddleware, test_auth_enabled
 from office_hero.api.routes import auth, health
 from office_hero.api.routes.admin import audit_router, create_admin_router, rate_limits_router
-from office_hero.api.routes.integrations import create_integrations_router
 from office_hero.api.routes.contracts import create_contract_router
 from office_hero.api.routes.customers import create_customer_router
 from office_hero.api.routes.dispatch import create_dispatch_router
+from office_hero.api.routes.integrations import create_integrations_router
 from office_hero.api.routes.jobs import create_job_router
 from office_hero.api.routes.locations import create_location_router
 from office_hero.api.routes.routes import create_routes_router
@@ -115,7 +115,9 @@ def _register_back_office_adapters() -> None:
             "SERVICETITAN_TENANT_ID",
         )
     ):
-        from office_hero.adapters.back_office.servicetitan import ServiceTitanAdapter  # noqa: PLC0415
+        from office_hero.adapters.back_office.servicetitan import (
+            ServiceTitanAdapter,
+        )  # noqa: PLC0415
 
         register_adapter("servicetitan", ServiceTitanAdapter.from_tenant)
         log.info("back_office.registered", adapter="servicetitan")

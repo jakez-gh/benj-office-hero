@@ -4,7 +4,7 @@
 
 This guide explains how Office Hero protects your business data and your team's access. It is written for Company Admins who want a clear, non-technical picture of the security measures in place.
 
-If you have a security concern at any time, email **security@officehero.dev**. We respond within 24 hours.
+If you have a security concern at any time, email **<security@officehero.dev>**. We respond within 24 hours.
 
 ---
 
@@ -108,7 +108,7 @@ Only users with the **Company Admin** role can access the audit log. Dispatchers
 
 ### Retention Period
 
-Audit records are kept for **90 days**. Records older than 90 days are permanently deleted. If your business requires longer retention for compliance reasons, contact us at support@officehero.dev to discuss options.
+Audit records are kept for **90 days**. Records older than 90 days are permanently deleted. If your business requires longer retention for compliance reasons, contact us at <support@officehero.dev> to discuss options.
 
 ---
 
@@ -145,14 +145,14 @@ Office Hero enforces the following minimum requirements for all passwords:
 
 If you discover or suspect a security vulnerability, a data exposure, or any suspicious activity in your account, contact us immediately:
 
-- **Email:** security@officehero.dev
+- **Email:** <security@officehero.dev>
 - **Response SLA:** We acknowledge every report within **24 hours** and provide a status update within 72 hours.
 
 Please include as much detail as you can: what you observed, when, and any screenshots or logs that may help us investigate. We treat all security reports as high priority.
 
 For general account help that is not a security emergency:
 
-- **Email:** support@officehero.dev
+- **Email:** <support@officehero.dev>
 - **In-app chat:** available from any screen via the chat icon
 - **Phone:** 1-800-HERO-FSM
 - **Hours:** Monday–Friday, 8am–6pm ET

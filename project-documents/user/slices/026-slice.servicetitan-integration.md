@@ -26,32 +26,39 @@ happens at app startup via the credential check pattern described below.
 ## Key design decisions
 
 ### Token caching
+
 Access tokens last 900 s. We cache in-memory with an 840 s reuse window (60 s
 margin) keyed on monotonic time. Multi-process deployments will re-auth on each
 worker start — acceptable given token cost is negligible.
 
 ### externalData idempotency (customers)
+
 ServiceTitan has no native externalId on the customer entity. We tag every
 customer at creation with:
+
 ```json
 {"applicationGuid": "office-hero", "key": "internal_id", "value": "<our UUID>"}
 ```
+
 Every mutating customer method calls `_find_customer_by_external_id` first and
 returns early if found. The filter
 `?externalData.applicationGuid=office-hero&externalData.key=internal_id&externalData.value={id}`
 is the ST-recommended approach from the v2 API docs.
 
 ### externalId idempotency (jobs)
+
 Jobs have a native `externalId` string field. We store our UUID there. The
 idempotency check is `?externalId={job.id}&pageSize=1` before every POST.
 
 ### Location requirement
+
 Every ST customer requires at least one location. `create_customer` always
 POSTs a stub location (`name: "Default", zip: "00000"`) immediately after the
 customer POST. The stub satisfies the constraint; field operators can fill real
 address data later via the ST back-office UI.
 
 ### create_job dependency on create_customer
+
 `create_job` needs the ST integer customerId. Rather than maintaining a local
 mapping table (deferred to future slice), it calls `_find_customer_by_external_id`
 at job-creation time. If the customer isn't in ST yet, a `ValueError` is raised
@@ -59,10 +66,12 @@ at job-creation time. If the customer isn't in ST yet, a `ValueError` is raised
 processes first.
 
 ### 429 retry
+
 Up to 3 retries with exponential backoff (1 s → 2 s → 4 s). `asyncio.sleep`
 is patched in tests to avoid wall-clock delays.
 
 ### Sentinel customer_id in get_job
+
 `get_job` returns `Job(id=id, customer_id=UUID(int=0))` as a sentinel when the
 job exists but we can't round-trip the ST integer customerId back to our UUID
 without a second externalData lookup. Callers that need the real customer link

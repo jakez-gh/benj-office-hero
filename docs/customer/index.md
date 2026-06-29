@@ -57,7 +57,7 @@ Most teams complete this checklist in under 30 minutes. The [Getting Started gui
 
 ## Getting Help
 
-- **Email:** support@officehero.dev
+- **Email:** <support@officehero.dev>
 - **In-app chat:** click the chat bubble in the bottom-right corner of any screen
 - **Phone:** 1-800-HERO-FSM (weekdays 7 am – 7 pm local time)
 

@@ -11,6 +11,7 @@ Create Date: 2026-06-18 00:00:00.000000
 """
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "0016_jobber_tables"

@@ -41,8 +41,8 @@ from __future__ import annotations
 
 import asyncio
 import os
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -78,7 +78,7 @@ class JobberConfig:
     graphql_version: str = "2023-11-15"
 
     @classmethod
-    def from_env(cls) -> "JobberConfig":
+    def from_env(cls) -> JobberConfig:
         return cls(
             client_id=os.environ["JOBBER_CLIENT_ID"],
             client_secret=os.environ["JOBBER_CLIENT_SECRET"],
@@ -124,7 +124,7 @@ class JobberAdapter:
     ) -> None:
         self._cfg = config
         self._creds = creds
-        self._http = http or httpx.AsyncClient()
+        self._http = http or httpx.AsyncClient(timeout=30.0)
         # When True, _refresh_token_if_needed loads creds from DB before first call.
         self._db_init_pending = db_init_pending
         # Scaffold entity cache: (entity_type, internal_id) -> jobber_id
@@ -141,12 +141,13 @@ class JobberAdapter:
         Called on first use when ``from_tenant`` was constructed without env-var
         tokens (production path — tokens come from the Jobber OAuth2 callback).
         """
+        from sqlalchemy import select  # noqa: PLC0415
+
         from office_hero.api.state import get_engine  # noqa: PLC0415
         from office_hero.db.session import get_session  # noqa: PLC0415
         from office_hero.models.jobber_credentials import (  # noqa: PLC0415
             JobberCredentials as JCModel,
         )
-        from sqlalchemy import select  # noqa: PLC0415
 
         engine = get_engine()
         async with get_session(engine) as session:
@@ -171,9 +172,10 @@ class JobberAdapter:
 
         Called after every token refresh so rotated refresh tokens are not lost.
         """
+        from sqlalchemy import text  # noqa: PLC0415
+
         from office_hero.api.state import get_engine  # noqa: PLC0415
         from office_hero.db.session import get_session  # noqa: PLC0415
-        from sqlalchemy import text  # noqa: PLC0415
 
         try:
             engine = get_engine()
@@ -201,7 +203,7 @@ class JobberAdapter:
         if self._db_init_pending:
             await self._load_creds_from_db()
 
-        threshold = datetime.now(tz=timezone.utc) + timedelta(minutes=5)
+        threshold = datetime.now(tz=UTC) + timedelta(minutes=5)
         if self._creds.expires_at > threshold:
             return
 
@@ -219,7 +221,7 @@ class JobberAdapter:
 
         self._creds.access_token = payload["access_token"]
         self._creds.refresh_token = payload["refresh_token"]
-        self._creds.expires_at = datetime.now(tz=timezone.utc) + timedelta(
+        self._creds.expires_at = datetime.now(tz=UTC) + timedelta(
             seconds=payload.get("expires_in", 3600)
         )
         await self._persist_creds_to_db()
@@ -228,9 +230,7 @@ class JobberAdapter:
     # GraphQL transport
     # ------------------------------------------------------------------
 
-    async def _graphql(
-        self, query: str, variables: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
+    async def _graphql(self, query: str, variables: dict[str, Any] | None = None) -> dict[str, Any]:
         """Execute a GraphQL request and return the ``data`` portion.
 
         Handles token refresh, throttle back-off, and error unwrapping.
@@ -270,9 +270,7 @@ class JobberAdapter:
         """Return the Jobber opaque ID for an internal UUID, or None."""
         return self._entity_cache.get((entity_type, internal_id))
 
-    async def _set_entity_map(
-        self, entity_type: str, internal_id: UUID, jobber_id: str
-    ) -> None:
+    async def _set_entity_map(self, entity_type: str, internal_id: UUID, jobber_id: str) -> None:
         """Store the internal → Jobber ID mapping."""
         self._entity_cache[(entity_type, internal_id)] = jobber_id
 
@@ -345,9 +343,7 @@ class JobberAdapter:
         """
         input_payload: dict[str, Any] = {**_name_fields(customer.name)}
         if cfg_id:
-            input_payload["customFields"] = [
-                {"configurationId": cfg_id, "value": str(customer.id)}
-            ]
+            input_payload["customFields"] = [{"configurationId": cfg_id, "value": str(customer.id)}]
 
         data = await self._graphql(mutation, {"input": input_payload})
         result = data["clientCreate"]
@@ -461,9 +457,7 @@ class JobberAdapter:
             "title": "Office Hero Job",
         }
         if cfg_id:
-            input_payload["customFields"] = [
-                {"configurationId": cfg_id, "value": str(job.id)}
-            ]
+            input_payload["customFields"] = [{"configurationId": cfg_id, "value": str(job.id)}]
 
         data = await self._graphql(mutation, {"input": input_payload})
         result = data["jobCreate"]
@@ -518,7 +512,7 @@ class JobberAdapter:
     # ------------------------------------------------------------------
 
     @classmethod
-    def from_tenant(cls, tenant_id: UUID, customer_repo: Any, job_repo: Any) -> "JobberAdapter":
+    def from_tenant(cls, tenant_id: UUID, customer_repo: Any, job_repo: Any) -> JobberAdapter:
         """Construct a JobberAdapter for ``tenant_id``.
 
         Production path: tokens are loaded lazily from the ``jobber_credentials``
@@ -536,7 +530,7 @@ class JobberAdapter:
                 tenant_id=tenant_id,
                 access_token=os.environ["JOBBER_ACCESS_TOKEN"],
                 refresh_token=os.environ.get("JOBBER_REFRESH_TOKEN", ""),
-                expires_at=datetime.now(tz=timezone.utc) + timedelta(hours=1),
+                expires_at=datetime.now(tz=UTC) + timedelta(hours=1),
                 custom_field_client_config_id=os.environ.get("JOBBER_CF_CLIENT_ID"),
                 custom_field_job_config_id=os.environ.get("JOBBER_CF_JOB_ID"),
             )
@@ -547,7 +541,7 @@ class JobberAdapter:
             tenant_id=tenant_id,
             access_token="__pending__",
             refresh_token="__pending__",
-            expires_at=datetime.min.replace(tzinfo=timezone.utc),
+            expires_at=datetime.min.replace(tzinfo=UTC),
         )
         return cls(cfg, placeholder, db_init_pending=True)
 

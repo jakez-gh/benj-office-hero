@@ -1,6 +1,5 @@
 """Main entry point for Office Hero API."""
 
-import os
 import sys
 
 from dotenv import load_dotenv
@@ -15,6 +14,6 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-from office_hero.api.app import create_app
+from office_hero.api.app import create_app  # noqa: E402
 
 app = create_app()

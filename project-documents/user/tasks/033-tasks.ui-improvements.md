@@ -22,6 +22,7 @@ Screenshots live in `apps/admin-web/screenshots/`.
 ## CRITICAL — Breaks functionality
 
 ### UI-01: Mobile nav overflow — 5+ pages unreachable on mobile
+
 **File:** `apps/admin-web/src/components/NavShell.tsx`
 **Impact:** At 375px, the nav bar fits only "Jobs", "Contracts", and "Sign out".
 Routes, Dispatch, Vehicles, Users, Customers — and for operators, Tenants and
@@ -32,6 +33,7 @@ on the item list + a `md:hidden` hamburger button that toggles a `<Drawer>`.
 **Effort:** 3/5
 
 ### UI-02: Tenants table truncates on mobile — not scrollable
+
 **File:** `apps/admin-web/src/pages/TenantsPage.tsx`
 **Impact:** At 375px the CREATED column is cut off and the table has no
 horizontal scroll container. Operator-role users on mobile cannot see full rows.
@@ -44,6 +46,7 @@ card-stack layout below `md`.
 ## HIGH — Inconsistency / missing core affordances
 
 ### UI-03: Vehicles page missing "Add Vehicle" primary action
+
 **File:** `apps/admin-web/src/pages/VehiclesPage.tsx`
 **Impact:** Every other list page has a primary CTA button (Jobs → "New job",
 Customers → "+ Add Customer", Contracts → "New contract"). Vehicles shows only
@@ -53,6 +56,7 @@ pattern in `CustomersPage.tsx`.
 **Effort:** 1/5
 
 ### UI-04: Users page missing "Add User" / "Invite User" primary action
+
 **File:** `apps/admin-web/src/pages/UsersPage.tsx`
 **Impact:** Same issue as Vehicles — no button to create or invite a user.
 **Fix:** Add an "Invite user" button (or "Add user") aligned right of the
@@ -60,7 +64,9 @@ heading. Check whether the backend endpoint exists; if not, track that too.
 **Effort:** 1/5 (UI) + backend check
 
 ### UI-05: Empty-state CTAs are plain bold text, not interactive
+
 **Files:**
+
 - `apps/admin-web/src/pages/JobsPage.tsx` — "Create your first job"
 - `apps/admin-web/src/pages/ContractsPage.tsx` — "Create your first contract"
 - `apps/admin-web/src/pages/CustomersPage.tsx` — "Add your first customer"
@@ -73,7 +79,9 @@ styling is sufficient; keep it inline.
 **Effort:** 1/5 per page
 
 ### UI-06: Three inconsistent error presentation styles
+
 **Pages:**
+
 - Yellow banner (`amber-100` bg, `amber-600` text) — Jobs, Vehicles, Users,
   Customers, Contracts, Routes, Tenants: "Service temporarily unavailable"
 - Red banner (no border) — Operator Dashboard: "Failed to load rate limits"
@@ -84,6 +92,7 @@ similar. The Dispatch and Operator error variants should be updated to match.
 **Effort:** 2/5
 
 ### UI-07: Operator Dashboard error has no retry action
+
 **File:** `apps/admin-web/src/pages/OperatorDashboardPage.tsx`
 **Impact:** "Failed to load rate limits" appears with no way to retry except
 refreshing the whole browser tab.
@@ -96,6 +105,7 @@ function again. Pattern: `<button onClick={loadRateLimits}>Retry</button>`.
 ## MEDIUM — Polish and consistency
 
 ### UI-08: Button label conventions are inconsistent across pages
+
 | Page | Button label |
 |------|-------------|
 | Jobs | "New job" |
@@ -109,6 +119,7 @@ to match.
 **Effort:** 1/5
 
 ### UI-09: Onboarding checklist shows on operator-only pages
+
 **File:** `apps/admin-web/src/components/NavShell.tsx` (or wherever the banner lives)
 **Impact:** The "Getting started — complete these steps to dispatch your first
 job" banner appears on Tenants and Operator Dashboard, where it is irrelevant.
@@ -118,6 +129,7 @@ suppress it entirely once the user role is `operator`.
 **Effort:** 1/5
 
 ### UI-10: Login page missing "Forgot password?" link
+
 **File:** `apps/admin-web/src/components/LoginPage.tsx`
 **Impact:** Standard user expectation for any auth form. No recovery path
 visible.
@@ -131,6 +143,7 @@ users to contact support.
 ## LOW — Minor polish
 
 ### UI-11: Routes date picker uses native `<input type="date">`
+
 **File:** `apps/admin-web/src/pages/RoutesPage.tsx`
 **Impact:** Native date inputs look inconsistent across browsers (especially
 Chrome vs Safari). The styling is out of place next to the rest of the Tailwind
@@ -141,6 +154,7 @@ the native input appearance.
 **Effort:** 2/5
 
 ### UI-12: Login subtitle uses amber/muted color
+
 **File:** `apps/admin-web/src/components/LoginPage.tsx`
 **Impact:** "Enter your credentials to access your account" renders in what
 appears to be `text-muted-foreground` or `text-amber-*`. Minor brand mismatch
@@ -150,6 +164,7 @@ class is intentional.
 **Effort:** trivial
 
 ### UI-13: Job/Contract count subtitle is redundant with empty state
+
 **Files:** `JobsPage.tsx`, `ContractsPage.tsx`
 **Impact:** The "0 jobs" / "0 contracts" line under the heading reads as noise
 when the empty state below also says "No jobs found."
@@ -158,6 +173,7 @@ load before data arrives.
 **Effort:** trivial
 
 ### UI-14: Dispatch page has large empty space below error card
+
 **File:** `apps/admin-web/src/pages/DispatchPage.tsx`
 **Impact:** When jobs fail to load, the bottom 60% of the page is blank white.
 **Fix:** Add a full-height flex container with `items-start` or shift the error

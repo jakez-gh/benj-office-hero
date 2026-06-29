@@ -104,9 +104,7 @@ async def test_get_token_refreshes_after_expiry(adapter: ServiceTitanAdapter) ->
 async def test_health_check_true_on_200(adapter: ServiceTitanAdapter) -> None:
     with respx.mock:
         respx.post(AUTH_URL).mock(return_value=_token_response())
-        respx.get(f"{API_BASE}/crm/v2/tenant/{ST_TID}/customers").mock(
-            return_value=_empty_page()
-        )
+        respx.get(f"{API_BASE}/crm/v2/tenant/{ST_TID}/customers").mock(return_value=_empty_page())
         result = await adapter.health_check()
 
     assert result is True
@@ -134,17 +132,15 @@ async def test_create_customer_posts_with_external_data(adapter: ServiceTitanAda
     with respx.mock:
         respx.post(AUTH_URL).mock(return_value=_token_response())
         # Idempotency check — not found
-        respx.get(f"{API_BASE}/crm/v2/tenant/{ST_TID}/customers").mock(
-            return_value=_empty_page()
-        )
+        respx.get(f"{API_BASE}/crm/v2/tenant/{ST_TID}/customers").mock(return_value=_empty_page())
         # Create customer
-        create_customer = respx.post(
-            f"{API_BASE}/crm/v2/tenant/{ST_TID}/customers"
-        ).mock(return_value=httpx.Response(200, json={"id": st_customer_id}))
+        create_customer = respx.post(f"{API_BASE}/crm/v2/tenant/{ST_TID}/customers").mock(
+            return_value=httpx.Response(200, json={"id": st_customer_id})
+        )
         # Create location
-        create_location = respx.post(
-            f"{API_BASE}/crm/v2/tenant/{ST_TID}/locations"
-        ).mock(return_value=httpx.Response(200, json={"id": 1}))
+        create_location = respx.post(f"{API_BASE}/crm/v2/tenant/{ST_TID}/locations").mock(
+            return_value=httpx.Response(200, json={"id": 1})
+        )
 
         result = await adapter.create_customer(customer)
 
@@ -152,6 +148,7 @@ async def test_create_customer_posts_with_external_data(adapter: ServiceTitanAda
     assert create_customer.called
     req_body = create_customer.calls.last.request.read()
     import json
+
     body = json.loads(req_body)
     assert body["name"] == "Acme Plumbing"
     assert body["externalData"][0]["applicationGuid"] == "office-hero"
@@ -185,9 +182,7 @@ async def test_create_customer_idempotent_when_exists(adapter: ServiceTitanAdapt
 async def test_get_customer_returns_none_when_not_found(adapter: ServiceTitanAdapter) -> None:
     with respx.mock:
         respx.post(AUTH_URL).mock(return_value=_token_response())
-        respx.get(f"{API_BASE}/crm/v2/tenant/{ST_TID}/customers").mock(
-            return_value=_empty_page()
-        )
+        respx.get(f"{API_BASE}/crm/v2/tenant/{ST_TID}/customers").mock(return_value=_empty_page())
         result = await adapter.get_customer(uuid4())
 
     assert result is None
@@ -238,13 +233,9 @@ async def test_create_job_raises_on_missing_customer_in_st(adapter: ServiceTitan
     with respx.mock:
         respx.post(AUTH_URL).mock(return_value=_token_response())
         # Job not found (first GET)
-        respx.get(f"{API_BASE}/jpm/v2/tenant/{ST_TID}/jobs").mock(
-            return_value=_empty_page()
-        )
+        respx.get(f"{API_BASE}/jpm/v2/tenant/{ST_TID}/jobs").mock(return_value=_empty_page())
         # Customer not found either
-        respx.get(f"{API_BASE}/crm/v2/tenant/{ST_TID}/customers").mock(
-            return_value=_empty_page()
-        )
+        respx.get(f"{API_BASE}/crm/v2/tenant/{ST_TID}/customers").mock(return_value=_empty_page())
 
         with pytest.raises(ValueError, match="ServiceTitan customerId not found"):
             await adapter.create_job(job)
@@ -261,9 +252,7 @@ async def test_create_job_posts_with_correct_fields(adapter: ServiceTitanAdapter
     with respx.mock:
         respx.post(AUTH_URL).mock(return_value=_token_response())
         # Job not found
-        respx.get(f"{API_BASE}/jpm/v2/tenant/{ST_TID}/jobs").mock(
-            return_value=_empty_page()
-        )
+        respx.get(f"{API_BASE}/jpm/v2/tenant/{ST_TID}/jobs").mock(return_value=_empty_page())
         # Customer found
         respx.get(f"{API_BASE}/crm/v2/tenant/{ST_TID}/customers").mock(
             return_value=_page_with({"id": st_customer_id, "name": "Test Co"})

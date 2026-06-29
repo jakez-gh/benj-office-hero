@@ -134,6 +134,7 @@ When sandbox access (`APISales@workwave.com`) is available:
 4. Write respx mock tests for all HTTP call paths.
 
 5. Register in `registry.py`:
+
    ```python
    from office_hero.adapters.back_office.pestpac import PestPacAdapter
    register_adapter("pestpac", PestPacAdapter.from_tenant)
@@ -146,6 +147,7 @@ When sandbox access (`APISales@workwave.com`) is available:
 ## Tests
 
 Already passing (10 tests in `tests/unit/test_pestpac_adapter.py`):
+
 - Protocol isinstance check
 - Config sandbox/prod URL switching
 - `from_tenant` factory satisfies protocol

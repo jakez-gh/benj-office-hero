@@ -161,7 +161,7 @@ Use this table to decide whether to create a contract or a standard job.
 
 | Channel | Details |
 |---|---|
-| Email | support@officehero.dev |
+| Email | <support@officehero.dev> |
 | In-app chat | Click the **?** icon in the bottom-right corner of any screen |
 | Phone | 1-800-HERO-FSM (available Mon–Fri, 7 am–8 pm local time) |
 

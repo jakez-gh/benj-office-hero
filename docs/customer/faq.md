@@ -120,7 +120,7 @@ A: The technician's app will show no further scheduled stops. The dispatcher can
 ## Account & Billing
 
 **Q: How is Office Hero priced?**
-A: Office Hero is billed monthly or annually, based on the number of active users on your account. Active users are those who have accepted their invite and can log in — deactivated accounts do not count toward your user total. Contact support@officehero.dev for current plan details and pricing.
+A: Office Hero is billed monthly or annually, based on the number of active users on your account. Active users are those who have accepted their invite and can log in — deactivated accounts do not count toward your user total. Contact <support@officehero.dev> for current plan details and pricing.
 
 **Q: How do I update my billing information?**
 A: Go to **Settings → Billing** and click **Update Payment Method**. You can replace a credit or debit card, or switch to ACH bank transfer. Changes take effect on your next billing cycle. Only Company Admins can access billing settings.
@@ -129,7 +129,7 @@ A: Go to **Settings → Billing** and click **Update Payment Method**. You can r
 A: You will receive an email notification immediately when a payment fails. Office Hero will retry the charge automatically over the following three days. If the charge has not succeeded after three attempts, your account is placed in a read-only grace period for seven days, during which no new jobs or dispatches can be created but all existing data remains accessible. Restoring a valid payment method immediately exits the grace period.
 
 **Q: How do I deactivate a user who has left my company?**
-A: Go to **Settings → Users**, click the user's name, and select **Deactivate Account**. Their active session is invalidated immediately — they cannot log in again. Their name and activity history remain in the audit log and on historical job records. If you need to permanently delete a user's personal data (for example, for a data subject access request), contact support@officehero.dev.
+A: Go to **Settings → Users**, click the user's name, and select **Deactivate Account**. Their active session is invalidated immediately — they cannot log in again. Their name and activity history remain in the audit log and on historical job records. If you need to permanently delete a user's personal data (for example, for a data subject access request), contact <support@officehero.dev>.
 
 **Q: Can I export all of my company's data?**
 A: Yes. Under **Settings → Data Export**, you can request a full export of your account data including customers, jobs, contracts, routes, and users in CSV format. Exports are generated asynchronously and emailed to the requesting Company Admin within one hour for most account sizes.
@@ -142,7 +142,7 @@ A: Yes. Under **Settings → Data Export**, you can request a full export of you
 A: Yes. The QuickBooks Online integration syncs completed jobs and contract invoices to your QuickBooks account. To connect, go to **Settings → Integrations → QuickBooks** and follow the authorization steps. Once connected, completed jobs with a billable amount automatically create a draft invoice in QuickBooks. You review and send the invoice from within QuickBooks.
 
 **Q: Can I connect Office Hero to my existing CRM or ERP system?**
-A: Office Hero supports webhook-based integrations that can push job and customer events to external systems in real time. For deeper integrations with specific CRM or ERP platforms, contact support@officehero.dev to discuss your use case. Our team can advise on available options and any custom integration work.
+A: Office Hero supports webhook-based integrations that can push job and customer events to external systems in real time. For deeper integrations with specific CRM or ERP platforms, contact <support@officehero.dev> to discuss your use case. Our team can advise on available options and any custom integration work.
 
 **Q: Does Office Hero support calendar integration?**
 A: A read-only iCal feed is available for each technician's schedule, which can be subscribed to from Google Calendar, Apple Calendar, or Outlook. Go to **Settings → Integrations → Calendar Feed** to generate the subscription link. Note that the calendar feed is read-only — jobs must still be created and managed within Office Hero.
@@ -158,10 +158,10 @@ A: A customer-facing booking portal is on the product roadmap. In the meantime, 
 A: No. Every company's data is completely isolated. Your jobs, customers, contracts, and team information are not visible to — and cannot be accessed by — any other company on the platform. This separation is enforced at the infrastructure level, not just through software filters.
 
 **Q: What happens to my data if I cancel my account?**
-A: Your data is retained for 30 days after cancellation, giving you time to export anything you need. After 30 days, all data associated with your account is permanently deleted from our systems. If you need an extended retention period before deletion, contact support@officehero.dev before the 30-day window closes.
+A: Your data is retained for 30 days after cancellation, giving you time to export anything you need. After 30 days, all data associated with your account is permanently deleted from our systems. If you need an extended retention period before deletion, contact <support@officehero.dev> before the 30-day window closes.
 
 **Q: Does Office Hero comply with data protection regulations?**
-A: Office Hero is designed with data privacy in mind. All data is encrypted in transit. User access is controlled by role-based permissions. Audit logs track all significant actions. If your business operates under specific regulatory requirements (such as CCPA or state-level privacy laws), contact support@officehero.dev to discuss your compliance needs — we are happy to provide documentation to support your compliance review.
+A: Office Hero is designed with data privacy in mind. All data is encrypted in transit. User access is controlled by role-based permissions. Audit logs track all significant actions. If your business operates under specific regulatory requirements (such as CCPA or state-level privacy laws), contact <support@officehero.dev> to discuss your compliance needs — we are happy to provide documentation to support your compliance review.
 
 ---
 
@@ -171,9 +171,9 @@ Our support team is here to help.
 
 | Channel | Details |
 |---|---|
-| Email | support@officehero.dev |
+| Email | <support@officehero.dev> |
 | In-app chat | Click the chat icon from any screen |
 | Phone | 1-800-HERO-FSM |
 | Hours | Monday–Friday, 8am–6pm ET |
 
-For security concerns specifically, email **security@officehero.dev** — we respond to every security report within 24 hours.
+For security concerns specifically, email **<security@officehero.dev>** — we respond to every security report within 24 hours.

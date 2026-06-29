@@ -15,6 +15,7 @@ class Base(DeclarativeBase):
 from office_hero.models.contract import Contract  # noqa: F401, E402
 from office_hero.models.customer import Customer  # noqa: F401, E402
 from office_hero.models.job import Job  # noqa: F401, E402
+from office_hero.models.jobber_credentials import JobberCredentials  # noqa: F401, E402
 from office_hero.models.location import Location  # noqa: F401, E402
 from office_hero.models.outbox_event import OutboxEvent  # noqa: F401, E402
 from office_hero.models.route import Route, RouteStop  # noqa: F401, E402
@@ -25,4 +26,3 @@ from office_hero.models.user import User  # noqa: F401, E402
 from office_hero.models.vehicle import Vehicle  # noqa: F401, E402
 from office_hero.models.vehicle_crew import VehicleCrew, VehicleCrewMember  # noqa: F401, E402
 from office_hero.models.vehicle_location import VehicleLocation  # noqa: F401, E402
-from office_hero.models.jobber_credentials import JobberCredentials  # noqa: F401, E402

@@ -33,7 +33,7 @@ from uuid import UUID
 
 import httpx
 
-from office_hero.adapters.back_office import BackOfficeAdapter, Customer, Job
+from office_hero.adapters.back_office import Customer, Job
 
 
 @dataclass
@@ -58,7 +58,7 @@ class PestPacConfig:
         return "https://prod-api.service.workwave.com/api/public/v1"
 
     @classmethod
-    def from_env(cls) -> "PestPacConfig":
+    def from_env(cls) -> PestPacConfig:
         return cls(
             api_key=os.environ["PESTPAC_API_KEY"],
             company_key=os.environ["PESTPAC_COMPANY_KEY"],
@@ -80,11 +80,9 @@ class PestPacAdapter:
 
     name = "pestpac"
 
-    def __init__(
-        self, config: PestPacConfig, http: httpx.AsyncClient | None = None
-    ) -> None:
+    def __init__(self, config: PestPacConfig, http: httpx.AsyncClient | None = None) -> None:
         self._cfg = config
-        self._http = http or httpx.AsyncClient()
+        self._http = http or httpx.AsyncClient(timeout=30.0)
         # In-memory entity cache: (entity_type, internal_id) → pestpac_id (str)
         # Production: replace with pestpac_entity_map table queries.
         self._entity_cache: dict[tuple[str, UUID], str] = {}
@@ -92,7 +90,7 @@ class PestPacAdapter:
     @classmethod
     def from_tenant(
         cls, tenant_id: UUID, customer_repo: object, job_repo: object
-    ) -> "PestPacAdapter":
+    ) -> PestPacAdapter:
         return cls(PestPacConfig.from_env())
 
     # ------------------------------------------------------------------

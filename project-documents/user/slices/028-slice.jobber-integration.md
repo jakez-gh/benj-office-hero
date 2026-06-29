@@ -26,6 +26,7 @@ Implements the Jobber back-office adapter against Jobber's GraphQL API
 ## Key design decisions
 
 ### OAuth2 token rotation
+
 Jobber uses authorization_code flow with mandatory refresh-token rotation: each
 `/token` refresh returns a new `refresh_token` that immediately invalidates the
 old one. Tokens are stored per-tenant in `jobber_credentials`. The adapter
@@ -37,6 +38,7 @@ before the access window closes. Without this the rotated refresh_token is
 lost on process restart.
 
 ### Custom field bootstrap
+
 Jobber has no native external-ID field. We configure two custom fields:
 
 - `hero_client_id` (Text) on Client
@@ -48,22 +50,26 @@ after first connect (provisioned via `customFieldConfigurationCreate` on
 `get_customer` and `get_job` return `None` rather than guessing.
 
 ### Entity cache (scaffold) → entity map table (production)
+
 The in-memory `_entity_cache` dict maps `(entity_type, internal_id)` → Jobber
 opaque ID for the lifetime of the adapter instance. Production must query/upsert
 `jobber_entity_map` to survive restarts and work across multiple processes.
 
 ### Throttle back-off
+
 Jobber's leaky-bucket allows 10,000 points with 500 pts/sec restore.
 After every GraphQL response, if `extensions.cost.throttleStatus.currentlyAvailable`
 is below 100, the adapter sleeps 1 second before returning. This is conservative
 and avoids DDoS-layer blocks without complex point accounting.
 
 ### Soft-delete mapping
+
 Jobber has no hard-delete on clients or jobs. `delete_customer` → `clientArchive`,
 `delete_job` → `jobArchive`. Archived entities are excluded from normal queries
 in Jobber's UI. Our entity-map entries are kept (for idempotency checks).
 
 ### `create_job` requires Jobber Client ID
+
 Jobber's `jobCreate` mutation takes a `clientId` (Jobber opaque ID), not our
 internal UUID. The adapter resolves this from the entity cache. If no mapping
 exists, it raises `ValueError` — callers must ensure `create_customer` runs
@@ -108,6 +114,7 @@ All unit tests use `respx` to intercept HTTP — zero live network calls.
 ## Effort: 4/5
 
 More complex than a REST adapter due to:
+
 - OAuth2 mandatory token rotation (stateful per-tenant credential store)
 - No native external ID → custom field bootstrap + lookup
 - GraphQL throttle back-off (point-based, not request-based)

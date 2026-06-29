@@ -8,12 +8,15 @@ Scalability note: subscriptions live in process memory, so this works
 correctly on a single Fly.io instance. Replace `_subscribers` with a
 Redis pub/sub backend if the deployment ever scales horizontally.
 """
+
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 from collections import defaultdict
-from typing import Any, AsyncGenerator
+from collections.abc import AsyncGenerator
+from typing import Any
 
 _subscribers: defaultdict[str, list[asyncio.Queue[str]]] = defaultdict(list)
 
@@ -26,10 +29,8 @@ async def subscribe(topic: str) -> AsyncGenerator[str, None]:
         while True:
             yield await q.get()
     finally:
-        try:
+        with contextlib.suppress(ValueError):
             _subscribers[topic].remove(q)
-        except ValueError:
-            pass
 
 
 async def publish(topic: str, payload: dict[str, Any]) -> None:

@@ -2,7 +2,7 @@
 
 # Technician Field Guide
 
-Welcome to Office Hero. This guide covers everything you need to get through your day — from logging in to completing your last stop. If you run into trouble at any point, reach out to your dispatcher or contact us at support@officehero.dev, through the in-app chat, or by calling 1-800-HERO-FSM.
+Welcome to Office Hero. This guide covers everything you need to get through your day — from logging in to completing your last stop. If you run into trouble at any point, reach out to your dispatcher or contact us at <support@officehero.dev>, through the in-app chat, or by calling 1-800-HERO-FSM.
 
 ---
 
@@ -35,6 +35,7 @@ Your session is encrypted and secured with a time-limited token. You will be ask
 After signing in, the **Today's Route** screen shows every stop assigned to you for the day.
 
 Each stop card displays:
+
 - The customer name and address
 - Your scheduled arrival window
 - Your estimated arrival time (ETA), updated automatically as you move through the day
@@ -120,7 +121,7 @@ If you sign in and see an empty route screen:
 1. Pull down to refresh the screen and wait a few seconds.
 2. Confirm you are signed in to the correct account — check that your name appears in the top-right corner.
 3. Contact your dispatcher directly. Your route may not have been assigned yet, or you may have been accidentally left off today's schedule.
-4. If your dispatcher confirms the route was sent and you still see nothing, contact support at support@officehero.dev or 1-800-HERO-FSM.
+4. If your dispatcher confirms the route was sent and you still see nothing, contact support at <support@officehero.dev> or 1-800-HERO-FSM.
 
 ### Can't Mark Complete — Job Already Marked by Someone Else
 
@@ -169,4 +170,4 @@ Do not navigate to an incorrect address. Instead:
 
 ---
 
-**Need help?** Reach us any time at support@officehero.dev, through the in-app **Help** chat, or by calling **1-800-HERO-FSM**.
+**Need help?** Reach us any time at <support@officehero.dev>, through the in-app **Help** chat, or by calling **1-800-HERO-FSM**.

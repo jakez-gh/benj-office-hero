@@ -14,8 +14,9 @@ Odyssey API returns the created entity synchronously or returns a requestId
 """
 
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects.postgresql import UUID
+
+from alembic import op
 
 revision = "0017_pestpac_entity_map"
 down_revision = "0016_jobber_tables"

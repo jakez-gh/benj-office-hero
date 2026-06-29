@@ -15,7 +15,7 @@ rather than returning JSON.
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 from urllib.parse import urlencode
 from uuid import UUID, uuid4
@@ -64,9 +64,7 @@ class CreateTenantRequest(BaseModel):
     @classmethod
     def industry_valid(cls, v: str) -> str:
         if v not in VALID_INDUSTRIES:
-            raise ValueError(
-                f"Invalid industry '{v}'. Valid options: {sorted(VALID_INDUSTRIES)}"
-            )
+            raise ValueError(f"Invalid industry '{v}'. Valid options: {sorted(VALID_INDUSTRIES)}")
         return v
 
 
@@ -78,9 +76,7 @@ class AdapterUpdateRequest(BaseModel):
     @classmethod
     def adapter_valid(cls, v: str) -> str:
         if v not in VALID_ADAPTERS:
-            raise ValueError(
-                f"Invalid adapter '{v}'. Valid options: {sorted(VALID_ADAPTERS)}"
-            )
+            raise ValueError(f"Invalid adapter '{v}'. Valid options: {sorted(VALID_ADAPTERS)}")
         return v
 
 
@@ -119,11 +115,9 @@ def create_integrations_router() -> APIRouter:
                 tenants = tenants_result.scalars().all()
 
                 # Collect tenant IDs that have active Jobber credentials
-                now = datetime.now(tz=timezone.utc)
+                now = datetime.now(tz=UTC)
                 creds_result = await session.execute(
-                    select(JobberCredentials.tenant_id).where(
-                        JobberCredentials.expires_at > now
-                    )
+                    select(JobberCredentials.tenant_id).where(JobberCredentials.expires_at > now)
                 )
                 jobber_connected_ids = {row[0] for row in creds_result.all()}
 
@@ -141,7 +135,12 @@ def create_integrations_router() -> APIRouter:
             )
             for t in tenants
         ]
-        return {"items": [i.model_dump() for i in items], "total": total, "limit": limit, "offset": offset}
+        return {
+            "items": [i.model_dump() for i in items],
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        }
 
     @router.post(
         "/tenants",
@@ -201,9 +200,7 @@ def create_integrations_router() -> APIRouter:
                 result = await session.execute(select(Tenant).where(Tenant.id == tenant_id))
                 tenant = result.scalars().first()
                 if tenant is None:
-                    raise HTTPException(
-                        status_code=404, detail=f"Tenant {tenant_id} not found"
-                    )
+                    raise HTTPException(status_code=404, detail=f"Tenant {tenant_id} not found")
                 tenant.back_office_adapter = body.adapter
                 await session.commit()
         except RuntimeError as exc:
@@ -258,8 +255,8 @@ def create_integrations_router() -> APIRouter:
     async def jobber_callback(code: str, state: str) -> RedirectResponse:
         try:
             tenant_id = UUID(state)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid state parameter")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Invalid state parameter") from exc
 
         client_id = os.environ.get("JOBBER_CLIENT_ID")
         client_secret = os.environ.get("JOBBER_CLIENT_SECRET")
@@ -318,9 +315,7 @@ def create_integrations_router() -> APIRouter:
                 )
                 # Switch tenant to the Jobber adapter
                 await session.execute(
-                    text(
-                        "UPDATE tenants SET back_office_adapter = 'jobber' WHERE id = :id"
-                    ),
+                    text("UPDATE tenants SET back_office_adapter = 'jobber' WHERE id = :id"),
                     {"id": tenant_id},
                 )
                 await session.commit()

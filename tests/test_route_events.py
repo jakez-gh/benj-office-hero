@@ -1,6 +1,7 @@
 """Unit tests for the route_events pub/sub hub."""
 
 import asyncio
+import contextlib
 import json
 
 import pytest
@@ -92,10 +93,8 @@ async def test_subscriber_count() -> None:
     # Consumer re-enters the generator after received.set(), suspending at
     # yield await q.get() before the event loop returns here.
     task.cancel()
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         await task
-    except asyncio.CancelledError:
-        pass
 
     assert subscriber_count(topic) == 0
 
@@ -113,9 +112,7 @@ async def test_subscriber_removed_on_cancellation() -> None:
     assert subscriber_count(topic) == 1
 
     task.cancel()
-    try:
+    with contextlib.suppress(asyncio.CancelledError):
         await task
-    except asyncio.CancelledError:
-        pass
 
     assert subscriber_count(topic) == 0

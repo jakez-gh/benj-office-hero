@@ -54,10 +54,11 @@ class BackOfficeSyncService:
         # Lazy DB lookup — works in production without changing the constructor
         # signature (tests pass no tenant_repo; engine won't be set → "native").
         try:
+            from sqlalchemy import select  # noqa: PLC0415
+
             from office_hero.api.state import get_engine  # noqa: PLC0415
             from office_hero.db.session import get_session  # noqa: PLC0415
             from office_hero.models.tenant import Tenant  # noqa: PLC0415
-            from sqlalchemy import select  # noqa: PLC0415
 
             engine = get_engine()
             async with get_session(engine) as session:
