@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { getDailyRoute, acknowledgeStop } from '@office-hero/api-client';
+import { startLocationTracking } from './LocationService';
 import type { Route, Stop } from '@office-hero/types';
 
 export type RouteScreenProps = {
@@ -18,12 +19,10 @@ export default function RouteScreen({ token, navigation }: RouteScreenProps) {
       try {
         const r = await getDailyRoute(token);
         setRoute(r);
-      // start background tracking if we have a vehicleId
-      if (r.vehicleId) {
-        import('./LocationService').then(({ startLocationTracking }) =>
-          startLocationTracking(token, r.vehicleId!)
-        );
-      }
+        // start background tracking if we have a vehicleId
+        if (r.vehicleId) {
+          startLocationTracking(token, r.vehicleId);
+        }
       } catch (err) {
         console.error('failed to load route', err);
       } finally {

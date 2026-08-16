@@ -52,3 +52,9 @@ secrets.*
 node_modules/
 npm-debug.log*
 yarn-error.log*
+
+# Backend server state (manage-backend.sh runtime files)
+.backend-port
+.backend-pid
+.backend-stdout.log
+.backend-stderr.log

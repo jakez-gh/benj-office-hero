@@ -23,8 +23,10 @@ export default function JobEntryScreen({ token, onCreated }: JobEntryScreenProps
       const res = await createJob(token, { customerName, address, description });
       Alert.alert('Job Created', `Job ID: ${res.jobId}`);
       onCreated?.(res.jobId);
-    } catch (err: any) {
-      Alert.alert('Error', err.message || String(err));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(err);
+      Alert.alert('Error', message);
     } finally {
       setBusy(false);
     }

@@ -1,7 +1,13 @@
 import fetch from 'cross-fetch';
 import type { LoginResponse, Route, AcknowledgeResponse } from '@office-hero/types';
 
-const BASE_URL = process.env.OFFICE_HERO_API_URL || 'http://localhost:8000';
+// Expo bundles EXPO_PUBLIC_* vars; Node/CI uses OFFICE_HERO_API_URL.
+// Fallback to localhost:8000 for local dev without any env config.
+const BASE_URL =
+  (typeof process !== 'undefined' &&
+    (process.env.EXPO_PUBLIC_API_BASE_URL ||
+      process.env.OFFICE_HERO_API_URL)) ||
+  'http://localhost:8000';
 
 export interface Credentials {
   username: string;

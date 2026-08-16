@@ -23,11 +23,9 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "typescript": "~5.9.2",
-    "jest-expo": "~48.0.0",
-    "@testing-library/react-native": "*",
-    "@testing-library/jest-native": "*",
-    "@types/jest": "*",
-    "@types/react-test-renderer": "*"
+    "jest-expo": "~55.0.11",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "*"
   },
   "private": true
 }

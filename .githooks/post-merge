@@ -1,133 +1,64 @@
-#!/bin/bash
-# post-merge hook — ensure backend is running after git operations
-# This runs after merge/rebase/pull to verify the backend server is available
+#!/usr/bin/env bash
+# .githooks/post-merge
+# ─────────────────────────────────────────────────────────────────────────────
+# Triggered after: git merge, git pull, git rebase
+#
+# Behaviour:
+#   1. Reinstalls JS deps if package.json changed (pnpm install).
+#   2. Deploys a fresh backend on a randomly-chosen free port via
+#      scripts/manage-backend.sh deploy.  The script will:
+#        • start a new uvicorn process on the chosen port
+#        • wait for /health to respond
+#        • kill the old instance (gracefully → SIGKILL if needed)
+#        • persist the new port in .backend-port
+#      If the new server fails to start, the old one is kept alive.
+#
+# The hook is non-blocking — missing .env skips the deploy with a warning.
+# ─────────────────────────────────────────────────────────────────────────────
 
-set -e
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$HOOK_DIR/.." && pwd)"
 
-# Color output
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
-
-BACKEND_PORT=8000
-BACKEND_TIMEOUT=10
-
-# Function to check if backend is running
-backend_running() {
-    if command -v curl > /dev/null; then
-        curl -s http://localhost:$BACKEND_PORT/health > /dev/null 2>&1
-        return $?
-    else
-        netstat -tuln 2>/dev/null | grep -q ":$BACKEND_PORT " 2>/dev/null
-        return $?
-    fi
-}
-
-# Function to start backend
-start_backend() {
-    echo -e "${YELLOW}ℹ️  Backend not running. Starting...${NC}"
-
-    # Look for backend in common locations
-    if [ -d "../../office-hero-backend-core" ]; then
-        BACKEND_DIR="../../office-hero-backend-core"
-    elif [ -d "../office-hero-backend-core" ]; then
-        BACKEND_DIR="../office-hero-backend-core"
-    elif [ -d "office-hero-backend-core" ]; then
-        BACKEND_DIR="office-hero-backend-core"
-    else
-        echo -e "${RED}❌ Backend directory not found${NC}"
-        return 1
-    fi
-
-    if [ -f "$BACKEND_DIR/start_backend.ps1" ]; then
-        # PowerShell on Windows
-        powershell -File "$BACKEND_DIR/start_backend.ps1" &
-        BACKEND_PID=$!
-    elif [ -f "$BACKEND_DIR/start_backend.sh" ]; then
-        # Bash script
-        bash "$BACKEND_DIR/start_backend.sh" &
-        BACKEND_PID=$!
-    else
-        echo -e "${YELLOW}⚠️  Backend startup script not found in $BACKEND_DIR${NC}"
-        return 1
-    fi
-
-    # Wait for backend to start
-    echo -e "${YELLOW}Waiting for backend to start (up to ${BACKEND_TIMEOUT}s)...${NC}"
-    for i in $(seq 1 $BACKEND_TIMEOUT); do
-        if backend_running; then
-            echo -e "${GREEN}✅ Backend is running${NC}"
-            return 0
-        fi
-        sleep 1
-    done
-
-    echo -e "${RED}❌ Backend failed to start${NC}"
-    return 1
-}
-
-# Main logic
-if backend_running; then
-    echo -e "${GREEN}✅ Backend is running${NC}"
+if [[ -t 1 ]]; then
+  GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 else
-    start_backend
+  GREEN=''; YELLOW=''; RED=''; NC=''
 fi
 
-#!/usr/bin/env pwsh
-# post-merge hook for Windows PowerShell
-# Auto-start backend if not running
+echo -e "${YELLOW}🔧 post-merge: running post-merge setup…${NC}"
 
-$BackendPort = 8000
-$BackendTimeout = 10
+# ── 1. JS deps ────────────────────────────────────────────────────────────────
+PREV_HEAD="${1:-ORIG_HEAD}"
+CHANGED=$(git -C "$PROJECT_ROOT" diff --name-only "$PREV_HEAD" HEAD 2>/dev/null || true)
 
-function Test-BackendRunning {
-    try {
-        $response = Invoke-WebRequest -Uri "http://localhost:$BackendPort/health" -ErrorAction SilentlyContinue
-        return $response.StatusCode -eq 200
-    } catch {
-        return $false
-    }
-}
+if echo "$CHANGED" | grep -q 'package\.json\|pnpm-lock\.yaml'; then
+  echo -e "${YELLOW}  package files changed — running pnpm install…${NC}"
+  if command -v pnpm &>/dev/null; then
+    (cd "$PROJECT_ROOT" && pnpm install --frozen-lockfile 2>&1 | tail -5) || \
+    (cd "$PROJECT_ROOT" && pnpm install 2>&1 | tail -5)
+    echo -e "${GREEN}  ✅ pnpm install complete.${NC}"
+  else
+    echo -e "${YELLOW}  ⚠️  pnpm not found — skipping JS install.${NC}"
+  fi
+fi
 
-function Start-BackendServer {
-    Write-Host "ℹ️  Backend not running. Starting..." -ForegroundColor Yellow
+# ── 2. Backend deploy ─────────────────────────────────────────────────────────
+DEPLOY_SCRIPT="$PROJECT_ROOT/scripts/manage-backend.sh"
 
-    $BackendDir = $null
-    @("..\..\office-hero-backend-core", "..\office-hero-backend-core", "office-hero-backend-core") | ForEach-Object {
-        if (Test-Path $_ -PathType Container) {
-            $BackendDir = $_
-        }
-    }
+if [[ ! -f "$PROJECT_ROOT/.env" ]]; then
+  echo -e "${YELLOW}  ⚠️  .env missing — skipping backend deploy (copy .env.example → .env).${NC}"
+  exit 0
+fi
 
-    if (-not $BackendDir) {
-        Write-Host "❌ Backend directory not found" -ForegroundColor Red
-        return $false
-    }
+if [[ ! -x "$DEPLOY_SCRIPT" ]]; then
+  echo -e "${RED}  ❌ $DEPLOY_SCRIPT not found or not executable — skipping.${NC}" >&2
+  exit 0
+fi
 
-    $StartScript = Join-Path $BackendDir "start_backend.ps1"
-    if (Test-Path $StartScript) {
-        & $StartScript -NoNewWindow -PassThru | Out-Null
-
-        Write-Host "Waiting for backend to start..." -ForegroundColor Yellow
-        $startTime = Get-Date
-        while ((Get-Date) - $startTime -lt [TimeSpan]::FromSeconds($BackendTimeout)) {
-            if (Test-BackendRunning) {
-                Write-Host "✅ Backend is running" -ForegroundColor Green
-                return $true
-            }
-            Start-Sleep -Milliseconds 500
-        }
-
-        Write-Host "❌ Backend failed to start" -ForegroundColor Red
-        return $false
-    }
-
-    return $false
-}
-
-if (Test-BackendRunning) {
-    Write-Host "✅ Backend is running" -ForegroundColor Green
-} else {
-    Start-BackendServer
-}
+echo -e "${YELLOW}  Deploying backend…${NC}"
+if bash "$DEPLOY_SCRIPT" deploy; then
+  echo -e "${GREEN}✅ post-merge: backend deployed.${NC}"
+else
+  echo -e "${RED}❌ post-merge: backend deploy failed (see .backend-stderr.log).${NC}" >&2
+  # Non-fatal — do NOT fail the merge
+fi
