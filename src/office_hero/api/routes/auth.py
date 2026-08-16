@@ -7,6 +7,7 @@ from fastapi.exceptions import HTTPException
 from pydantic import BaseModel, EmailStr
 
 from office_hero.api.deps import require_auth
+from office_hero.api.limiter import limiter
 from office_hero.api.state import get_auth_service, get_engine
 from office_hero.core.exceptions import AuthError
 from office_hero.db.session import get_session
@@ -50,7 +51,8 @@ class LogoutResponse(BaseModel):
 
 
 @router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
-async def login(request_body: LoginRequest):
+@limiter.limit("10/minute")
+async def login(request: Request, request_body: LoginRequest):
     """Authenticate user and return access/refresh tokens."""
     auth_service = get_auth_service()
     engine = get_engine()
@@ -71,7 +73,8 @@ async def login(request_body: LoginRequest):
 
 
 @router.post("/refresh", response_model=RefreshResponse, status_code=status.HTTP_200_OK)
-async def refresh(request_body: RefreshRequest):
+@limiter.limit("10/minute")
+async def refresh(request: Request, request_body: RefreshRequest):
     """Refresh access token using refresh token."""
     auth_service = get_auth_service()
     engine = get_engine()
@@ -89,6 +92,7 @@ async def refresh(request_body: RefreshRequest):
 
 
 @router.post("/logout", response_model=LogoutResponse, status_code=status.HTTP_200_OK)
+@limiter.limit("10/minute")
 async def logout(request: Request, user_id: str = Depends(require_auth)):
     """Logout user by revoking refresh token."""
     # Refresh token revocation wired in Slice 4 (Observability) audit events.

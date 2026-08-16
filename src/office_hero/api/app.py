@@ -7,6 +7,8 @@ from office_hero.api.limiter import limiter
 from office_hero.api.middleware.logging import LoggingMiddleware
 from office_hero.api.middleware.security_headers import SecurityHeadersMiddleware
 from office_hero.api.routes import admin, health, sagas
+from office_hero.api.routes import auth as auth_routes
+from office_hero.core.logging import configure_logging
 
 
 def create_app() -> FastAPI:
@@ -15,6 +17,8 @@ def create_app() -> FastAPI:
     Wires middleware (order matters — outermost first), exception handlers,
     the slowapi rate limiter, and all route routers.
     """
+    configure_logging()
+
     application = FastAPI(
         title="Office Hero",
         description="Back-office management API for office services",
@@ -35,6 +39,7 @@ def create_app() -> FastAPI:
 
     # --- Routers ---
     application.include_router(health.router, tags=["health"])
+    application.include_router(auth_routes.router)  # prefix="/auth" set in router definition
     application.include_router(sagas.router, prefix="/sagas", tags=["sagas"])
     application.include_router(admin.router, prefix="/admin", tags=["admin"])
 
