@@ -6,15 +6,15 @@ import pytest
 pytest.importorskip("mcp", reason="mcp package not installed — run from mcp-server/")
 
 try:
-    from fastapi import FastAPI
-    from fastapi.testclient import TestClient
-    from pydantic import BaseModel
+    from fastapi import FastAPI  # noqa: E402
+    from fastapi.testclient import TestClient  # noqa: E402
+    from pydantic import BaseModel  # noqa: E402
 except ImportError:  # pragma: no cover - fastapi may not be installed in CI
     pytest.skip("fastapi not available, skipping integration tests", allow_module_level=True)
 
-from office_hero_mcp.client import client
+from office_hero_mcp.client import client  # noqa: E402
 
-from tools.generate_mcp_from_openapi import generate
+from tools.generate_mcp_from_openapi import generate  # noqa: E402
 
 
 class Tokens(BaseModel):

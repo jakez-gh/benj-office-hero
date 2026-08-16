@@ -6,10 +6,10 @@ import pytest
 
 pytest.importorskip("mcp", reason="mcp package not installed — run from mcp-server/")
 
-from office_hero_mcp.client import client
-from pydantic import ValidationError
+from office_hero_mcp.client import client  # noqa: E402
+from pydantic import ValidationError  # noqa: E402
 
-from tools import generate_mcp_from_openapi as gen
+from tools import generate_mcp_from_openapi as gen  # noqa: E402
 
 
 def make_auth_spec() -> dict[str, Any]:

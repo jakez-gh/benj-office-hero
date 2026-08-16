@@ -85,7 +85,9 @@ jobs:
           cache: "pip"
 
       - name: Install dev dependencies
-        run: pip install -e ".[dev]"
+        run: |
+          pip install -e ".[dev]"
+          pip install -e mcp-server/
 
       - name: Run tests
         id: run-tests
