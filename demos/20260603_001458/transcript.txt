@@ -1,0 +1,22 @@
+Step 0: Health Check
+Backend: {"status":"ok"}
+✅ Backend healthy
+Step 1: Create Customer
+✅ Customer created: null
+Step 2: Create Location
+✅ Location created: null
+Step 3: Create Job
+✅ Job created: null
+Step 4: Dispatch Job to Vehicle
+✅ Job dispatched. Status: null
+Step 5: Create Route (Commit Dispatch)
+✅ Route created: null, Stop: null, Status: null
+Step 6: List Routes for Work Date
+✅ Routes retrieved
+Step 7: Start Route (Technician Beginning Work)
+✅ Route started. Status: null
+Step 8: Mark Stop as Arrived
+✅ Stop marked arrived. Status: null
+Step 9: Record Vehicle Location (GPS)
+✅ Vehicle location recorded
+Step 10: Query Latest Vehicle Location
